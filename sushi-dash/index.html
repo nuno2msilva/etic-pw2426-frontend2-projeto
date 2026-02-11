@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ===================== Basic SEO ===================== -->
+    <title>Sushi Dash — All-You-Can-Eat Sushi Ordering System</title>
+    <meta name="description" content="Sushi Dash is a modern all-you-can-eat sushi restaurant ordering system. Browse our menu of 100+ items, place orders from your table, and track them in real time." />
+    <meta name="keywords" content="sushi, restaurant, ordering, all-you-can-eat, Japanese food, menu, real-time orders" />
+    <meta name="author" content="Sushi Dash" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://sushi-dash.vercel.app/" />
+    <meta name="theme-color" content="#f97316" />
+
+    <!-- ===================== Open Graph (Facebook, LinkedIn) ===================== -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Sushi Dash" />
+    <meta property="og:title" content="Sushi Dash — All-You-Can-Eat Sushi Ordering" />
+    <meta property="og:description" content="Browse 100+ sushi items, place orders from your table, and track them in real time. A modern restaurant ordering experience." />
+    <meta property="og:url" content="https://sushi-dash.vercel.app/" />
+    <meta property="og:image" content="https://sushi-dash.vercel.app/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- ===================== Twitter Card ===================== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sushi Dash — All-You-Can-Eat Sushi Ordering" />
+    <meta name="twitter:description" content="Browse 100+ sushi items, place orders from your table, and track them in real time." />
+    <meta name="twitter:image" content="https://sushi-dash.vercel.app/og-image.png" />
+
+    <!-- ===================== Structured Data (JSON-LD) ===================== -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "name": "Sushi Dash",
+        "description": "All-you-can-eat sushi restaurant with 100+ menu items and real-time ordering.",
+        "url": "https://sushi-dash.vercel.app/",
+        "image": "https://sushi-dash.vercel.app/og-image.png",
+        "servesCuisine": ["Japanese", "Sushi"],
+        "priceRange": "$$",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Lisbon",
+          "addressCountry": "PT"
+        },
+        "hasMenu": {
+          "@type": "Menu",
+          "name": "All-You-Can-Eat Menu",
+          "description": "100+ sushi items across Nigiri, Rolls, Sashimi, Hot Dishes, Sides, Noodles, Drinks and Desserts",
+          "hasMenuSection": [
+            { "@type": "MenuSection", "name": "Nigiri", "description": "Classic hand-pressed sushi" },
+            { "@type": "MenuSection", "name": "Rolls", "description": "Maki and specialty rolls" },
+            { "@type": "MenuSection", "name": "Sashimi", "description": "Fresh sliced fish" },
+            { "@type": "MenuSection", "name": "Hot Dishes", "description": "Teriyaki, tempura and more" },
+            { "@type": "MenuSection", "name": "Sides", "description": "Edamame, gyoza, salads" },
+            { "@type": "MenuSection", "name": "Noodles", "description": "Ramen, udon and more" },
+            { "@type": "MenuSection", "name": "Drinks", "description": "Tea, sake, sodas" },
+            { "@type": "MenuSection", "name": "Desserts", "description": "Mochi, ice cream, cakes" }
+          ]
+        },
+        "potentialAction": {
+          "@type": "OrderAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://sushi-dash.vercel.app/table/{tableId}",
+            "actionPlatform": "http://schema.org/DesktopWebPlatform"
+          },
+          "deliveryMethod": "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet"
+        }
+      }
+    </script>
+
+    <!-- ===================== Web App Manifest & Icons ===================== -->
+    <link rel="icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" href="/favicon.ico" />
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
