@@ -16,6 +16,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Table } from "@/types/sushi";
+import CardPanel from "./CardPanel";
+import ActionButton from "./ActionButton";
 
 interface TableManagerProps {
   tables: Table[];
@@ -43,7 +45,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable }: TableManagerProps) 
   };
 
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <CardPanel variant="section">
       <h2 className="text-lg font-bold text-card-foreground mb-4">
         Manage Tables
       </h2>
@@ -57,12 +59,9 @@ const TableManager = ({ tables, onAddTable, onRemoveTable }: TableManagerProps) 
           onChange={(e) => setTableName(e.target.value)}
           className="flex-1 px-4 py-2 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <button
-          onClick={handleAddTable}
-          className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity"
-        >
+        <ActionButton variant="primary" onClick={handleAddTable}>
           Add
-        </button>
+        </ActionButton>
       </div>
 
       {/* Tables List */}
@@ -73,16 +72,13 @@ const TableManager = ({ tables, onAddTable, onRemoveTable }: TableManagerProps) 
             className="flex items-center justify-between rounded-lg border bg-background px-4 py-2"
           >
             <span className="font-medium text-foreground">🪑 {table.label}</span>
-            <button
-              onClick={() => handleRemoveTable(table)}
-              className="px-3 py-1 rounded-lg text-sm bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-            >
+            <ActionButton variant="destructive" onClick={() => handleRemoveTable(table)}>
               Remove
-            </button>
+            </ActionButton>
           </div>
         ))}
       </div>
-    </div>
+    </CardPanel>
   );
 };
 

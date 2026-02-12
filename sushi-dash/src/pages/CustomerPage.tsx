@@ -9,19 +9,27 @@ import {
   OrderQueueList,
   OrderConfirmation,
   CartSummaryBanner,
+  CollapsibleSection,
+  Badge,
   LoginModal,
 } from "@/components/sushi";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
-import { AlertCircle, Search, X, ChevronDown, Trash2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 
 import type { Table, SushiItem } from "@/types/sushi";
+
+/** Emoji icons for each menu category */
+const CATEGORY_EMOJI: Record<string, string> = {
+  "Nigiri": "🍣",
+  "Rolls": "🍙",
+  "Specialty Rolls": "👑",
+  "Sashimi": "🐟",
+  "Hot Dishes": "🍗",
+  "Sides": "🥗",
+  "Noodles": "🍜",
+  "Drinks": "🍵",
+  "Desserts": "🍡",
+};
 
 type Step = "table" | "menu" | "confirm";
 
@@ -55,7 +63,6 @@ const CustomerPage = () => {
 
   // Cart state
   const [cart, setCart] = useState<Record<string, number>>({});
-  const [searchQuery, setSearchQuery] = useState("");
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   // Derived values
@@ -70,28 +77,17 @@ const CustomerPage = () => {
     .filter(Boolean)
     .join(", ");
 
-  // Filter menu by search query
-  const filteredMenu = useMemo(() => {
-    if (!searchQuery.trim()) return menu;
-    const query = searchQuery.toLowerCase();
-    return menu.filter(
-      (item) =>
-        item.name.toLowerCase().includes(query) ||
-        item.category.toLowerCase().includes(query)
-    );
-  }, [menu, searchQuery]);
-
-  // Group filtered items by category
+  // Group items by category
   const menuByCategory = useMemo(() => {
     const grouped: Record<string, SushiItem[]> = {};
-    for (const item of filteredMenu) {
+    for (const item of menu) {
       if (!grouped[item.category]) {
         grouped[item.category] = [];
       }
       grouped[item.category].push(item);
     }
     return grouped;
-  }, [filteredMenu]);
+  }, [menu]);
 
   // Get cart count per category
   const cartByCategory = useMemo(() => {
@@ -127,12 +123,10 @@ const CustomerPage = () => {
 
   // Handlers
   const handleSelectTable = (table: Table) => {
-    // Check if already authenticated for this table
     if (checkAccess('customer', table.id)) {
       setSelectedTable(table);
       setStep("menu");
     } else {
-      // Need to login for this table
       setPendingTable(table);
       setShowLoginModal(true);
     }
@@ -152,7 +146,6 @@ const CustomerPage = () => {
     return success;
   };
 
-  // Quick increment/decrement handlers
   const handleIncrement = (item: SushiItem) => {
     if (!canAddMore) {
       toast.error(`Maximum ${settings.maxItemsPerOrder} items per order`);
@@ -172,10 +165,16 @@ const CustomerPage = () => {
     });
   };
 
+  const handleRemoveItem = (item: SushiItem) => {
+    setCart((prev) => {
+      const { [item.id]: _, ...rest } = prev;
+      return rest;
+    });
+  };
+
   const handlePlaceOrder = () => {
     if (!selectedTable || totalItems === 0) return;
 
-    // Check if table can place order
     const canOrder = canTablePlaceOrder(selectedTable.id);
     if (!canOrder.allowed) {
       toast.error(canOrder.reason || "Cannot place order");
@@ -202,13 +201,7 @@ const CustomerPage = () => {
     setCart({});
     setStep("table");
     setSelectedTable(null);
-    setSearchQuery("");
     setOpenCategories(new Set());
-  };
-
-  const handleClearCart = () => {
-    setCart({});
-    toast.success("Cart cleared");
   };
 
   const toggleCategory = (category: string) => {
@@ -233,7 +226,7 @@ const CustomerPage = () => {
   };
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
+    <main className="max-w-5xl mx-auto px-4 py-8 pb-[5.5rem]">
       {/* STEP 1: Table Selection */}
       {step === "table" && (
         <TableSelector tables={tables} onSelectTable={handleSelectTable} />
@@ -251,31 +244,14 @@ const CustomerPage = () => {
               >
                 ← Back to tables
               </button>
-              <h1 className="text-2xl font-display font-bold text-foreground">
-                {selectedTable.label} — Order
-              </h1>
-            </div>
-
-            <div className="flex items-center gap-2">
-              {totalItems > 0 && (
-                <>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleClearCart}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="w-4 h-4 mr-1" />
-                    Clear
-                  </Button>
-                  <Button
-                    onClick={() => setStep("confirm")}
-                    className="font-bold"
-                  >
-                    Review ({totalItems}) →
-                  </Button>
-                </>
-              )}
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-display font-bold text-foreground">
+                  {selectedTable.label} — Order
+                </h1>
+                <span className={`text-xl font-bold ${totalItems >= settings.maxItemsPerOrder ? "text-destructive" : "text-muted-foreground"}`}>
+                  {totalItems}/{settings.maxItemsPerOrder}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -287,104 +263,46 @@ const CustomerPage = () => {
             </Alert>
           )}
 
-          {/* Items Counter & Search */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
-            <div className="text-sm text-muted-foreground">
-              Items: <span className={totalItems >= settings.maxItemsPerOrder ? "text-destructive font-bold" : "font-medium"}>
-                {totalItems}
-              </span> / {settings.maxItemsPerOrder} max
-            </div>
-            
-            <div className="relative flex-1 max-w-xs">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search menu (e.g. #26 or salmon)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 pr-8"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Cart Summary */}
-          <CartSummaryBanner summary={cartSummary} />
+          <CartSummaryBanner 
+            summary={cartSummary} 
+            onReview={totalItems > 0 ? () => setStep("confirm") : undefined}
+          />
 
           {/* Menu by Category (Collapsible) */}
-          {searchQuery ? (
-            // Show flat grid when searching
-            <div className="mb-6">
-              <p className="text-sm text-muted-foreground mb-3">
-                {filteredMenu.length} results for "{searchQuery}"
-              </p>
-              <SushiGrid
-                items={filteredMenu}
-                cart={cart}
-                maxItems={settings.maxItemsPerOrder}
-                currentTotal={totalItems}
-                onIncrement={handleIncrement}
-                onDecrement={handleDecrement}
-              />
-            </div>
-          ) : (
-            // Show collapsible categories
-            <div className="space-y-3 mb-6">
-              {categories.map((category) => {
-                const items = menuByCategory[category] || [];
-                const cartCount = cartByCategory[category] || 0;
-                const isOpen = openCategories.has(category);
+          <div className="space-y-3">
+            {categories.map((category) => {
+              const items = menuByCategory[category] || [];
+              const cartCount = cartByCategory[category] || 0;
+              const isOpen = openCategories.has(category);
 
-                if (items.length === 0) return null;
+              if (items.length === 0) return null;
 
-                return (
-                  <Collapsible
-                    key={category}
-                    open={isOpen}
-                    onOpenChange={() => toggleCategory(category)}
-                  >
-                    <CollapsibleTrigger asChild>
-                      <button className="w-full flex items-center justify-between p-4 rounded-xl bg-card border-2 border-border hover:border-primary/50 transition-colors">
-                        <div className="flex items-center gap-3">
-                          <span className="text-lg font-semibold">{category}</span>
-                          <span className="text-sm text-muted-foreground">
-                            ({items.length} items)
-                          </span>
-                          {cartCount > 0 && (
-                            <span className="px-2 py-0.5 rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                              {cartCount} in cart
-                            </span>
-                          )}
-                        </div>
-                        <ChevronDown
-                          className={`w-5 h-5 text-muted-foreground transition-transform ${
-                            isOpen ? "rotate-180" : ""
-                          }`}
-                        />
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pt-3">
-                      <SushiGrid
-                        items={items}
-                        cart={cart}
-                        maxItems={settings.maxItemsPerOrder}
-                        currentTotal={totalItems}
-                        onIncrement={handleIncrement}
-                        onDecrement={handleDecrement}
-                      />
-                    </CollapsibleContent>
-                  </Collapsible>
-                );
-              })}
-            </div>
-          )}
+              return (
+                <CollapsibleSection
+                  key={category}
+                  title={category}
+                  icon={CATEGORY_EMOJI[category] || '📋'}
+                  badge={
+                    cartCount > 0
+                      ? <Badge size="sm">{cartCount} in cart</Badge>
+                      : undefined
+                  }
+                  open={isOpen}
+                  onToggle={() => toggleCategory(category)}
+                >
+                  <SushiGrid
+                    items={items}
+                    cart={cart}
+                    maxItems={settings.maxItemsPerOrder}
+                    currentTotal={totalItems}
+                    onIncrement={handleIncrement}
+                    onDecrement={handleDecrement}
+                  />
+                </CollapsibleSection>
+              );
+            })}
+          </div>
 
           {/* Order Queue */}
           <OrderQueueList
@@ -404,6 +322,9 @@ const CustomerPage = () => {
           onBack={handleBackToMenu}
           onAddMore={handleBackToMenu}
           onConfirm={handlePlaceOrder}
+          onIncrement={handleIncrement}
+          onDecrement={handleDecrement}
+          onRemove={handleRemoveItem}
         />
       )}
 

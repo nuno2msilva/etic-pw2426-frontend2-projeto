@@ -22,6 +22,7 @@
  */
 
 import type { Table } from "@/types/sushi";
+import CardPanel from "./CardPanel";
 
 interface TableSelectorProps {
   tables: Table[];
@@ -42,14 +43,15 @@ const TableSelector = ({ tables, onSelectTable }: TableSelectorProps) => {
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
         {tables.map((table) => (
-          <button
+          <CardPanel
             key={table.id}
+            as="button"
             onClick={() => onSelectTable(table)}
-            className="rounded-xl border-2 border-border bg-card p-6 text-center hover:border-primary hover:shadow-lg transition-all"
+            className="p-6 text-center hover:border-primary hover:shadow-lg"
           >
             <span className="text-3xl block mb-2">🪑</span>
             <span className="font-bold text-card-foreground">{table.label}</span>
-          </button>
+          </CardPanel>
         ))}
       </div>
     </div>

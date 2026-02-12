@@ -22,6 +22,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import type { SushiItem } from "@/types/sushi";
+import CardPanel from "./CardPanel";
+import ActionButton from "./ActionButton";
 
 interface MenuListProps {
   menu: SushiItem[];
@@ -59,7 +61,7 @@ const MenuList = ({ menu, categories, onRemoveItem }: MenuListProps) => {
   }, [menu, categories]);
 
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <CardPanel variant="section">
       <div className="space-y-2">
         {categories.map((cat) => {
           const categoryItems = menu.filter((m) => m.category === cat);
@@ -101,12 +103,9 @@ const MenuList = ({ menu, categories, onRemoveItem }: MenuListProps) => {
                         {item.name}
                       </span>
                     </div>
-                    <button
-                      onClick={() => handleRemoveItem(item)}
-                      className="px-3 py-1 rounded-lg text-sm bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors"
-                    >
+                    <ActionButton variant="destructive" onClick={() => handleRemoveItem(item)}>
                       Remove
-                    </button>
+                    </ActionButton>
                   </div>
                 ))}
               </CollapsibleContent>
@@ -114,7 +113,7 @@ const MenuList = ({ menu, categories, onRemoveItem }: MenuListProps) => {
           );
         })}
       </div>
-    </div>
+    </CardPanel>
   );
 };
 

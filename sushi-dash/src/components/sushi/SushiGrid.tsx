@@ -25,7 +25,10 @@
 
 import { Plus, Minus, Flame } from "lucide-react";
 import type { SushiItem } from "@/types/sushi";
+import IconButton from "./IconButton";
+import Badge from "./Badge";
 
+// Typescript Interface for each item
 interface SushiGridProps {
   items: SushiItem[];
   cart: Record<string, number>;
@@ -51,80 +54,83 @@ const SushiGrid = ({
   const canAddMore = currentTotal < maxItems;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
       {items.map((item) => {
         const qty = cart[item.id] || 0;
 
         return (
           <div
             key={item.id}
-            className={`relative rounded-xl border-2 bg-card p-3 transition-all hover:shadow-md ${
+            className={`relative rounded-xl border-2 bg-card p-3 min-h-[120px] transition-all hover:shadow-md ${
               qty > 0 ? "border-primary shadow-sm" : "border-border"
             }`}
           >
-            {/* HOT badge for popular items */}
+            {/* Item number in top-left corner with # prefix */}
+            <div className="absolute top-2 left-2 text-xs font-bold text-muted-foreground z-10">
+              #{item.name.match(/#(\d+)/)?.[1] || ''}
+            </div>
+
+            {/* HOT badge for popular items - top right */}
             {item.isPopular && (
-              <span className="absolute -top-2 -left-2 px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center gap-0.5 shadow-sm z-10">
+              <Badge variant="orange" size="xs" className="absolute -top-2 -right-2 flex items-center gap-0.5 shadow-sm z-20">
                 <Flame className="w-3 h-3" />
                 HOT
-              </span>
+              </Badge>
             )}
 
-            {/* Item display - no click action */}
-            <div className="w-full text-center mb-2">
-              <span className="text-3xl block mb-1">{item.emoji}</span>
-              <span className="text-xs font-medium text-card-foreground block leading-tight">
-                {item.name}
-              </span>
+            {/* Minus button - closer on mobile, further on desktop */}
+            <IconButton
+              size="md"
+              variant={qty > 0 ? "destructive" : "muted"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDecrement(item);
+              }}
+              disabled={qty === 0}
+              className={`absolute left-2 md:left-4 lg:left-6 top-1/2 -translate-y-1/2 z-10 ${
+                qty === 0 ? "cursor-not-allowed" : ""
+              }`}
+              aria-label={`Remove ${item.name}`}
+            >
+              <Minus className="w-5 h-5" />
+            </IconButton>
+
+            {/* Plus button - closer on mobile, further on desktop */}
+            <IconButton
+              size="md"
+              variant={canAddMore ? "primary" : "muted"}
+              onClick={(e) => {
+                e.stopPropagation();
+                onIncrement(item);
+              }}
+              disabled={!canAddMore}
+              className={`absolute right-2 md:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-10 ${
+                !canAddMore ? "cursor-not-allowed" : ""
+              }`}
+              aria-label={`Add ${item.name}`}
+            >
+              <Plus className="w-5 h-5" />
+            </IconButton>
+
+            {/* Emoji centered in the middle of the card */}
+            <div className="absolute inset-0 flex top-8 justify-center">
+              <div className="relative">
+                <span className="text-4xl block">{item.emoji}</span>
+                {/* Quantity display on top-right of emoji */}
+                {qty > 0 && (
+                  <Badge size="xs" className="absolute -top-3 -right-5 shadow-md">
+                    {qty}x
+                  </Badge>
+                )}
+              </div>
             </div>
 
-            {/* Quick quantity controls */}
-            <div className="flex items-center justify-center gap-2 mt-2">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDecrement(item);
-                }}
-                disabled={qty === 0}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                  qty > 0
-                    ? "bg-destructive/10 text-destructive hover:bg-destructive/20"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
-                aria-label={`Remove ${item.name}`}
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-
-              <span className={`w-8 text-center font-bold text-sm ${
-                qty > 0 ? "text-primary" : "text-muted-foreground"
-              }`}>
-                {qty}
+            {/* Item name at the bottom */}
+            <div className="absolute bottom-2 left-2 right-2">
+              <span className="text-sm font-medium text-card-foreground text-center leading-tight block">
+                {item.name.replace(/#\d+\s/, '')}
               </span>
-
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onIncrement(item);
-                }}
-                disabled={!canAddMore}
-                className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                  canAddMore
-                    ? "bg-primary/10 text-primary hover:bg-primary/20"
-                    : "bg-muted text-muted-foreground cursor-not-allowed"
-                }`}
-                aria-label={`Add ${item.name}`}
-              >
-                <Plus className="w-4 h-4" />
-              </button>
             </div>
-
-            {/* Quantity badge */}
-            {qty > 0 && (
-              <span className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">
-                {qty}
-              </span>
-            )}
           </div>
         );
       })}

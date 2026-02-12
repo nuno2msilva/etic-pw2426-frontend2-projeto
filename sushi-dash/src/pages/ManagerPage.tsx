@@ -34,15 +34,11 @@ import {
   PasswordManager,
   OrderSettingsManager,
   SEOHead,
+  CollapsibleSection,
 } from "@/components/sushi";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { ChevronDown, AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 const ManagerPage = () => {
   const {
     menu,
@@ -194,34 +190,18 @@ const ManagerPage = () => {
             const isOpen = openSections.has(section.id);
 
             return (
-              <Collapsible
+              <CollapsibleSection
                 key={section.id}
+                title={section.title}
+                subtitle={section.description}
                 open={isOpen}
-                onOpenChange={() => toggleSection(section.id)}
+                onToggle={() => toggleSection(section.id)}
+                contentClassName="pt-3 pb-2"
               >
-                <CollapsibleTrigger asChild>
-                  <button className="w-full flex items-center justify-between p-4 rounded-xl bg-card border-2 border-border hover:border-primary/50 transition-colors">
-                    <div className="text-left">
-                      <span className="text-lg font-semibold block">
-                        {section.title}
-                      </span>
-                      <span className="text-sm text-muted-foreground">
-                        {section.description}
-                      </span>
-                    </div>
-                    <ChevronDown
-                      className={`w-5 h-5 text-muted-foreground transition-transform ${
-                        isOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3 pb-2">
-                  <div className="pl-2 pr-2">
-                    {section.content}
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
+                <div className="pl-2 pr-2">
+                  {section.content}
+                </div>
+              </CollapsibleSection>
             );
           })}
         </div>

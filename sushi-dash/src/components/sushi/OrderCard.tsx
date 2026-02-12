@@ -20,6 +20,9 @@
  */
 
 import type { Order, OrderStatus } from "@/types/sushi";
+import CardPanel from "./CardPanel";
+import Badge from "./Badge";
+import ActionButton from "./ActionButton";
 
 interface OrderCardProps {
   order: Order;
@@ -29,12 +32,12 @@ interface OrderCardProps {
   showActions?: boolean;
 }
 
-const STATUS_STYLES: Record<OrderStatus, string> = {
-  queued: "bg-accent/20 text-accent-foreground",
-  preparing: "bg-primary/10 text-primary",
-  ready: "bg-sushi-green/20 text-sushi-green",
-  delivered: "bg-muted text-muted-foreground",
-  cancelled: "bg-destructive/10 text-destructive",
+const STATUS_BADGE_VARIANT: Record<OrderStatus, "accent" | "primary-soft" | "success" | "muted" | "destructive"> = {
+  queued: "accent",
+  preparing: "primary-soft",
+  ready: "success",
+  delivered: "muted",
+  cancelled: "destructive",
 };
 
 const STATUS_LABELS: Record<OrderStatus, string> = {
@@ -69,12 +72,12 @@ const OrderCard = ({
   const canDelete = onDelete && (order.status === "delivered" || order.status === "cancelled");
 
   return (
-    <div className="rounded-xl border bg-card p-4">
+    <CardPanel variant="section" className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display font-bold text-card-foreground">{order.table.label}</h3>
-        <span className={`text-xs font-bold px-3 py-1 rounded-full ${STATUS_STYLES[order.status]}`}>
+        <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="md">
           {STATUS_LABELS[order.status]}
-        </span>
+        </Badge>
       </div>
       <ul className="space-y-1 mb-3">
         {order.items.map((item, i) => (
@@ -89,32 +92,35 @@ const OrderCard = ({
       {showActions && (
         <div className="border-t pt-3 space-y-2">
           {nextStatus && onUpdateStatus && (
-            <button
+            <ActionButton
+              variant="primary"
+              fullWidth
               onClick={() => onUpdateStatus(nextStatus)}
-              className="w-full px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-bold hover:opacity-90 transition-opacity"
             >
               {ACTION_LABELS[order.status]}
-            </button>
+            </ActionButton>
           )}
           {canCancel && (
-            <button
+            <ActionButton
+              variant="destructive"
+              fullWidth
               onClick={onCancel}
-              className="w-full px-4 py-2 rounded-lg bg-destructive/10 text-destructive text-sm font-bold hover:bg-destructive/20 transition-colors"
             >
               Cancel Order
-            </button>
+            </ActionButton>
           )}
           {canDelete && (
-            <button
+            <ActionButton
+              variant="muted"
+              fullWidth
               onClick={onDelete}
-              className="w-full px-4 py-2 rounded-lg bg-muted text-muted-foreground text-sm font-bold hover:bg-destructive/10 hover:text-destructive transition-colors"
             >
               Delete Order
-            </button>
+            </ActionButton>
           )}
         </div>
       )}
-    </div>
+    </CardPanel>
   );
 };
 

@@ -24,6 +24,8 @@
  */
 
 import type { SushiItem } from "@/types/sushi";
+import IconButton from "./IconButton";
+import ActionButton from "./ActionButton";
 
 interface QuantityPickerModalProps {
   item: SushiItem;
@@ -60,37 +62,45 @@ const QuantityPickerModal = ({
 
         {/* Quantity Controls */}
         <div className="flex items-center justify-center gap-4 mb-6">
-          <button
+          <IconButton
+            size="md"
+            variant="outline"
             onClick={() => onQuantityChange(Math.max(0, quantity - 1))}
-            className="w-10 h-10 rounded-full border border-border text-foreground flex items-center justify-center hover:bg-secondary transition-colors text-lg"
+            className="text-lg"
           >
             −
-          </button>
+          </IconButton>
           <span className="text-3xl font-bold text-foreground w-12 text-center">
             {quantity}
           </span>
-          <button
+          <IconButton
+            size="md"
+            variant="solid"
             onClick={() => onQuantityChange(quantity + 1)}
-            className="w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition-colors text-lg"
+            className="text-lg"
           >
             +
-          </button>
+          </IconButton>
         </div>
 
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <button
+          <ActionButton
+            variant="outline"
+            size="sm"
             onClick={onCancel}
-            className="flex-1 py-2 rounded-lg border border-border text-muted-foreground hover:text-foreground transition-colors text-sm"
+            className="flex-1 border"
           >
             Cancel
-          </button>
-          <button
+          </ActionButton>
+          <ActionButton
+            variant="primary"
+            size="sm"
             onClick={onConfirm}
-            className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground font-bold hover:opacity-90 transition-opacity text-sm"
+            className="flex-1"
           >
             {quantity === 0 ? "Remove" : "Confirm"}
-          </button>
+          </ActionButton>
         </div>
       </div>
     </div>

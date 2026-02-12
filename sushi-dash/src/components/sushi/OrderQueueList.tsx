@@ -20,6 +20,7 @@
  */
 
 import type { Order } from "@/types/sushi";
+import Badge from "./Badge";
 
 interface OrderQueueListProps {
   orders: Order[];
@@ -27,10 +28,10 @@ interface OrderQueueListProps {
   tableLabel: string;
 }
 
-const STATUS_STYLES: Record<string, string> = {
-  queued: "bg-accent/20 text-accent-foreground",
-  preparing: "bg-primary/10 text-primary",
-  ready: "bg-sushi-green/20 text-sushi-green",
+const STATUS_BADGE_VARIANT: Record<string, "accent" | "primary-soft" | "success"> = {
+  queued: "accent",
+  preparing: "primary-soft",
+  ready: "success",
 };
 
 const STATUS_LABELS: Record<string, string> = {
@@ -74,13 +75,9 @@ const OrderQueueList = ({ orders, allOrders, tableLabel }: OrderQueueListProps) 
                 <span className="text-muted-foreground text-sm">{itemsSummary}</span>
               </div>
 
-              <span
-                className={`text-xs font-bold px-2 py-1 rounded-full ${
-                  STATUS_STYLES[order.status]
-                }`}
-              >
+              <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="sm">
                 {STATUS_LABELS[order.status]}
-              </span>
+              </Badge>
             </div>
           );
         })}

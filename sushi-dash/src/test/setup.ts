@@ -35,3 +35,15 @@ Object.defineProperty(window, "matchMedia", {
     dispatchEvent: () => {},
   }),
 });
+
+// Polyfill IntersectionObserver for jsdom
+class MockIntersectionObserver {
+  readonly root: Element | null = null;
+  readonly rootMargin: string = '';
+  readonly thresholds: ReadonlyArray<number> = [];
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+  takeRecords(): IntersectionObserverEntry[] { return []; }
+}
+global.IntersectionObserver = MockIntersectionObserver as unknown as typeof IntersectionObserver;

@@ -22,18 +22,7 @@
  */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import {
-  AuthSession,
-  AuthRole,
-  getAuthSession,
-  saveAuthSession,
-  clearAuthSession,
-  initializePasswords,
-  verifyTablePassword,
-  verifyKitchenPassword,
-  verifyManagerPassword,
-  hasAccess,
-} from '@/lib/auth';
+import {AuthSession, AuthRole, getAuthSession, saveAuthSession, clearAuthSession, initializePasswords, verifyTablePassword, verifyKitchenPassword,  verifyManagerPassword, hasAccess,} from '@/lib/auth';
 
 interface AuthContextType {
   /** Current authentication session */

@@ -9,6 +9,11 @@
  */
 
 // Core UI components
+export { default as CardPanel } from "./CardPanel";
+export { default as CollapsibleSection } from "./CollapsibleSection";
+export { default as IconButton } from "./IconButton";
+export { default as Badge } from "./Badge";
+export { default as ActionButton } from "./ActionButton";
 export { default as OrderCard } from "./OrderCard";
 export { default as AppHeader } from "./AppHeader";
 export { default as TableSelector } from "./TableSelector";

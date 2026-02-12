@@ -16,6 +16,8 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
+import CardPanel from "./CardPanel";
+import ActionButton from "./ActionButton";
 
 const EMOJI_OPTIONS = ["🍣", "🍙", "🍤", "🍜", "🐉", "🥟", "🍱", "🦐", "🥢", "🍘", "🫘", "🐟"];
 const CATEGORY_PRESETS = ["Nigiri", "Rolls", "Sides", "Sashimi", "Dessert", "Drinks"];
@@ -41,7 +43,7 @@ const AddMenuItemForm = ({ onAddItem }: AddMenuItemFormProps) => {
   };
 
   return (
-    <div className="rounded-xl border bg-card p-6">
+    <CardPanel variant="section">
       <h2 className="text-lg font-bold text-card-foreground mb-4">
         Add Menu Item
       </h2>
@@ -100,13 +102,10 @@ const AddMenuItemForm = ({ onAddItem }: AddMenuItemFormProps) => {
       </div>
 
       {/* Submit Button */}
-      <button
-        onClick={handleSubmit}
-        className="px-6 py-2 rounded-lg bg-sushi-green text-sushi-green-foreground font-bold hover:opacity-90 transition-opacity"
-      >
+      <ActionButton variant="success" onClick={handleSubmit}>
         Add to Menu ✨
-      </button>
-    </div>
+      </ActionButton>
+    </CardPanel>
   );
 };
 

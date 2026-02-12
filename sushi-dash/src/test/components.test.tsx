@@ -31,9 +31,9 @@ import { AuthProvider } from "@/context/AuthContext";
 // CART SUMMARY BANNER
 // ==========================================================================
 describe("CartSummaryBanner", () => {
-  it("shows 'Empty!' when cart is empty", () => {
+  it("shows empty message when cart is empty", () => {
     render(<CartSummaryBanner summary="" />);
-    expect(screen.getByText("Empty!")).toBeDefined();
+    expect(screen.getByText(/Currently empty/)).toBeDefined();
   });
 
   it("renders the cart summary text when items are added", () => {
@@ -74,6 +74,9 @@ describe("OrderConfirmation", () => {
         onBack={() => {}}
         onAddMore={() => {}}
         onConfirm={() => {}}
+        onIncrement={() => {}}
+        onDecrement={() => {}}
+        onRemove={() => {}}
       />
     );
 
@@ -90,6 +93,9 @@ describe("OrderConfirmation", () => {
         onBack={() => {}}
         onAddMore={() => {}}
         onConfirm={() => {}}
+        onIncrement={() => {}}
+        onDecrement={() => {}}
+        onRemove={() => {}}
       />
     );
 
@@ -105,6 +111,9 @@ describe("OrderConfirmation", () => {
         onBack={() => {}}
         onAddMore={() => {}}
         onConfirm={() => {}}
+        onIncrement={() => {}}
+        onDecrement={() => {}}
+        onRemove={() => {}}
       />
     );
 
