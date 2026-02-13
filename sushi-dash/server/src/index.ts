@@ -45,9 +45,11 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// ─── Start ───────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`🍣 Sushi Dash API running on http://localhost:${PORT}`);
-});
+// ─── Start (skip in serverless environments like Vercel) ─────
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🍣 Sushi Dash API running on http://localhost:${PORT}`);
+  });
+}
 
 export default app;

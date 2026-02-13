@@ -19,6 +19,6 @@
     },
     "baseUrl": "."
   },
-  "include": ["src/**/*", "../src/data/defaultMenu.ts", "../src/types/sushi.ts"],
+  "include": ["src/**/*", "api/**/*", "../src/data/defaultMenu.ts", "../src/types/sushi.ts"],
   "exclude": ["node_modules", "dist"]
 }
