@@ -1,7 +1,11 @@
 {
   "version": 2,
-  "buildCommand": "prisma generate && tsc",
-  "outputDirectory": "dist",
+  "builds": [
+    {
+      "src": "api/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
   ]
