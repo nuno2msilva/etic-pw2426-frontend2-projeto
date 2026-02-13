@@ -7,7 +7,6 @@
 
 import "dotenv/config";
 import express from "express";
-import cors from "cors";
 import cookieParser from "cookie-parser";
 
 import { authenticate } from "./middleware/auth.js";
@@ -22,11 +21,24 @@ import settingsRoutes from "./routes/settings.js";
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
-// ─── Global middleware ───────────────────────────────────────
-app.use(cors({
-  origin: true,        // reflect the requesting origin (allows any)
-  credentials: true,   // allow cookies
-}));
+// ─── CORS — manual middleware (works reliably in Vercel serverless) ───
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
+  // Handle preflight
+  if (req.method === "OPTIONS") {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(authenticate);        // decode JWT on every request (non-blocking)
