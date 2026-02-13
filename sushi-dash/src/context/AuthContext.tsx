@@ -126,7 +126,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     clearAuthSession('customer');
     setCustomerSession(null);
-    fetch('/api/auth/logout', {
+    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -139,7 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutStaff = useCallback(() => {
     clearAuthSession('staff');
     setStaffSession(null);
-    fetch('/api/auth/logout', {
+    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

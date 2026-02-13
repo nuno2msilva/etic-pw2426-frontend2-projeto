@@ -175,7 +175,7 @@ const CustomerPage = () => {
       return;
     }
     if (isInitialized && isCustomerAuthenticated && customerSession?.tableId) {
-      fetch('/api/auth/session', { credentials: 'include' })
+      fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/session`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : Promise.reject())
         .then((data: { authenticated: boolean; role?: string; tableId?: number; sessions?: { role: string; tableId?: number | null; authenticated: boolean }[] }) => {
           // Check if customer session is valid (look in sessions array or top-level)

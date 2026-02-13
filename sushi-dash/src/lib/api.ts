@@ -11,13 +11,16 @@
 import type { SushiItem, Table, Order, OrderStatus, Category } from "@/types/sushi";
 import type { OrderSettings } from "@/context/SushiContext";
 
+/** Base URL for API requests. Empty in dev (Vite proxies), full URL in production. */
+const API = import.meta.env.VITE_API_URL ?? "";
+
 // ==========================================================================
 // MENU CRUD
 // ==========================================================================
 
 /** GET /api/menu — Fetch all menu items */
 export async function fetchMenu(): Promise<SushiItem[]> {
-  const res = await fetch("/api/menu", { credentials: "include" });
+  const res = await fetch(`${API}/api/menu`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch menu");
   const data = await res.json();
   
@@ -46,7 +49,7 @@ export async function createMenuItem(
     categoryId = category?.id;
   }
   
-  const res = await fetch("/api/menu", {
+  const res = await fetch(`${API}/api/menu`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -75,7 +78,7 @@ export async function updateMenuItem(
   id: string,
   updates: { name?: string; emoji?: string; category_id?: number; is_popular?: boolean }
 ): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/menu/${id}`, {
+  const res = await fetch(`${API}/api/menu/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -90,7 +93,7 @@ export async function toggleItemAvailability(
   id: string,
   isAvailable: boolean
 ): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/menu/${id}/availability`, {
+  const res = await fetch(`${API}/api/menu/${id}/availability`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -102,7 +105,7 @@ export async function toggleItemAvailability(
 
 /** DELETE /api/menu/:id — Remove a menu item by ID */
 export async function deleteMenuItem(id: string): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/menu/${id}`, {
+  const res = await fetch(`${API}/api/menu/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -116,14 +119,14 @@ export async function deleteMenuItem(id: string): Promise<{ success: boolean }> 
 
 /** GET /api/categories — Fetch all categories */
 export async function fetchCategories(): Promise<Category[]> {
-  const res = await fetch("/api/categories", { credentials: "include" });
+  const res = await fetch(`${API}/api/categories`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch categories");
   return res.json();
 }
 
 /** POST /api/categories — Create a new category */
 export async function createCategory(name: string): Promise<Category> {
-  const res = await fetch("/api/categories", {
+  const res = await fetch(`${API}/api/categories`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -138,7 +141,7 @@ export async function createCategory(name: string): Promise<Category> {
 
 /** DELETE /api/categories/:id — Delete a category (cascades items) */
 export async function deleteCategory(id: number): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/categories/${id}`, {
+  const res = await fetch(`${API}/api/categories/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -152,7 +155,7 @@ export async function deleteCategory(id: number): Promise<{ success: boolean }> 
 
 /** GET /api/tables — Fetch tables with PINs (manager auth required) */
 export async function fetchTablesWithPins(): Promise<Table[]> {
-  const res = await fetch("/api/tables", { credentials: "include" });
+  const res = await fetch(`${API}/api/tables`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch tables");
   const data = await res.json();
   // Convert numeric id to string for frontend type compatibility
@@ -167,7 +170,7 @@ export const fetchTables = fetchTablesWithPins;
 
 /** POST /api/tables — Add new table */
 export async function createTable(label: string): Promise<Table> {
-  const res = await fetch("/api/tables", {
+  const res = await fetch(`${API}/api/tables`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include", 
@@ -183,7 +186,7 @@ export async function updateTable(
   id: string,
   label: string
 ): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/tables/${id}`, {
+  const res = await fetch(`${API}/api/tables/${id}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -197,7 +200,7 @@ export async function updateTable(
 export async function deleteTable(
   id: string
 ): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/tables/${id}`, {
+  const res = await fetch(`${API}/api/tables/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -210,7 +213,7 @@ export async function setTablePin(
   id: string,
   pin: string
 ): Promise<{ success: boolean; pin: string }> {
-  const res = await fetch(`/api/tables/${id}/pin`, {
+  const res = await fetch(`${API}/api/tables/${id}/pin`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -224,7 +227,7 @@ export async function setTablePin(
 export async function randomizeTablePin(
   id: string
 ): Promise<{ success: boolean; pin: string; pin_version: number }> {
-  const res = await fetch(`/api/tables/${id}/pin/randomize`, {
+  const res = await fetch(`${API}/api/tables/${id}/pin/randomize`, {
     method: "POST",
     credentials: "include",
   });
@@ -238,7 +241,7 @@ export async function randomizeTablePin(
 
 /** GET /api/orders — Fetch all orders */
 export async function fetchOrders(): Promise<Order[]> {
-  const res = await fetch("/api/orders", { credentials: "include" });
+  const res = await fetch(`${API}/api/orders`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch orders");
   const data = await res.json();
   
@@ -268,7 +271,7 @@ export async function createOrder(orderData: {
   items: { sushiId: string; quantity: number }[];
   tableId: string;
 }): Promise<Order> {
-  const res = await fetch(`/api/orders/table/${orderData.tableId}`, {
+  const res = await fetch(`${API}/api/orders/table/${orderData.tableId}`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -310,7 +313,7 @@ export async function updateOrderStatus(
   id: string,
   status: OrderStatus
 ): Promise<{ success: boolean; id: number; status: string }> {
-  const res = await fetch(`/api/orders/${id}/status`, {
+  const res = await fetch(`${API}/api/orders/${id}/status`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -322,7 +325,7 @@ export async function updateOrderStatus(
 
 /** PATCH /api/orders/:id/cancel — Cancel an order (sets status to cancelled) */
 export async function cancelOrder(id: string): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/orders/${id}/cancel`, {
+  const res = await fetch(`${API}/api/orders/${id}/cancel`, {
     method: "PATCH",
     credentials: "include",
   });
@@ -332,7 +335,7 @@ export async function cancelOrder(id: string): Promise<{ success: boolean }> {
 
 /** DELETE /api/orders/:id — Permanently delete an order (manager only) */
 export async function deleteOrder(id: string): Promise<{ success: boolean }> {
-  const res = await fetch(`/api/orders/${id}`, {
+  const res = await fetch(`${API}/api/orders/${id}`, {
     method: "DELETE",
     credentials: "include",
   });
@@ -346,7 +349,7 @@ export async function deleteOrder(id: string): Promise<{ success: boolean }> {
 
 /** GET /api/settings — Fetch current settings */
 export async function fetchSettings(): Promise<OrderSettings> {
-  const res = await fetch("/api/settings", { credentials: "include" });
+  const res = await fetch(`${API}/api/settings`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch settings");
   const data = await res.json();
   // Backend returns string values — coerce to numbers
@@ -360,7 +363,7 @@ export async function fetchSettings(): Promise<OrderSettings> {
 export async function updateSettings(
   updates: Partial<OrderSettings>
 ): Promise<OrderSettings> {
-  const res = await fetch("/api/settings", {
+  const res = await fetch(`${API}/api/settings`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     credentials: "include", 

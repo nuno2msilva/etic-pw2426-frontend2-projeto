@@ -74,13 +74,15 @@ export async function initializePasswords(): Promise<void> {
   }
 }
 
+const API = import.meta.env.VITE_API_URL ?? '';
+
 /**
  * Login to a table via backend PIN verification.
  * Returns true on success (server sets httpOnly cookie).
  */
 export async function loginTableWithPin(tableId: string, pin: string): Promise<boolean> {
   try {
-    const res = await fetch(`/api/auth/login/table/${tableId}`, {
+    const res = await fetch(`${API}/api/auth/login/table/${tableId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -104,7 +106,7 @@ export async function verifyKitchenPassword(password: string): Promise<boolean> 
 
   // Also login on the backend so the JWT cookie is set for API calls
   try {
-    const res = await fetch('/api/auth/login/kitchen', {
+    const res = await fetch(`${API}/api/auth/login/kitchen`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -129,7 +131,7 @@ export async function verifyManagerPassword(password: string): Promise<boolean> 
 
   // Also login on the backend so the JWT cookie is set for API calls
   try {
-    const res = await fetch('/api/auth/login/manager', {
+    const res = await fetch(`${API}/api/auth/login/manager`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -150,7 +152,7 @@ export async function updateKitchenPassword(newPassword: string): Promise<void> 
   localStorage.setItem(STORAGE_KEYS.KITCHEN_PASSWORD, hash);
   // Sync with backend
   try {
-    await fetch('/api/settings/passwords', {
+    await fetch(`${API}/api/settings/passwords`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -169,7 +171,7 @@ export async function updateManagerPassword(newPassword: string): Promise<void> 
   localStorage.setItem(STORAGE_KEYS.MANAGER_PASSWORD, hash);
   // Sync with backend
   try {
-    await fetch('/api/settings/passwords', {
+    await fetch(`${API}/api/settings/passwords`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

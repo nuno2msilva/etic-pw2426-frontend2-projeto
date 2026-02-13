@@ -62,10 +62,11 @@ export function useServerEvents({ tableId, onEjected }: UseServerEventsOptions =
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
     function connect() {
+      const base = import.meta.env.VITE_API_URL ?? "";
       // Pass tableId as query param so server tracks table presence
       const url = tableIdRef.current
-        ? `/api/events?tableId=${tableIdRef.current}`
-        : "/api/events";
+        ? `${base}/api/events?tableId=${tableIdRef.current}`
+        : `${base}/api/events`;
       es = new EventSource(url);
 
       es.onmessage = (msg) => {
