@@ -23,20 +23,9 @@ const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
 // ─── Global middleware ───────────────────────────────────────
-const allowedOrigins = (process.env.CORS_ORIGIN ?? "http://localhost:5173")
-  .split(",")
-  .map((o) => o.trim());
-
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (curl, server-to-server)
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, origin ?? true);
-    } else {
-      callback(null, allowedOrigins[0]); // fallback — browser will block if mismatch
-    }
-  },
-  credentials: true,  // allow cookies
+  origin: true,        // reflect the requesting origin (allows any)
+  credentials: true,   // allow cookies
 }));
 app.use(express.json());
 app.use(cookieParser());
