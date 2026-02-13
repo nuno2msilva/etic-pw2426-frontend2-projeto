@@ -8,7 +8,7 @@
  */
 
 import { createHash } from "crypto";
-import { query } from "./connection.js";
+import prisma from "./prisma.js";
 
 // Import default data from the frontend source
 import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "../../../src/data/defaultMenu.js";
@@ -60,69 +60,77 @@ async function seed() {
     console.log(`Seeding ${categoryNames.length} categories...`);
     for (const name of categoryNames) {
       const sortOrder = CATEGORY_ORDER[name] ?? 99;
-      await query(
-        "INSERT INTO categories (name, sort_order) VALUES (?, ?) ON CONFLICT (name) DO UPDATE SET sort_order = EXCLUDED.sort_order",
-        [name, sortOrder]
-      );
+      await prisma.category.upsert({
+        where: { name },
+        update: { sortOrder },
+        create: { name, sortOrder },
+      });
     }
 
     // Build a category name → id lookup
-    const catRows = await query("SELECT id, name FROM categories") as { id: number; name: string }[];
+    const catRows = await prisma.category.findMany({ select: { id: true, name: true } });
     const catMap = new Map(catRows.map((r) => [r.name, r.id]));
 
     // ── Items ───────────────────────────────────────────────
     console.log(`Seeding ${DEFAULT_MENU.length} menu items...`);
     for (const item of DEFAULT_MENU) {
       const categoryId = catMap.get(item.category)!;
-      await query(
-        "INSERT INTO items (id, name, emoji, category_id, is_popular, is_available) VALUES (?, ?, ?, ?, ?, TRUE) ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name, emoji = EXCLUDED.emoji, category_id = EXCLUDED.category_id, is_popular = EXCLUDED.is_popular",
-        [Number(item.id), item.name, item.emoji, categoryId, item.isPopular ?? false]
-      );
+      await prisma.item.upsert({
+        where: { id: Number(item.id) },
+        update: { name: item.name, emoji: item.emoji, categoryId, isPopular: item.isPopular ?? false },
+        create: { id: Number(item.id), name: item.name, emoji: item.emoji, categoryId, isPopular: item.isPopular ?? false, isAvailable: true },
+      });
     }
 
     // Reset sequence to continue after the highest seeded id
     const maxId = Math.max(...DEFAULT_MENU.map((i) => Number(i.id)));
-    await query(`SELECT setval('items_id_seq', ${maxId})`);
+    await prisma.$executeRawUnsafe(`SELECT setval('items_id_seq', ${maxId})`);
 
     // ── Tables ──────────────────────────────────────────────
     console.log(`Seeding ${DEFAULT_TABLES.length} tables...`);
     for (const t of DEFAULT_TABLES) {
       const pin = TABLE_PINS[t.id] ?? generatePin();
-      await query(
-        "INSERT INTO tables_config (id, label, pin, pin_version) VALUES (?, ?, ?, 1) ON CONFLICT (id) DO UPDATE SET label = EXCLUDED.label, pin = EXCLUDED.pin",
-        [Number(t.id), t.label, pin]
-      );
+      await prisma.tableConfig.upsert({
+        where: { id: Number(t.id) },
+        update: { label: t.label, pin },
+        create: { id: Number(t.id), label: t.label, pin, pinVersion: 1 },
+      });
     }
 
     // Reset sequence for tables
     const maxTableId = Math.max(...DEFAULT_TABLES.map((t) => Number(t.id)));
-    await query(`SELECT setval('tables_config_id_seq', ${maxTableId})`);
+    await prisma.$executeRawUnsafe(`SELECT setval('tables_config_id_seq', ${maxTableId})`);
 
     // ── Role passwords ──────────────────────────────────────
     console.log(`Seeding ${ROLE_PASSWORDS.length} role passwords...`);
     for (const p of ROLE_PASSWORDS) {
       const hash = hashPassword(p.password);
-      await query(
-        "INSERT INTO passwords (role, password_hash) VALUES (?, ?) ON CONFLICT (role) DO UPDATE SET password_hash = EXCLUDED.password_hash",
-        [p.role, hash]
-      );
+      await prisma.password.upsert({
+        where: { role: p.role },
+        update: { passwordHash: hash },
+        create: { role: p.role, passwordHash: hash },
+      });
     }
 
     // ── Settings ────────────────────────────────────────────
     console.log("Seeding settings...");
-    await query(
-      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
-      ["maxItemsPerOrder", DEFAULT_SETTINGS.maxItemsPerOrder]
-    );
-    await query(
-      "INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
-      ["maxActiveOrdersPerTable", DEFAULT_SETTINGS.maxActiveOrdersPerTable]
-    );
+    await prisma.setting.upsert({
+      where: { key: "maxItemsPerOrder" },
+      update: { value: String(DEFAULT_SETTINGS.maxItemsPerOrder) },
+      create: { key: "maxItemsPerOrder", value: String(DEFAULT_SETTINGS.maxItemsPerOrder) },
+    });
+    await prisma.setting.upsert({
+      where: { key: "maxActiveOrdersPerTable" },
+      update: { value: String(DEFAULT_SETTINGS.maxActiveOrdersPerTable) },
+      create: { key: "maxActiveOrdersPerTable", value: String(DEFAULT_SETTINGS.maxActiveOrdersPerTable) },
+    });
 
     console.log("Seed complete!");
   } catch (err) {
     console.error("Seed failed:", err);
     throw err;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 

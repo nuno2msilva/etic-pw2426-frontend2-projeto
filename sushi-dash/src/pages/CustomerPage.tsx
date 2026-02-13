@@ -12,18 +12,9 @@ import {
   CollapsibleSection,
   PinPad,
   StaffLoginModal,
+  OrderProgressModal,
 } from "@/components/sushi";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
-import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
 
 import type { Table, SushiItem, Order } from "@/types/sushi";
 
@@ -90,7 +81,7 @@ const CustomerPage = () => {
   const [showConfirm, setShowConfirm] = useState(false);
 
   // Cancel order confirmation
-  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
+  // (handled by OrderProgressModal)
 
   // Cart state
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -143,14 +134,6 @@ const CustomerPage = () => {
     : [];
 
   const pendingCount = tableOrders.length;
-
-  /** Global queue position for a given order */
-  const getQueuePosition = (orderId: string): number => {
-    const globalQueue = orders.filter(
-      (o) => o.status === "queued" || o.status === "preparing"
-    );
-    return globalQueue.findIndex((o) => o.id === orderId) + 1;
-  };
 
   // React to session being cleared (e.g. PIN changed by manager via SSE)
   useEffect(() => {
@@ -432,90 +415,13 @@ const CustomerPage = () => {
       />
 
       {/* Order Progress Modal */}
-      <Dialog open={showProgress} onOpenChange={setShowProgress}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-lg">📋 Order Progress</DialogTitle>
-          </DialogHeader>
-
-          {tableOrders.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No pending orders yet. Start picking items!
-            </p>
-          ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {tableOrders.map((order) => {
-                const position = getQueuePosition(order.id);
-                const itemsSummary = order.items
-                  .map((i) => `${i.sushi.name} (${i.quantity}x)`)
-                  .join(", ");
-
-                return (
-                  <div
-                    key={order.id}
-                    className="flex items-center justify-between rounded-lg border bg-card px-3 py-2"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
-                        #{position > 0 ? position : "—"}
-                      </span>
-                      <span className="text-xs text-muted-foreground truncate">
-                        {itemsSummary}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
-                      <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="sm">
-                        {STATUS_LABELS[order.status]}
-                      </Badge>
-                      {order.status === "queued" && (
-                        <button
-                          onClick={() => setCancellingOrderId(order.id)}
-                          className="text-xs text-destructive hover:text-destructive/80 transition-colors font-medium px-1.5 py-0.5 rounded hover:bg-destructive/10"
-                          title="Cancel order"
-                        >
-                          ✕
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {/* Cancel Order Confirmation */}
-      <Dialog
-        open={!!cancellingOrderId}
-        onOpenChange={(open) => !open && setCancellingOrderId(null)}
-      >
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Cancel Order</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this order? This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCancellingOrderId(null)}>
-              Keep
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                if (cancellingOrderId) {
-                  cancelOrder(cancellingOrderId);
-                  toast.info("Order cancelled");
-                }
-                setCancellingOrderId(null);
-              }}
-            >
-              Cancel Order
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <OrderProgressModal
+        open={showProgress}
+        onOpenChange={setShowProgress}
+        orders={tableOrders}
+        allOrders={orders}
+        onCancelOrder={cancelOrder}
+      />
 
       {/* Staff Login Modal */}
       <StaffLoginModal

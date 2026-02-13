@@ -6,7 +6,7 @@
  */
 
 import { Router } from "express";
-import { query, execute } from "../db/connection.js";
+import prisma from "../db/prisma.js";
 import { requireRole } from "../middleware/auth.js";
 import { broadcast } from "../events.js";
 
@@ -15,9 +15,7 @@ const router = Router();
 // ── Read settings ────────────────────────────────────────────
 router.get("/", async (_req, res) => {
   try {
-    const rows = await query<{ key: string; value: string }>(
-      'SELECT "key", value FROM settings'
-    );
+    const rows = await prisma.setting.findMany();
     const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     res.json(settings);
   } catch (err) {
@@ -37,16 +35,15 @@ router.put("/", requireRole("manager"), async (req, res) => {
     }
 
     for (const [key, value] of Object.entries(updates)) {
-      await execute(
-        'INSERT INTO settings ("key", value) VALUES (?, ?) ON CONFLICT ("key") DO UPDATE SET value = EXCLUDED.value',
-        [key, String(value)]
-      );
+      await prisma.setting.upsert({
+        where: { key },
+        update: { value: String(value) },
+        create: { key, value: String(value) },
+      });
     }
 
     // Return updated settings
-    const rows = await query<{ key: string; value: string }>(
-      'SELECT "key", value FROM settings'
-    );
+    const rows = await prisma.setting.findMany();
     const settings = Object.fromEntries(rows.map((r) => [r.key, r.value]));
     broadcast({ type: "settings-changed" });
     res.json(settings);
@@ -75,10 +72,10 @@ router.put("/passwords", requireRole("manager"), async (req, res) => {
     const { hashPassword } = await import("../middleware/auth.js");
     const hash = hashPassword(password);
 
-    await execute(
-      "UPDATE passwords SET password_hash = ? WHERE role = ?",
-      [hash, role]
-    );
+    await prisma.password.update({
+      where: { role },
+      data: { passwordHash: hash },
+    });
 
     res.json({ success: true });
   } catch (err) {

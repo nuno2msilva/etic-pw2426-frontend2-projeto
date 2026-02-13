@@ -21,7 +21,7 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 ```
 
 - **Frontend**: React 18, TypeScript, Vite, TanStack React Query, Radix UI + shadcn/ui, Tailwind CSS
-- **Backend**: Express.js, JWT (httpOnly cookies), PostgreSQL via `pg`
+- **Backend**: Express.js, JWT (httpOnly cookies), PostgreSQL via **Prisma ORM**
 - **DevContainer**: Docker Compose with app, db (postgres:15), and Adminer
 
 ## 🚀 Quick Start
@@ -53,11 +53,7 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 1. Set up PostgreSQL and create a `sushi_dash` database
 2. Create `sushi-dash/server/.env`:
    ```env
-   DB_HOST=localhost
-   DB_PORT=5432
-   DB_USER=postgres
-   DB_PASSWORD=<your-password>
-   DB_NAME=sushi_dash
+   DATABASE_URL=postgresql://postgres:<your-password>@localhost:5432/sushi_dash
    JWT_SECRET=<generate-a-secure-secret>
    ```
 3. Install dependencies:
@@ -83,9 +79,10 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Express with tsx watch |
-| `npm run db:init` | Create database tables |
+| `npm run db:push` | Sync Prisma schema to database |
 | `npm run db:seed` | Seed menu, tables, passwords |
-| `npm run db:reset` | Init + seed (full reset) |
+| `npm run db:reset` | Drop & recreate tables + seed |
+| `npm run db:generate` | Regenerate Prisma client |
 
 ### Makefile (`sushi-dash/`)
 
@@ -99,10 +96,10 @@ make build          # Production build
 make test           # Run all frontend tests (Jest)
 make test-watch     # Run tests in watch mode
 make test-coverage  # Run tests with coverage report
-make db-init        # Create database tables
+make db-push        # Sync Prisma schema to database
 make db-seed        # Seed with default data
-make db-reset       # Drop & recreate (init + seed)
-make db-test        # Test database connectivity + seed integrity
+make db-reset       # Drop & recreate (Prisma push + seed)
+make db-generate    # Regenerate Prisma client
 make lint           # Run ESLint
 make clean          # Remove node_modules and dist
 ```
@@ -145,6 +142,7 @@ Visit `/staff` for a unified login page:
 
 ### Backend
 - **Express.js** — REST API
+- **Prisma ORM** — Type-safe database access
 - **PostgreSQL 15** — Relational database
 - **JWT** — httpOnly cookie authentication
 - **dotenv** — Environment configuration
@@ -159,7 +157,7 @@ Visit `/staff` for a unified login page:
 sushi-dash/
 ├── src/
 │   ├── components/
-│   │   ├── sushi/        # App-specific components (14 files)
+│   │   ├── sushi/        # App-specific components (15 files)
 │   │   └── ui/           # shadcn/ui primitives (12 files)
 │   ├── context/
 │   │   ├── AuthContext.tsx      # Auth state & sessions
@@ -168,7 +166,6 @@ sushi-dash/
 │   │   └── defaultMenu.ts       # Seed data (145 items)
 │   ├── hooks/
 │   │   ├── useQueries.ts        # React Query hooks
-│   │   ├── use-toast.ts         # Toast hook (legacy)
 │   │   └── useSound.ts         # Sound effects hook
 │   ├── lib/
 │   │   ├── api.ts              # REST API client
@@ -187,7 +184,7 @@ sushi-dash/
 ├── server/
 │   └── src/
 │       ├── index.ts            # Express entry point
-│       ├── db/                 # PostgreSQL connection, init, seed
+│       ├── db/                 # Prisma client, seed
 │       ├── middleware/auth.ts  # JWT middleware
 │       └── routes/             # API routes (auth, menu, orders, tables, etc.)
 ├── package.json
@@ -229,10 +226,11 @@ make test-coverage
 ### Database
 
 ```sh
-make db-test   # Verify DB connectivity + seed data
+make db-push   # Sync Prisma schema to database
+make db-reset  # Drop & recreate tables + seed data
 ```
 
-Checks PostgreSQL connection and verifies that tables, menu items, and settings are seeded.
+Uses Prisma ORM for type-safe schema management and database access.
 
 ## 🔒 Security Notes
 
@@ -244,6 +242,8 @@ Checks PostgreSQL connection and verifies that tables, menu items, and settings 
 
 ## 🚢 Deployment
 
+### Local Production Build
+
 The frontend builds to a static `dist/` folder. The backend is a standalone Express server.
 
 ```sh
@@ -252,6 +252,133 @@ cd server && npm run build       # Backend → dist/
 ```
 
 Set `JWT_SECRET` and database connection variables in your production environment.
+
+### 🚀 Deploy to Vercel
+
+Sushi Dash can be deployed as two separate Vercel projects: one for the **frontend** (static React app) and one for the **backend** (Express API).
+
+#### 1. Set Up a Production Database
+
+You need a PostgreSQL database accessible from the internet. Recommended providers:
+
+| Provider | Free Tier | Notes |
+|----------|-----------|-------|
+| [Vercel Postgres](https://vercel.com/docs/storage/vercel-postgres) | 256 MB | Tightly integrated with Vercel |
+| [Neon](https://neon.tech) | 512 MB | Serverless Postgres, generous free tier |
+| [Supabase](https://supabase.com) | 500 MB | Full Postgres with extras |
+| [Railway](https://railway.app) | $5 credit | Easy setup |
+
+After creating a database, copy its connection string (e.g. `postgresql://user:pass@host:5432/dbname`).
+
+#### 2. Deploy the Backend
+
+1. Push your repo to GitHub.
+
+2. Go to [vercel.com/new](https://vercel.com/new) and import the repository.
+
+3. Configure the project:
+   - **Root Directory**: `sushi-dash/server`
+   - **Framework Preset**: Other
+   - **Build Command**: `npx prisma generate && npm run build`
+   - **Output Directory**: `dist`
+
+4. Add environment variables:
+   | Variable | Value |
+   |----------|-------|
+   | `DATABASE_URL` | Your PostgreSQL connection string |
+   | `JWT_SECRET` | A long random secret (e.g. `openssl rand -hex 32`) |
+
+5. Click **Deploy**.
+
+#### 3. Populate the Database
+
+After the backend deploys, populate the database with schema and seed data:
+
+**Option A — From your local machine** (easiest):
+
+```sh
+cd sushi-dash/server
+
+# Point to the production database
+export DATABASE_URL="postgresql://user:pass@host:5432/dbname"
+
+# Push the Prisma schema to create all tables
+npx prisma db push
+
+# Seed default menu items, tables, and passwords
+npm run db:seed
+```
+
+**Option B — Via Vercel CLI**:
+
+```sh
+# Install Vercel CLI if needed
+npm i -g vercel
+
+# Link to your backend project
+cd sushi-dash/server && vercel link
+
+# Run seed using production env vars
+vercel env pull .env.local
+source .env.local
+npx prisma db push
+npm run db:seed
+```
+
+> After seeding, your database will contain 145 menu items, default tables with PINs, and staff passwords defined in `server/src/db/seed.ts`.
+
+#### 4. Deploy the Frontend
+
+1. Go to [vercel.com/new](https://vercel.com/new) and import the **same repository** again (as a separate project).
+
+2. Configure the project:
+   - **Root Directory**: `sushi-dash`
+   - **Framework Preset**: Vite
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+3. Add an environment variable to point the frontend's API calls to your deployed backend:
+   | Variable | Value |
+   |----------|-------|
+   | `VITE_API_URL` | `https://your-backend.vercel.app` |
+
+4. Update the Vite proxy or API client to use `VITE_API_URL` in production. In `src/lib/api.ts`, the `BASE_URL` should resolve to the backend URL:
+   ```ts
+   const BASE_URL = import.meta.env.VITE_API_URL || "";
+   ```
+
+5. Click **Deploy**.
+
+#### 5. Configure CORS
+
+In `server/src/index.ts`, ensure the CORS origin includes your frontend's Vercel URL:
+
+```ts
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  credentials: true,
+}));
+```
+
+Add `CORS_ORIGIN=https://your-frontend.vercel.app` as an environment variable in the backend project.
+
+#### Alternative: Single-Project Deploy with Vercel Serverless
+
+If you prefer a single project, you can convert the Express API into a Vercel serverless function:
+
+1. Create `sushi-dash/api/index.ts` that imports and re-exports the Express app.
+2. Add a `vercel.json` in `sushi-dash/`:
+   ```json
+   {
+     "rewrites": [
+       { "source": "/api/(.*)", "destination": "/api" },
+       { "source": "/(.*)", "destination": "/index.html" }
+     ]
+   }
+   ```
+3. Deploy as a single Vercel project with root directory `sushi-dash`.
+
+> This approach avoids CORS configuration but requires restructuring the Express app as a serverless handler.
 
 ## 📄 License
 

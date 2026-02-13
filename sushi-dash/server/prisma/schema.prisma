@@ -1,0 +1,116 @@
+// Sushi Dash — Prisma Schema
+// Mirrors the existing PostgreSQL tables created by db/init.ts
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ── Order status enum ──────────────────────────────────────────
+enum OrderStatus {
+  queued
+  preparing
+  ready
+  delivered
+  cancelled
+
+  @@map("order_status")
+}
+
+// ── Categories ─────────────────────────────────────────────────
+model Category {
+  id        Int    @id @default(autoincrement())
+  name      String @unique @db.VarChar(100)
+  sortOrder Int    @default(0) @map("sort_order")
+
+  items Item[]
+
+  @@map("categories")
+}
+
+// ── Items (menu) ───────────────────────────────────────────────
+model Item {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(200)
+  emoji       String   @db.VarChar(20)
+  categoryId  Int      @map("category_id")
+  isPopular   Boolean  @default(false) @map("is_popular")
+  isAvailable Boolean  @default(true) @map("is_available")
+
+  category   Category    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems OrderItem[]
+
+  @@map("items")
+}
+
+// ── Tables ─────────────────────────────────────────────────────
+model TableConfig {
+  id         Int    @id @default(autoincrement())
+  label      String @unique @db.VarChar(100)
+  pin        String @db.VarChar(4)
+  pinVersion Int    @default(1) @map("pin_version")
+
+  sessions Session[]
+  orders   Order[]
+
+  @@map("tables_config")
+}
+
+// ── Role passwords (kitchen, manager) ──────────────────────────
+model Password {
+  role         String @id @db.VarChar(20)
+  passwordHash String @map("password_hash") @db.VarChar(64)
+
+  @@map("passwords")
+}
+
+// ── Sessions (JWT tracking for revocation) ─────────────────────
+model Session {
+  token     String   @id @db.VarChar(512)
+  role      String   @db.VarChar(20)
+  tableId   Int?     @map("table_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  expiresAt DateTime @map("expires_at")
+
+  table TableConfig? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+
+  @@map("sessions")
+}
+
+// ── Orders ─────────────────────────────────────────────────────
+model Order {
+  id        Int         @id @default(autoincrement())
+  tableId   Int         @map("table_id")
+  status    OrderStatus @default(queued)
+  createdAt DateTime    @default(now()) @map("created_at")
+
+  table TableConfig  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  items OrderItem[]
+
+  @@index([tableId, status], name: "idx_orders_table_status")
+  @@map("orders")
+}
+
+// ── Order items (junction) ─────────────────────────────────────
+model OrderItem {
+  id       Int @id @default(autoincrement())
+  orderId  Int @map("order_id")
+  itemId   Int @map("item_id")
+  quantity Int @default(1)
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  item  Item  @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  @@map("order_items")
+}
+
+// ── Settings (key-value) ───────────────────────────────────────
+model Setting {
+  key   String @id @map("key") @db.VarChar(100)
+  value Int
+
+  @@map("settings")
+}

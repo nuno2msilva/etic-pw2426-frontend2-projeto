@@ -1,7 +1,7 @@
 /**
  * order-status.ts
  * ---------------------------------------------------------------------------
- * Shared order-status display maps used by OrderCard and OrderQueueList.
+ * Shared order-status display maps used by OrderCard and OrderProgressModal.
  * Keeps the badge variant + emoji label in one place so they stay in sync.
  * ---------------------------------------------------------------------------
  */

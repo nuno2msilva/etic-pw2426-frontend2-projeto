@@ -10,73 +10,44 @@
  */
 
 import { Router } from "express";
-import { query, execute, getConnection } from "../db/connection.js";
+import prisma from "../db/prisma.js";
 import { requireRole, requireTable } from "../middleware/auth.js";
 import { broadcast } from "../events.js";
+import { OrderStatus } from "@prisma/client";
 
 const router = Router();
 
-interface OrderRow {
-  id: number;
-  table_id: number;
-  table_label: string;
-  status: string;
-  created_at: string;
-}
+/** Shared include for loading orders with table + items */
+const orderInclude = {
+  table: { select: { label: true } },
+  items: { include: { item: { select: { name: true, emoji: true } } } },
+} as const;
 
-interface OrderItemRow {
-  id: number;
-  order_id: number;
-  item_id: number;
-  item_name: string;
-  item_emoji: string;
-  quantity: number;
-}
-
-/** Build full order objects with nested items */
-async function enrichOrders(orders: OrderRow[]) {
-  if (orders.length === 0) return [];
-
-  const ids = orders.map((o) => o.id);
-  const placeholders = ids.map(() => "?").join(",");
-
-  const items = await query<OrderItemRow>(
-    `SELECT oi.id, oi.order_id, oi.item_id, i.name AS item_name, i.emoji AS item_emoji, oi.quantity
-     FROM order_items oi
-     JOIN items i ON i.id = oi.item_id
-     WHERE oi.order_id IN (${placeholders})`,
-    ids
-  );
-
-  const itemsByOrder = new Map<number, OrderItemRow[]>();
-  for (const item of items) {
-    const list = itemsByOrder.get(item.order_id) ?? [];
-    list.push(item);
-    itemsByOrder.set(item.order_id, list);
-  }
-
-  return orders.map((o) => ({
+/** Map a Prisma order (with includes) to the API response shape */
+function formatOrder(o: any) {
+  return {
     id: o.id,
-    table_id: o.table_id,
-    table_label: o.table_label,
+    table_id: o.tableId,
+    table_label: o.table.label,
     status: o.status,
-    createdAt: o.created_at,
-    items: (itemsByOrder.get(o.id) ?? []).map((i) => ({
-      id: i.item_id,
-      name: i.item_name,
-      emoji: i.item_emoji,
-      quantity: i.quantity,
+    createdAt: o.createdAt,
+    items: o.items.map((oi: any) => ({
+      id: oi.itemId,
+      name: oi.item.name,
+      emoji: oi.item.emoji,
+      quantity: oi.quantity,
     })),
-  }));
+  };
 }
 
 // ── All orders (kitchen / manager) ───────────────────────────
 router.get("/", requireRole("kitchen", "manager"), async (_req, res) => {
   try {
-    const orders = await query<OrderRow>(
-      "SELECT o.id, o.table_id, t.label AS table_label, o.status, o.created_at FROM orders o JOIN tables_config t ON t.id = o.table_id ORDER BY o.created_at DESC"
-    );
-    res.json(await enrichOrders(orders));
+    const orders = await prisma.order.findMany({
+      include: orderInclude,
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(orders.map(formatOrder));
   } catch (err) {
     console.error("Orders fetch error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -87,11 +58,12 @@ router.get("/", requireRole("kitchen", "manager"), async (_req, res) => {
 router.get("/table/:tableId", requireTable, async (req, res) => {
   try {
     const tableId = Number(req.params.tableId);
-    const orders = await query<OrderRow>(
-      "SELECT o.id, o.table_id, t.label AS table_label, o.status, o.created_at FROM orders o JOIN tables_config t ON t.id = o.table_id WHERE o.table_id = ? ORDER BY o.created_at DESC",
-      [tableId]
-    );
-    res.json(await enrichOrders(orders));
+    const orders = await prisma.order.findMany({
+      where: { tableId },
+      include: orderInclude,
+      orderBy: { createdAt: "desc" },
+    });
+    res.json(orders.map(formatOrder));
   } catch (err) {
     console.error("Table orders fetch error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -100,7 +72,6 @@ router.get("/table/:tableId", requireTable, async (req, res) => {
 
 // ── Create order ─────────────────────────────────────────────
 router.post("/table/:tableId", requireTable, async (req, res) => {
-  const conn = await getConnection();
   try {
     const tableId = Number(req.params.tableId);
     const { items } = req.body as {
@@ -113,9 +84,9 @@ router.post("/table/:tableId", requireTable, async (req, res) => {
     }
 
     // Check settings limits
-    const settings = await query<{ key: string; value: string }>(
-      `SELECT "key", value FROM settings WHERE "key" IN ('maxItemsPerOrder', 'maxActiveOrdersPerTable')`
-    );
+    const settings = await prisma.setting.findMany({
+      where: { key: { in: ["maxItemsPerOrder", "maxActiveOrdersPerTable"] } },
+    });
     const settingsMap = Object.fromEntries(settings.map((s) => [s.key, s.value]));
 
     const maxItems = Number(settingsMap.maxItemsPerOrder ?? 10);
@@ -127,22 +98,20 @@ router.post("/table/:tableId", requireTable, async (req, res) => {
       return;
     }
 
-    const activeOrders = await query<{ count: number }>(
-      "SELECT COUNT(*) as count FROM orders WHERE table_id = ? AND status IN ('queued', 'preparing')",
-      [tableId]
-    );
-    if (activeOrders[0].count >= maxActive) {
+    const activeCount = await prisma.order.count({
+      where: { tableId, status: { in: [OrderStatus.queued, OrderStatus.preparing] } },
+    });
+    if (activeCount >= maxActive) {
       res.status(400).json({ error: `Table already has ${maxActive} active orders` });
       return;
     }
 
     // Verify all items exist and are available
     const itemIds = items.map((i) => i.id);
-    const placeholders = itemIds.map((_, idx) => `$${idx + 1}`).join(", ");
-    const availableItems = await query<{ id: number }>(
-      `SELECT id FROM items WHERE id IN (${placeholders}) AND is_available = TRUE`,
-      itemIds
-    );
+    const availableItems = await prisma.item.findMany({
+      where: { id: { in: itemIds }, isAvailable: true },
+      select: { id: true },
+    });
     const availableIds = new Set(availableItems.map((i) => i.id));
     const unavailable = itemIds.filter((id) => !availableIds.has(id));
     if (unavailable.length > 0) {
@@ -150,37 +119,23 @@ router.post("/table/:tableId", requireTable, async (req, res) => {
       return;
     }
 
-    await conn.query("BEGIN");
+    // Create order + items in a transaction
+    const order = await prisma.order.create({
+      data: {
+        tableId,
+        status: OrderStatus.queued,
+        items: {
+          create: items.map((i) => ({ itemId: i.id, quantity: i.quantity })),
+        },
+      },
+      include: orderInclude,
+    });
 
-    const orderResult = await conn.query(
-      "INSERT INTO orders (table_id, status) VALUES ($1, 'queued') RETURNING id",
-      [tableId]
-    );
-    const orderId = Number(orderResult.rows[0].id);
-
-    for (const item of items) {
-      await conn.query(
-        "INSERT INTO order_items (order_id, item_id, quantity) VALUES ($1, $2, $3)",
-        [orderId, item.id, item.quantity]
-      );
-    }
-
-    await conn.query("COMMIT");
-
-    // Return the full order
-    const [order] = await query<OrderRow>(
-      "SELECT o.id, o.table_id, t.label AS table_label, o.status, o.created_at FROM orders o JOIN tables_config t ON t.id = o.table_id WHERE o.id = ?",
-      [orderId]
-    );
-    const enriched = await enrichOrders([order]);
-    broadcast({ type: "order-created", tableId, orderId });
-    res.status(201).json(enriched[0]);
+    broadcast({ type: "order-created", tableId, orderId: order.id });
+    res.status(201).json(formatOrder(order));
   } catch (err) {
-    await conn.query("ROLLBACK");
     console.error("Order create error:", err);
     res.status(500).json({ error: "Internal server error" });
-  } finally {
-    conn.release();
   }
 });
 
@@ -190,26 +145,27 @@ router.patch("/:id/status", requireRole("kitchen", "manager"), async (req, res) 
     const id = Number(req.params.id);
     const { status } = req.body as { status?: string };
 
-    const validStatuses = ["queued", "preparing", "ready", "delivered", "cancelled"];
+    const validStatuses = Object.values(OrderStatus) as string[];
     if (!status || !validStatuses.includes(status)) {
       res.status(400).json({ error: `status must be one of: ${validStatuses.join(", ")}` });
       return;
     }
 
-    const result = await execute(
-      "UPDATE orders SET status = ? WHERE id = ?",
-      [status, id]
-    );
+    const updated = await prisma.order.update({
+      where: { id },
+      data: { status: status as OrderStatus },
+      select: { id: true, tableId: true, status: true },
+    }).catch((e: any) => {
+      if (e.code === "P2025") return null;
+      throw e;
+    });
 
-    if (result.affectedRows === 0) {
+    if (!updated) {
       res.status(404).json({ error: "Order not found" });
       return;
     }
 
-    // Look up the table for this order so we can broadcast to the right client
-    const orderRows = await query<{ table_id: number }>("SELECT table_id FROM orders WHERE id = ?", [id]);
-    const tableId = orderRows[0]?.table_id ?? 0;
-    broadcast({ type: "order-updated", orderId: id, status, tableId });
+    broadcast({ type: "order-updated", orderId: id, status, tableId: updated.tableId });
     res.json({ success: true, id, status });
   } catch (err) {
     console.error("Order status update error:", err);
@@ -227,32 +183,30 @@ router.patch("/:id/cancel", async (req, res) => {
       return;
     }
 
-    const orders = await query<OrderRow>(
-      "SELECT id, table_id, status, created_at FROM orders WHERE id = ?",
-      [id]
-    );
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { id: true, tableId: true, status: true },
+    });
 
-    if (orders.length === 0) {
+    if (!order) {
       res.status(404).json({ error: "Order not found" });
       return;
     }
 
-    const order = orders[0];
-
     // Customers can only cancel their own table's orders
-    if (req.auth.role === "customer" && req.auth.tableId !== order.table_id) {
+    if (req.auth.role === "customer" && req.auth.tableId !== order.tableId) {
       res.status(403).json({ error: "Cannot cancel another table's order" });
       return;
     }
 
     // Only pending orders can be cancelled by customers
-    if (req.auth.role === "customer" && order.status !== "queued") {
+    if (req.auth.role === "customer" && order.status !== OrderStatus.queued) {
       res.status(400).json({ error: "Can only cancel queued orders" });
       return;
     }
 
-    await execute("UPDATE orders SET status = 'cancelled' WHERE id = ?", [id]);
-    broadcast({ type: "order-cancelled", orderId: id, tableId: order.table_id });
+    await prisma.order.update({ where: { id }, data: { status: OrderStatus.cancelled } });
+    broadcast({ type: "order-cancelled", orderId: id, tableId: order.tableId });
     res.json({ success: true, id, status: "cancelled" });
   } catch (err) {
     console.error("Order cancel error:", err);
@@ -265,11 +219,16 @@ router.delete("/:id", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    // Delete items first (FK constraint)
-    await execute("DELETE FROM order_items WHERE order_id = ?", [id]);
-    const result = await execute("DELETE FROM orders WHERE id = ?", [id]);
+    // Delete items first, then the order
+    const [, deleted] = await prisma.$transaction([
+      prisma.orderItem.deleteMany({ where: { orderId: id } }),
+      prisma.order.delete({ where: { id } }).catch((e: any) => {
+        if (e.code === "P2025") return null;
+        throw e;
+      }),
+    ]);
 
-    if (result.affectedRows === 0) {
+    if (!deleted) {
       res.status(404).json({ error: "Order not found" });
       return;
     }

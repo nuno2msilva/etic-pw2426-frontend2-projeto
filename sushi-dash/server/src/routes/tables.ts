@@ -10,7 +10,7 @@
  */
 
 import { Router } from "express";
-import { query, execute } from "../db/connection.js";
+import prisma from "../db/prisma.js";
 import { requireRole } from "../middleware/auth.js";
 import { broadcast } from "../events.js";
 
@@ -26,16 +26,15 @@ function generatePin(): string {
 router.get("/", async (req, res) => {
   try {
     const isManager = req.auth?.role === "manager";
-    
+
     if (isManager) {
-      const rows = await query<{ id: number; label: string; pin: string; pin_version: number }>(
-        "SELECT id, label, pin, pin_version FROM tables_config ORDER BY id"
-      );
-      res.json(rows);
+      const rows = await prisma.tableConfig.findMany({ orderBy: { id: "asc" } });
+      res.json(rows.map((r) => ({ id: r.id, label: r.label, pin: r.pin, pin_version: r.pinVersion })));
     } else {
-      const rows = await query<{ id: number; label: string }>(
-        "SELECT id, label FROM tables_config ORDER BY id"
-      );
+      const rows = await prisma.tableConfig.findMany({
+        select: { id: true, label: true },
+        orderBy: { id: "asc" },
+      });
       res.json(rows);
     }
   } catch (err) {
@@ -56,14 +55,12 @@ router.post("/", requireRole("manager"), async (req, res) => {
 
     const tablePin = pin && /^\d{4}$/.test(pin) ? pin : generatePin();
 
-    const result = await execute(
-      "INSERT INTO tables_config (label, pin, pin_version) VALUES (?, ?, 1)",
-      [label, tablePin]
-    );
+    const table = await prisma.tableConfig.create({
+      data: { label, pin: tablePin, pinVersion: 1 },
+    });
 
-    const id = Number(result.insertId);
-    broadcast({ type: "table-added", tableId: id });
-    res.status(201).json({ id, label, pin: tablePin, pin_version: 1 });
+    broadcast({ type: "table-added", tableId: table.id });
+    res.status(201).json({ id: table.id, label: table.label, pin: table.pin, pin_version: table.pinVersion });
   } catch (err) {
     console.error("Table add error:", err);
     res.status(500).json({ error: "Internal server error" });
@@ -81,12 +78,15 @@ router.put("/:id", requireRole("manager"), async (req, res) => {
       return;
     }
 
-    const result = await execute(
-      "UPDATE tables_config SET label = ? WHERE id = ?",
-      [label, id]
-    );
+    const updated = await prisma.tableConfig.update({
+      where: { id },
+      data: { label },
+    }).catch((e: any) => {
+      if (e.code === "P2025") return null;
+      throw e;
+    });
 
-    if (result.affectedRows === 0) {
+    if (!updated) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -103,9 +103,13 @@ router.put("/:id", requireRole("manager"), async (req, res) => {
 router.delete("/:id", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
-    const result = await execute("DELETE FROM tables_config WHERE id = ?", [id]);
 
-    if (result.affectedRows === 0) {
+    const deleted = await prisma.tableConfig.delete({ where: { id } }).catch((e: any) => {
+      if (e.code === "P2025") return null;
+      throw e;
+    });
+
+    if (!deleted) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -119,7 +123,7 @@ router.delete("/:id", requireRole("manager"), async (req, res) => {
 });
 
 // ── Set table PIN manually (manager only) ────────────────────
-// Bumps pin_version → customer sessions for this table are invalidated
+// Bumps pinVersion → customer sessions for this table are invalidated
 router.put("/:id/pin", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
@@ -130,12 +134,15 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
       return;
     }
 
-    const result = await execute(
-      "UPDATE tables_config SET pin = ?, pin_version = pin_version + 1 WHERE id = ?",
-      [pin, id]
-    );
+    const updated = await prisma.tableConfig.update({
+      where: { id },
+      data: { pin, pinVersion: { increment: 1 } },
+    }).catch((e: any) => {
+      if (e.code === "P2025") return null;
+      throw e;
+    });
 
-    if (result.affectedRows === 0) {
+    if (!updated) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -149,30 +156,27 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
 });
 
 // ── Randomize table PIN (manager only) ───────────────────────
-// Bumps pin_version → all existing customer sessions for this table are invalidated
+// Bumps pinVersion → all existing customer sessions for this table are invalidated
 router.post("/:id/pin/randomize", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
     const newPin = generatePin();
 
-    const result = await execute(
-      "UPDATE tables_config SET pin = ?, pin_version = pin_version + 1 WHERE id = ?",
-      [newPin, id]
-    );
+    const updated = await prisma.tableConfig.update({
+      where: { id },
+      data: { pin: newPin, pinVersion: { increment: 1 } },
+    }).catch((e: any) => {
+      if (e.code === "P2025") return null;
+      throw e;
+    });
 
-    if (result.affectedRows === 0) {
+    if (!updated) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
 
-    // Get the new pin_version
-    const rows = await query<{ pin_version: number }>(
-      "SELECT pin_version FROM tables_config WHERE id = ?",
-      [id]
-    );
-
     broadcast({ type: "pin-changed", tableId: id });
-    res.json({ success: true, pin: newPin, pin_version: rows[0].pin_version });
+    res.json({ success: true, pin: newPin, pin_version: updated.pinVersion });
   } catch (err) {
     console.error("Table PIN randomize error:", err);
     res.status(500).json({ error: "Internal server error" });

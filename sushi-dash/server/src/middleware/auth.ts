@@ -189,13 +189,13 @@ export async function requireTable(req: Request, res: Response, next: NextFuncti
 
   // Check pinVersion — if the manager randomized the PIN, the session is invalid
   if (req.auth.pinVersion !== undefined) {
-    const { query } = await import("../db/connection.js");
-    const rows = await query<{ pin_version: number }>(
-      "SELECT pin_version FROM tables_config WHERE id = ?",
-      [requestedTableId]
-    );
+    const prisma = (await import("../db/prisma.js")).default;
+    const table = await prisma.tableConfig.findUnique({
+      where: { id: requestedTableId },
+      select: { pinVersion: true },
+    });
 
-    if (rows.length > 0 && rows[0].pin_version !== req.auth.pinVersion) {
+    if (table && table.pinVersion !== req.auth.pinVersion) {
       res.status(401).json({ error: "Session expired — PIN has been changed" });
       return;
     }

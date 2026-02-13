@@ -9,7 +9,7 @@
  */
 
 import { Router } from "express";
-import { query } from "../db/connection.js";
+import prisma from "../db/prisma.js";
 import { hashPassword, issueToken, clearToken } from "../middleware/auth.js";
 
 const router = Router();
@@ -25,23 +25,23 @@ router.post("/login/table/:tableId", async (req, res) => {
       return;
     }
 
-    const rows = await query<{ id: number; pin: string; pin_version: number }>(
-      "SELECT id, pin, pin_version FROM tables_config WHERE id = ?",
-      [tableId]
-    );
+    const table = await prisma.tableConfig.findUnique({
+      where: { id: tableId },
+      select: { id: true, pin: true, pinVersion: true },
+    });
 
-    if (rows.length === 0) {
+    if (!table) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
 
-    if (pin !== rows[0].pin) {
+    if (pin !== table.pin) {
       res.status(401).json({ error: "Invalid PIN" });
       return;
     }
 
     // Include pinVersion so session is invalidated when manager randomizes PIN
-    issueToken(res, { role: "customer", tableId, pinVersion: rows[0].pin_version });
+    issueToken(res, { role: "customer", tableId, pinVersion: table.pinVersion });
     res.json({ success: true, role: "customer", tableId });
   } catch (err) {
     console.error("Customer login error:", err);
@@ -59,17 +59,17 @@ router.post("/login/kitchen", async (req, res) => {
       return;
     }
 
-    const rows = await query<{ password_hash: string }>(
-      "SELECT password_hash FROM passwords WHERE role = 'kitchen'",
-    );
+    const row = await prisma.password.findUnique({
+      where: { role: "kitchen" },
+    });
 
-    if (rows.length === 0) {
+    if (!row) {
       res.status(500).json({ error: "Kitchen password not configured" });
       return;
     }
 
     const hash = hashPassword(password);
-    if (hash !== rows[0].password_hash) {
+    if (hash !== row.passwordHash) {
       res.status(401).json({ error: "Invalid password" });
       return;
     }
@@ -92,17 +92,17 @@ router.post("/login/manager", async (req, res) => {
       return;
     }
 
-    const rows = await query<{ password_hash: string }>(
-      "SELECT password_hash FROM passwords WHERE role = 'manager'",
-    );
+    const row = await prisma.password.findUnique({
+      where: { role: "manager" },
+    });
 
-    if (rows.length === 0) {
+    if (!row) {
       res.status(500).json({ error: "Manager password not configured" });
       return;
     }
 
     const hash = hashPassword(password);
-    if (hash !== rows[0].password_hash) {
+    if (hash !== row.passwordHash) {
       res.status(401).json({ error: "Invalid password" });
       return;
     }
@@ -148,11 +148,11 @@ router.get("/session", async (req, res) => {
     const ca = req.customerAuth;
     if (ca.tableId && ca.pinVersion !== undefined) {
       try {
-        const rows = await query<{ pin_version: number }>(
-          "SELECT pin_version FROM tables_config WHERE id = ?",
-          [ca.tableId]
-        );
-        if (rows.length === 0 || rows[0].pin_version !== ca.pinVersion) {
+        const table = await prisma.tableConfig.findUnique({
+          where: { id: ca.tableId },
+          select: { pinVersion: true },
+        });
+        if (!table || table.pinVersion !== ca.pinVersion) {
           clearToken(res, "customer");
           // Customer session expired — don't include it
         } else {

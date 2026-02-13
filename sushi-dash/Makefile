@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-init db-seed db-reset lint preview
+.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-push db-seed db-reset lint preview
 
 help:
 	@echo "Sushi Dash — Makefile Commands"
@@ -22,10 +22,9 @@ help:
 	@echo ""
 	@echo "  Database"
 	@echo "  --------"
-	@echo "  make db-init       Create database + tables (destructive!)"
+	@echo "  make db-push       Sync Prisma schema to database"
 	@echo "  make db-seed       Populate database with default data"
-	@echo "  make db-reset      Drop & recreate everything (init + seed)"
-	@echo "  make db-test       Test database connectivity + seed integrity"
+	@echo "  make db-reset      Drop & recreate everything (Prisma push + seed)"
 	@echo ""
 	@echo "  Cleanup"
 	@echo "  -------"
@@ -68,36 +67,14 @@ test-coverage:
 	npm run test:coverage
 
 # ── Database ─────────────────────────────────────────────────
-db-init:
-	cd server && npm run db:init
+db-push:
+	cd server && npm run db:push
 
 db-seed:
 	cd server && npm run db:seed
 
 db-reset:
 	cd server && npm run db:reset
-
-db-test:
-	@echo "Testing database connectivity and seed data..."
-	@cd server && node -e " \
-	  const { Pool } = require('pg'); \
-	  require('dotenv').config(); \
-	  const pool = new Pool({ host: process.env.DB_HOST, port: process.env.DB_PORT, user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME }); \
-	  (async () => { \
-	    const tables = await pool.query(\"SELECT tablename FROM pg_tables WHERE schemaname = 'public'\"); \
-	    console.log('Tables found:', tables.rows.map(r => r.tablename).join(', ')); \
-	    const items = await pool.query('SELECT count(*) FROM menu_items'); \
-	    console.log('Menu items:', items.rows[0].count); \
-	    const t = await pool.query('SELECT count(*) FROM tables'); \
-	    console.log('Tables:', t.rows[0].count); \
-	    const s = await pool.query('SELECT count(*) FROM settings'); \
-	    console.log('Settings:', s.rows[0].count); \
-	    const ok = Number(items.rows[0].count) > 0 && Number(t.rows[0].count) > 0; \
-	    console.log(ok ? '✅ Database OK' : '❌ Database empty — run make db-seed'); \
-	    await pool.end(); \
-	    process.exit(ok ? 0 : 1); \
-	  })().catch(e => { console.error('❌ DB connection failed:', e.message); process.exit(1); }); \
-	"
 
 # ── Cleanup ──────────────────────────────────────────────────
 clean:
