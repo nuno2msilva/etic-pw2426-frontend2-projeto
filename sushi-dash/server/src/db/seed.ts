@@ -12,7 +12,7 @@ import { createHash } from "crypto";
 import prisma from "./prisma.js";
 
 // Import default data from the frontend source
-import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "../../../src/data/defaultMenu.ts";
+import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "../../../src/data/defaultMenu.js";
 
 /** SHA-256 hash matching the frontend's hashPassword() */
 function hashPassword(password: string): string {
