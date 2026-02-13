@@ -37,8 +37,8 @@ router.put("/", requireRole("manager"), async (req, res) => {
     for (const [key, value] of Object.entries(updates)) {
       await prisma.setting.upsert({
         where: { key },
-        update: { value: String(value) },
-        create: { key, value: String(value) },
+        update: { value: Number(value) },
+        create: { key, value: Number(value) },
       });
     }
 

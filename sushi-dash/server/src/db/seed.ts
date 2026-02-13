@@ -117,13 +117,13 @@ async function seed() {
     console.log("Seeding settings...");
     await prisma.setting.upsert({
       where: { key: "maxItemsPerOrder" },
-      update: { value: String(DEFAULT_SETTINGS.maxItemsPerOrder) },
-      create: { key: "maxItemsPerOrder", value: String(DEFAULT_SETTINGS.maxItemsPerOrder) },
+      update: { value: DEFAULT_SETTINGS.maxItemsPerOrder },
+      create: { key: "maxItemsPerOrder", value: DEFAULT_SETTINGS.maxItemsPerOrder },
     });
     await prisma.setting.upsert({
       where: { key: "maxActiveOrdersPerTable" },
-      update: { value: String(DEFAULT_SETTINGS.maxActiveOrdersPerTable) },
-      create: { key: "maxActiveOrdersPerTable", value: String(DEFAULT_SETTINGS.maxActiveOrdersPerTable) },
+      update: { value: DEFAULT_SETTINGS.maxActiveOrdersPerTable },
+      create: { key: "maxActiveOrdersPerTable", value: DEFAULT_SETTINGS.maxActiveOrdersPerTable },
     });
 
     console.log("Seed complete!");

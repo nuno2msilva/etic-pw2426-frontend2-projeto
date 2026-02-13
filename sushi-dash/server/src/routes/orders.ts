@@ -220,17 +220,17 @@ router.delete("/:id", requireRole("manager"), async (req, res) => {
     const id = Number(req.params.id);
 
     // Delete items first, then the order
-    const [, deleted] = await prisma.$transaction([
-      prisma.orderItem.deleteMany({ where: { orderId: id } }),
-      prisma.order.delete({ where: { id } }).catch((e: any) => {
-        if (e.code === "P2025") return null;
-        throw e;
-      }),
-    ]);
+    const deleteItems = prisma.orderItem.deleteMany({ where: { orderId: id } });
+    const deleteOrder = prisma.order.delete({ where: { id } });
 
-    if (!deleted) {
-      res.status(404).json({ error: "Order not found" });
-      return;
+    try {
+      await prisma.$transaction([deleteItems, deleteOrder]);
+    } catch (e: any) {
+      if (e.code === "P2025") {
+        res.status(404).json({ error: "Order not found" });
+        return;
+      }
+      throw e;
     }
 
     broadcast({ type: "order-deleted", orderId: id });
