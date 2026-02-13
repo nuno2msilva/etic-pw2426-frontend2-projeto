@@ -7,6 +7,7 @@
  * seeds all tables. Passwords are hashed with SHA-256.
  */
 
+import "dotenv/config";
 import { createHash } from "crypto";
 import prisma from "./prisma.js";
 
