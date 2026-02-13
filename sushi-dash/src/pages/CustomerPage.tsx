@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import { toast } from "sonner";
+import { API_BASE } from "@/lib/config";
 
 import { useSushi } from "@/context/SushiContext";
 import { useAuth } from "@/context/AuthContext";
@@ -175,7 +176,7 @@ const CustomerPage = () => {
       return;
     }
     if (isInitialized && isCustomerAuthenticated && customerSession?.tableId) {
-      fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/session`, { credentials: 'include' })
+      fetch(`${API_BASE}/api/auth/session`, { credentials: 'include' })
         .then(res => res.ok ? res.json() : Promise.reject())
         .then((data: { authenticated: boolean; role?: string; tableId?: number; sessions?: { role: string; tableId?: number | null; authenticated: boolean }[] }) => {
           // Check if customer session is valid (look in sessions array or top-level)

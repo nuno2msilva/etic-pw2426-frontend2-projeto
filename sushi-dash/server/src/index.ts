@@ -21,7 +21,9 @@ import settingsRoutes from "./routes/settings.js";
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);
 
-// ─── CORS — manual middleware (works reliably in Vercel serverless) ───
+// ─── CORS — needed for local dev (Vite :5173 → Express :3001) ───
+// In production (single Vercel project) both share the same origin,
+// so these headers are harmless no-ops.
 app.use((req, res, next) => {
   const origin = req.headers.origin;
   if (origin) {

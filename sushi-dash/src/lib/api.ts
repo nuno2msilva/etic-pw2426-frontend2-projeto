@@ -10,9 +10,10 @@
 
 import type { SushiItem, Table, Order, OrderStatus, Category } from "@/types/sushi";
 import type { OrderSettings } from "@/context/SushiContext";
+import { API_BASE } from "@/lib/config";
 
-/** Base URL for API requests. Empty in dev (Vite proxies), full URL in production. */
-const API = import.meta.env.VITE_API_URL ?? "";
+/** @internal alias used throughout this file */
+const API = API_BASE;
 
 // ==========================================================================
 // MENU CRUD

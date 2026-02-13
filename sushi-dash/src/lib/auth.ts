@@ -74,7 +74,7 @@ export async function initializePasswords(): Promise<void> {
   }
 }
 
-const API = import.meta.env.VITE_API_URL ?? '';
+import { API_BASE as API } from '@/lib/config';
 
 /**
  * Login to a table via backend PIN verification.

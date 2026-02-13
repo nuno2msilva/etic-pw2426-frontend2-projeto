@@ -21,6 +21,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { API_BASE } from '@/lib/config';
 import {AuthSession, AuthRole, getAuthSession, saveAuthSession, clearAuthSession, initializePasswords, loginTableWithPin, verifyKitchenPassword,  verifyManagerPassword, hasAccess,} from '@/lib/auth';
 
 interface AuthContextType {
@@ -126,7 +127,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     clearAuthSession('customer');
     setCustomerSession(null);
-    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/logout`, {
+    fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -139,7 +140,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutStaff = useCallback(() => {
     clearAuthSession('staff');
     setStaffSession(null);
-    fetch(`${import.meta.env.VITE_API_URL ?? ''}/api/auth/logout`, {
+    fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },

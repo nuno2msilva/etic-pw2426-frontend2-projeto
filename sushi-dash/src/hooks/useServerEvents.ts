@@ -18,6 +18,7 @@
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { API_BASE } from "@/lib/config";
 import { toast } from "sonner";
 import { queryKeys } from "./useQueries";
 
@@ -62,7 +63,7 @@ export function useServerEvents({ tableId, onEjected }: UseServerEventsOptions =
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
     function connect() {
-      const base = import.meta.env.VITE_API_URL ?? "";
+      const base = API_BASE;
       // Pass tableId as query param so server tracks table presence
       const url = tableIdRef.current
         ? `${base}/api/events?tableId=${tableIdRef.current}`
