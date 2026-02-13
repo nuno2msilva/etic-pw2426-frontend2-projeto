@@ -36,7 +36,9 @@ type ServerEvent =
   | { type: "settings-changed" }
   | { type: "table-presence"; presence: Record<number, number> };
 
-interface UseServerEventsOptions {
+export interface UseServerEventsOptions {
+  /** Whether the user has an active session (customer or staff). */
+  enabled?: boolean;
   /** Currently authenticated table ID (customer sessions). */
   tableId?: string | null;
   /** Called when the customer's session is invalidated. */
@@ -46,7 +48,7 @@ interface UseServerEventsOptions {
 /** React Query key for table presence data */
 export const presenceKey = ["table-presence"] as const;
 
-export function useServerEvents({ tableId, onEjected }: UseServerEventsOptions = {}) {
+export function useServerEvents({ tableId, onEjected, enabled = true }: UseServerEventsOptions = {}) {
   const queryClient = useQueryClient();
 
   // Keep refs so the EventSource callback always sees the latest values
@@ -59,6 +61,9 @@ export function useServerEvents({ tableId, onEjected }: UseServerEventsOptions =
 
   // Reconnect when tableId changes so server tracks the correct table
   useEffect(() => {
+    // Don't connect until the user has an active session
+    if (!enabled) return;
+
     let es: EventSource | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout>;
 
@@ -143,5 +148,5 @@ export function useServerEvents({ tableId, onEjected }: UseServerEventsOptions =
       clearTimeout(reconnectTimer);
       es?.close();
     };
-  }, [queryClient, tableId]); // reconnect when tableId changes
+  }, [queryClient, tableId, enabled]); // reconnect when tableId changes
 }
