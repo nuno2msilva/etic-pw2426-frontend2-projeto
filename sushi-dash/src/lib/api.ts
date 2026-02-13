@@ -240,13 +240,24 @@ export async function randomizeTablePin(
 // ORDER CRUD
 // ==========================================================================
 
-/** GET /api/orders — Fetch all orders */
+/** GET /api/orders — Fetch all orders (kitchen/manager) */
 export async function fetchOrders(): Promise<Order[]> {
   const res = await fetch(`${API}/api/orders`, { credentials: "include" });
   if (!res.ok) throw new Error("Failed to fetch orders");
   const data = await res.json();
-  
-  // Transform backend response to frontend format
+  return parseOrders(data);
+}
+
+/** GET /api/orders/table/:tableId — Fetch orders for one table (customer) */
+export async function fetchOrdersForTable(tableId: string): Promise<Order[]> {
+  const res = await fetch(`${API}/api/orders/table/${tableId}`, { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch table orders");
+  const data = await res.json();
+  return parseOrders(data);
+}
+
+/** Transform backend order response to frontend format */
+function parseOrders(data: any[]): Order[] {
   return data.map((order: any) => ({
     id: String(order.id),
     table: {

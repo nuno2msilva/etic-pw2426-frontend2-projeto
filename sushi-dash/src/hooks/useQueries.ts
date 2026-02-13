@@ -230,13 +230,13 @@ export function useRemoveTable() {
 // ==========================================================================
 
 /**
- * Fetches all orders. Polls every 3 seconds for real-time updates
- * (useful for the kitchen dashboard to see new orders arrive).
+ * Fetches orders. When tableId is provided, fetches only that table's orders
+ * (for customers). When omitted, fetches all orders (kitchen/manager).
  */
-export function useOrdersQuery() {
+export function useOrdersQuery(tableId?: string | null) {
   return useQuery({
-    queryKey: queryKeys.orders,
-    queryFn: api.fetchOrders,
+    queryKey: tableId ? [...queryKeys.orders, tableId] : queryKeys.orders,
+    queryFn: () => tableId ? api.fetchOrdersForTable(tableId) : api.fetchOrders(),
     staleTime: 1000 * 30, // SSE pushes real-time updates; only refetch as fallback
   });
 }

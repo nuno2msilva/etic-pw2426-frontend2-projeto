@@ -24,6 +24,7 @@
 import React, { createContext, useContext, useCallback, useMemo, useRef } from "react";
 import type { SushiItem, Table, Order, OrderStatus, Category } from "@/types/sushi";
 import { DEFAULT_SETTINGS } from "@/data/defaultMenu";
+import { useAuth } from "@/context/AuthContext";
 import {
   useMenuQuery,
   useAddMenuItem,
@@ -128,11 +129,18 @@ export const useSushi = () => {
 
 export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // ---------------------------------------------------------------------------
+  // Auth — determines whether to fetch all orders or just for the customer's table
+  // ---------------------------------------------------------------------------
+  const { authenticatedTableId, staffSession } = useAuth();
+  const isStaff = staffSession !== null;
+
+  // ---------------------------------------------------------------------------
   // React Query hooks — fetch data from the mock API
   // ---------------------------------------------------------------------------
   const menuQuery = useMenuQuery();
   const tablesQuery = useTablesQuery();
-  const ordersQuery = useOrdersQuery();
+  // Staff (kitchen/manager) fetch all orders; customers fetch only their table
+  const ordersQuery = useOrdersQuery(isStaff ? undefined : authenticatedTableId);
   const settingsQuery = useSettingsQuery();
   const categoriesQuery = useCategoriesQuery();
 
