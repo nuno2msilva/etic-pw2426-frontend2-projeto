@@ -29,7 +29,7 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";
-import type { SushiItem, Table, OrderStatus, Order } from "@/types/sushi";
+import type { SushiItem, Table, OrderStatus, Order, Category } from "@/types/sushi";
 import type { OrderSettings } from "@/context/SushiContext";
 
 // ---------------------------------------------------------------------------
@@ -40,6 +40,7 @@ export const queryKeys = {
   tables: ["tables"] as const,
   orders: ["orders"] as const,
   settings: ["settings"] as const,
+  categories: ["categories"] as const,
 };
 
 // ==========================================================================
@@ -88,6 +89,85 @@ export function useRemoveMenuItem() {
   });
 }
 
+/**
+ * Mutation: update a menu item (name, emoji, etc.).
+ * Invalidates the menu cache after successful update.
+ */
+export function useUpdateMenuItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, updates }: { id: string; updates: { name?: string; emoji?: string; category_id?: number; is_popular?: boolean } }) =>
+      api.updateMenuItem(id, updates),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.menu });
+    },
+  });
+}
+
+/**
+ * Mutation: toggle item availability.
+ * Invalidates the menu cache after successful toggle.
+ */
+export function useToggleItemAvailability() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, isAvailable }: { id: string; isAvailable: boolean }) =>
+      api.toggleItemAvailability(id, isAvailable),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.menu });
+    },
+  });
+}
+
+// ==========================================================================
+// CATEGORY HOOKS
+// ==========================================================================
+
+/**
+ * Fetches all categories from the API.
+ */
+export function useCategoriesQuery() {
+  return useQuery({
+    queryKey: queryKeys.categories,
+    queryFn: api.fetchCategories,
+    staleTime: 1000 * 60 * 5,
+  });
+}
+
+/**
+ * Mutation: add a new category.
+ * Invalidates both categories and menu caches.
+ */
+export function useAddCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (name: string) => api.createCategory(name),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+      queryClient.invalidateQueries({ queryKey: queryKeys.menu });
+    },
+  });
+}
+
+/**
+ * Mutation: delete a category (cascades to items).
+ * Invalidates both categories and menu caches.
+ */
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => api.deleteCategory(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.categories });
+      queryClient.invalidateQueries({ queryKey: queryKeys.menu });
+    },
+  });
+}
+
 // ==========================================================================
 // TABLE HOOKS
 // ==========================================================================
@@ -98,7 +178,7 @@ export function useRemoveMenuItem() {
 export function useTablesQuery() {
   return useQuery({
     queryKey: queryKeys.tables,
-    queryFn: api.fetchTables,
+    queryFn: api.fetchTablesWithPins,
     staleTime: 1000 * 60 * 5,
   });
 }
@@ -111,6 +191,20 @@ export function useAddTable() {
 
   return useMutation({
     mutationFn: (label: string) => api.createTable(label),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables });
+    },
+  });
+}
+
+/**
+ * Mutation: update a table by ID.
+ */
+export function useUpdateTable() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, label }: { id: string; label: string }) => api.updateTable(id, label),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tables });
     },
@@ -143,8 +237,7 @@ export function useOrdersQuery() {
   return useQuery({
     queryKey: queryKeys.orders,
     queryFn: api.fetchOrders,
-    refetchInterval: 3000, // Poll every 3 seconds for kitchen real-time
-    staleTime: 1000,
+    staleTime: 1000 * 30, // SSE pushes real-time updates; only refetch as fallback
   });
 }
 
@@ -166,7 +259,7 @@ export function usePlaceOrder() {
       table: Table;
       menu: SushiItem[];
       settings: OrderSettings;
-    }) => api.createOrder(items, table, menu, settings),
+    }) => api.createOrder({ items, tableId: table.id }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.orders });
     },

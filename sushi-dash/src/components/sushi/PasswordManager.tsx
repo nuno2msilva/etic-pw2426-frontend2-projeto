@@ -31,15 +31,16 @@ import {
   AlertCircle,
   ChefHat,
   Shield,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { 
   updateKitchenPassword, 
   updateManagerPassword,
 } from '@/lib/auth';
-import { useToast } from '@/hooks/use-toast';
-export function PasswordManager() {
-  const { toast } = useToast();
+import { toast } from 'sonner';
 
+export function PasswordManager() {
   return (
     <Card>
       <CardHeader>
@@ -69,7 +70,6 @@ export function PasswordManager() {
               title="Kitchen Password"
               description="Password for kitchen staff to access the order dashboard"
               onSave={updateKitchenPassword}
-              toast={toast}
             />
           </TabsContent>
 
@@ -78,7 +78,6 @@ export function PasswordManager() {
               title="Manager Password"
               description="Password for manager access. Be careful when changing this!"
               onSave={updateManagerPassword}
-              toast={toast}
               isManager
             />
           </TabsContent>
@@ -92,7 +91,6 @@ interface SinglePasswordSectionProps {
   title: string;
   description: string;
   onSave: (password: string) => Promise<void>;
-  toast: ReturnType<typeof useToast>['toast'];
   isManager?: boolean;
 }
 
@@ -100,13 +98,14 @@ function SinglePasswordSection({
   title, 
   description, 
   onSave, 
-  toast,
   isManager = false 
 }: SinglePasswordSectionProps) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleSave = async () => {
     setError(null);
@@ -129,10 +128,7 @@ function SinglePasswordSection({
     setIsSaving(true);
     try {
       await onSave(password);
-      toast({
-        title: 'Password Updated',
-        description: `${title} has been updated successfully`,
-      });
+      toast.success(`${title} has been updated successfully`);
       setPassword('');
       setConfirmPassword('');
     } catch {
@@ -156,25 +152,49 @@ function SinglePasswordSection({
       <div className="space-y-3">
         <div className="space-y-2">
           <Label htmlFor={`${title}-password`}>New Password</Label>
-          <Input
-            id={`${title}-password`}
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter new password"
-          />
+          <div className="relative">
+            <Input
+              id={`${title}-password`}
+              type={showPassword ? 'text' : 'password'}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter new password"
+              className="pr-10"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+              tabIndex={-1}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
         {isManager && (
           <div className="space-y-2">
             <Label htmlFor={`${title}-confirm`}>Confirm Password</Label>
-            <Input
-              id={`${title}-confirm`}
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-            />
+            <div className="relative">
+              <Input
+                id={`${title}-confirm`}
+                type={showConfirm ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                className="pr-10"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                tabIndex={-1}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+              >
+                {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
         )}
 

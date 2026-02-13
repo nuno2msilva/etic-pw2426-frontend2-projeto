@@ -26,16 +26,30 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { SushiProvider } from "@/context/SushiContext";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { useServerEvents } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/sushi/AppHeader";
-import Index from "./pages/Index";
+import CustomerPage from "./pages/CustomerPage";
 import TablePage from "./pages/TablePage";
-import StaffLoginPage from "./pages/StaffLoginPage";
 import KitchenPage from "./pages/KitchenPage";
 import ManagerPage from "./pages/ManagerPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+/**
+ * Invisible component that keeps a single SSE connection alive.
+ * Handles cache invalidation for live data and customer ejection
+ * (when manager changes a table PIN or deletes a table).
+ */
+function LiveUpdates() {
+  const { authenticatedTableId, logout } = useAuth();
+  useServerEvents({
+    tableId: authenticatedTableId,
+    onEjected: logout,
+  });
+  return null;
+}
 
 /**
  * Main App with routing:
@@ -49,13 +63,13 @@ const App = () => (
     <TooltipProvider>
       <Sonner />
       <AuthProvider>
+        <LiveUpdates />
         <SushiProvider>
           <BrowserRouter>
             <AppHeader />
             <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<CustomerPage />} />
               <Route path="/table/:tableId" element={<TablePage />} />
-              <Route path="/staff" element={<StaffLoginPage />} />
               <Route path="/kitchen" element={<KitchenPage />} />
               <Route path="/manager" element={<ManagerPage />} />
               <Route path="*" element={<NotFound />} />

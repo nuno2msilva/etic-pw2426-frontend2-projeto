@@ -1,22 +1,24 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the
-// README at: https://github.com/devcontainers/templates/tree/main/src/typescript-node
+// For format details, see https://aka.ms/devcontainer.json.
 {
-	"name": "Node.js & TypeScript",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm"
+	"name": "Sushi Dash",
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspaces/etic-pw2426-frontend2-projeto",
 
-	// Features to add to the dev container. More info: https://containers.dev/features.
-	// "features": {},
+	"forwardPorts": [5173, 3001, 5432, 8080],
+	"portsAttributes": {
+                "5173": { "label": "Vite Dev Server", "onAutoForward": "openBrowser" },
+		"8080": { "label": "Adminer" }
+	},
 
-	// Use 'forwardPorts' to make a list of ports inside the container available locally.
-	// "forwardPorts": [],
+	//"postCreateCommand": "cd sushi-dash && npm install && cd server && npm install",
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "yarn install",
-
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"dbaeumer.vscode-eslint",
+				"bradlc.vscode-tailwindcss"
+			]
+		}
+	}
 }

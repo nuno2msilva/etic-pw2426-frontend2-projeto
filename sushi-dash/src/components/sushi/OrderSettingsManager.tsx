@@ -30,7 +30,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Settings, Save, RotateCcw } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import type { OrderSettings } from '@/context/SushiContext';
 import { DEFAULT_SETTINGS } from '@/data/defaultMenu';
 
@@ -40,7 +40,6 @@ interface OrderSettingsManagerProps {
 }
 
 export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettingsManagerProps) {
-  const { toast } = useToast();
   const [maxItems, setMaxItems] = useState(String(settings.maxItemsPerOrder));
   const [maxOrders, setMaxOrders] = useState(String(settings.maxActiveOrdersPerTable));
 
@@ -49,20 +48,12 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
     const newMaxOrders = parseInt(maxOrders, 10);
 
     if (isNaN(newMaxItems) || newMaxItems < 1) {
-      toast({
-        title: 'Invalid Value',
-        description: 'Max items per order must be at least 1',
-        variant: 'destructive',
-      });
+      toast.error('Max items per order must be at least 1');
       return;
     }
 
     if (isNaN(newMaxOrders) || newMaxOrders < 1) {
-      toast({
-        title: 'Invalid Value',
-        description: 'Max orders per table must be at least 1',
-        variant: 'destructive',
-      });
+      toast.error('Max orders per table must be at least 1');
       return;
     }
 
@@ -71,10 +62,7 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
       maxActiveOrdersPerTable: newMaxOrders,
     });
 
-    toast({
-      title: 'Settings Saved',
-      description: 'Order limits have been updated',
-    });
+    toast.success('Order limits have been updated');
   };
 
   const handleReset = () => {
@@ -82,10 +70,7 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
     setMaxOrders(String(DEFAULT_SETTINGS.maxActiveOrdersPerTable));
     onUpdateSettings(DEFAULT_SETTINGS);
     
-    toast({
-      title: 'Settings Reset',
-      description: 'Order limits have been reset to defaults',
-    });
+    toast.success('Order limits have been reset to defaults');
   };
 
   return (

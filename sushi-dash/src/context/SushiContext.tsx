@@ -22,14 +22,17 @@
  */
 
 import React, { createContext, useContext, useCallback, useMemo, useRef } from "react";
-import type { SushiItem, Table, Order, OrderStatus } from "@/types/sushi";
+import type { SushiItem, Table, Order, OrderStatus, Category } from "@/types/sushi";
 import { DEFAULT_SETTINGS } from "@/data/defaultMenu";
 import {
   useMenuQuery,
   useAddMenuItem,
   useRemoveMenuItem,
+  useUpdateMenuItem,
+  useToggleItemAvailability,
   useTablesQuery,
   useAddTable,
+  useUpdateTable,
   useRemoveTable,
   useOrdersQuery,
   usePlaceOrder,
@@ -38,6 +41,9 @@ import {
   useDeleteOrder,
   useSettingsQuery,
   useUpdateSettings,
+  useCategoriesQuery,
+  useAddCategory,
+  useDeleteCategory,
 } from "@/hooks/useQueries";
 
 // ---------------------------------------------------------------------------
@@ -60,18 +66,27 @@ interface SushiContextType {
   orders: Order[];
   /** Derived: unique category names from menu */
   categories: string[];
+  /** Full category objects from DB */
+  categoryList: Category[];
   /** Current order limit settings */
   settings: OrderSettings;
   /** Whether data is still loading from the API */
   isLoading: boolean;
 
   // Menu CRUD
-  addMenuItem: (item: Omit<SushiItem, "id">) => void;
+  addMenuItem: (item: Omit<SushiItem, "id"> & { categoryId?: number }) => void;
   removeMenuItem: (id: string) => void;
+  updateMenuItem: (id: string, updates: { name?: string; emoji?: string; category_id?: number; is_popular?: boolean }) => void;
+  toggleItemAvailability: (id: string, isAvailable: boolean) => void;
+
+  // Category CRUD
+  addCategory: (name: string) => void;
+  deleteCategory: (id: number) => void;
 
   // Table CRUD
-  addTable: (label: string) => void;
-  removeTable: (id: string) => void;
+  addTable: (label: string) => Promise<void>;
+  updateTable: (id: string, label: string) => Promise<void>;
+  removeTable: (id: string) => Promise<void>;
 
   // Orders
   placeOrder: (
@@ -119,11 +134,17 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const tablesQuery = useTablesQuery();
   const ordersQuery = useOrdersQuery();
   const settingsQuery = useSettingsQuery();
+  const categoriesQuery = useCategoriesQuery();
 
   // Mutation hooks
   const addMenuMutation = useAddMenuItem();
   const removeMenuMutation = useRemoveMenuItem();
+  const updateMenuMutation = useUpdateMenuItem();
+  const toggleAvailMutation = useToggleItemAvailability();
+  const addCategoryMutation = useAddCategory();
+  const deleteCategoryMutation = useDeleteCategory();
   const addTableMutation = useAddTable();
+  const updateTableMutation = useUpdateTable();
   const removeTableMutation = useRemoveTable();
   const placeOrderMutation = usePlaceOrder();
   const updateOrderMutation = useUpdateOrder();
@@ -138,6 +159,7 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const menu = useMemo(() => menuQuery.data ?? [], [menuQuery.data]);
   const tables = useMemo(() => tablesQuery.data ?? [], [tablesQuery.data]);
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
+  const categoryList = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const settings = settingsQuery.data ?? DEFAULT_SETTINGS;
   const isLoading = menuQuery.isLoading || tablesQuery.isLoading;
 
@@ -165,11 +187,11 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // useCallback — memoised action handlers to prevent child re-renders
   // ---------------------------------------------------------------------------
 
-  /** Returns active (non-delivered) orders for a specific table */
+  /** Returns active (non-delivered, non-cancelled) orders for a specific table */
   const getActiveOrdersForTable = useCallback(
     (tableId: string): Order[] => {
       return ordersRef.current.filter(
-        (o) => o.table.id === tableId && o.status !== "delivered"
+        (o) => o.table.id === tableId && o.status !== "delivered" && o.status !== "cancelled"
       );
     },
     []
@@ -192,7 +214,7 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   /** Add a new item to the menu via the API */
   const addMenuItem = useCallback(
-    (item: Omit<SushiItem, "id">) => {
+    (item: Omit<SushiItem, "id"> & { categoryId?: number }) => {
       addMenuMutation.mutate(item);
     },
     [addMenuMutation]
@@ -206,18 +228,56 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     [removeMenuMutation]
   );
 
+  /** Update a menu item (name, emoji, etc.) */
+  const updateMenuItemAction = useCallback(
+    (id: string, updates: { name?: string; emoji?: string; category_id?: number; is_popular?: boolean }) => {
+      updateMenuMutation.mutate({ id, updates });
+    },
+    [updateMenuMutation]
+  );
+
+  /** Toggle item availability */
+  const toggleItemAvailability = useCallback(
+    (id: string, isAvailable: boolean) => {
+      toggleAvailMutation.mutate({ id, isAvailable });
+    },
+    [toggleAvailMutation]
+  );
+
+  /** Add a new category */
+  const addCategory = useCallback(
+    (name: string) => {
+      addCategoryMutation.mutate(name);
+    },
+    [addCategoryMutation]
+  );
+
+  /** Delete a category */
+  const deleteCategoryAction = useCallback(
+    (id: number) => {
+      deleteCategoryMutation.mutate(id);
+    },
+    [deleteCategoryMutation]
+  );
+
   /** Add a new table */
   const addTable = useCallback(
-    (label: string) => {
-      addTableMutation.mutate(label);
+    async (label: string) => {
+      await addTableMutation.mutateAsync(label);
     },
     [addTableMutation]
   );
-
+  /** Update table label */
+  const updateTable = useCallback(
+    async (id: string, label: string) => {
+      await updateTableMutation.mutateAsync({ id, label });
+    },
+    [updateTableMutation]
+  );
   /** Remove a table by ID */
   const removeTable = useCallback(
-    (id: string) => {
-      removeTableMutation.mutate(id);
+    async (id: string) => {
+      await removeTableMutation.mutateAsync(id);
     },
     [removeTableMutation]
   );
@@ -310,11 +370,17 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tables,
       orders,
       categories,
+      categoryList,
       settings,
       isLoading,
       addMenuItem,
       removeMenuItem,
+      updateMenuItem: updateMenuItemAction,
+      toggleItemAvailability,
+      addCategory,
+      deleteCategory: deleteCategoryAction,
       addTable,
+      updateTable,
       removeTable,
       placeOrder,
       updateOrderStatus,
@@ -330,11 +396,17 @@ export const SushiProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tables,
       orders,
       categories,
+      categoryList,
       settings,
       isLoading,
       addMenuItem,
       removeMenuItem,
+      updateMenuItemAction,
+      toggleItemAvailability,
+      addCategory,
+      deleteCategoryAction,
       addTable,
+      updateTable,
       removeTable,
       placeOrder,
       updateOrderStatus,

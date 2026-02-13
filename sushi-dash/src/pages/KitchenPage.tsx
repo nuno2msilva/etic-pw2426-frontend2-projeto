@@ -16,17 +16,14 @@
  * ==========================================================================
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useMemo, useCallback, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useSushi } from "@/context/SushiContext";
 import { useAuth } from "@/context/AuthContext";
 import { OrderCard, SEOHead } from "@/components/sushi";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
 const KitchenPage = () => {
   const { orders, updateOrderStatus, cancelOrder, deleteOrder } = useSushi();
-  const { isInitialized, checkAccess, logout } = useAuth();
+  const { isInitialized, checkAccess } = useAuth();
   const navigate = useNavigate();
 
   // Check if user has kitchen access
@@ -35,10 +32,10 @@ const KitchenPage = () => {
   // Check if user is manager (has extra permissions)
   const isManager = checkAccess('manager');
 
-  // Redirect to staff login if not authenticated
+  // Redirect to home if not authenticated
   useEffect(() => {
     if (isInitialized && !hasKitchenAccess) {
-      navigate('/staff');
+      navigate('/');
     }
   }, [isInitialized, hasKitchenAccess, navigate]);
 
@@ -75,7 +72,7 @@ const KitchenPage = () => {
     return null; // useEffect will handle redirect
   }
 
-  // Redirect to /staff if not authenticated (handled by useEffect)
+  // Redirect to home if not authenticated (handled by useEffect)
   if (!hasKitchenAccess) {
     return null;
   }
@@ -87,26 +84,10 @@ const KitchenPage = () => {
         description="Process incoming sushi orders. View active and delivered orders in real time."
       />
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <h1 className="text-3xl font-display font-bold text-foreground">
           🔥 Kitchen Dashboard
         </h1>
-        <div className="flex items-center gap-3">
-          {isManager && (
-            <Link
-              to="/manager"
-              className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-            >
-              Manager Settings →
-            </Link>
-          )}
-          <button
-            onClick={logout}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Logout
-          </button>
-        </div>
       </div>
       <p className="text-muted-foreground mb-8">
         Process orders in queue order.

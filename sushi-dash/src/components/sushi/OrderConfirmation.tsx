@@ -25,12 +25,19 @@
 import { useState } from "react";
 import { Plus, Minus, Trash2, Check, X } from "lucide-react";
 import type { SushiItem, Table } from "@/types/sushi";
-import CardPanel from "./CardPanel";
-import IconButton from "./IconButton";
-import Badge from "./Badge";
-import ActionButton from "./ActionButton";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface OrderConfirmationProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   table: Table;
   cart: Record<string, number>;
   menu: SushiItem[];
@@ -43,6 +50,8 @@ interface OrderConfirmationProps {
 }
 
 const OrderConfirmation = ({
+  open,
+  onOpenChange,
   table,
   cart,
   menu,
@@ -79,35 +88,29 @@ const OrderConfirmation = ({
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <button
-        onClick={onBack}
-        className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-4"
-      >
-        ← Back to menu
-      </button>
-
-      <h1 className="text-2xl font-display font-bold text-foreground mb-4">
-        Confirm Order — {table.label}
-      </h1>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="text-lg">Confirm Order — {table.label}</DialogTitle>
+        </DialogHeader>
 
       {totalItems === 0 ? (
-        <CardPanel className="p-8 text-center">
+        <div className="p-6 text-center">
           <span className="text-4xl mb-3 block">🍣</span>
           <p className="text-muted-foreground">Your cart is empty.</p>
-          <ActionButton
+          <Button
             variant="primary"
-            size="md"
+            size="lg"
             onClick={onAddMore}
             className="mt-4"
           >
             Browse Menu
-          </ActionButton>
-        </CardPanel>
+          </Button>
+        </div>
       ) : (
         <>
-          {/* Item cards — same style as category headers */}
-          <div className="space-y-3 mb-6">
+          {/* Item cards — scrollable list */}
+          <div className="space-y-3 overflow-y-auto max-h-[50vh] pr-1">
             {Object.entries(cart).map(([id, qty]) => {
               const item = menu.find((m) => m.id === id);
               if (!item) return null;
@@ -115,8 +118,9 @@ const OrderConfirmation = ({
               const isPendingDelete = pendingDeleteId === id;
 
               return (
-                <CardPanel
+                <Card
                   key={id}
+                  variant="item"
                   className={`w-full flex items-center justify-between ${
                     isPendingDelete
                       ? 'bg-destructive/5 border-destructive/50'
@@ -142,79 +146,89 @@ const OrderConfirmation = ({
                       /* Confirmation buttons */
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-destructive font-medium mr-1">Remove?</span>
-                        <IconButton
-                          variant="solid-danger"
+                        <Button
+                          variant="destructive"
+                          size="icon-sm"
+                          className="rounded-full"
                           onClick={() => confirmDelete(item)}
                           aria-label="Confirm remove"
                         >
                           <Check className="w-4 h-4" />
-                        </IconButton>
-                        <IconButton
+                        </Button>
+                        <Button
                           variant="muted"
+                          size="icon-sm"
+                          className="rounded-full"
                           onClick={cancelDelete}
                           aria-label="Cancel remove"
                         >
                           <X className="w-4 h-4" />
-                        </IconButton>
+                        </Button>
                       </div>
                     ) : (
                       /* Normal controls: trash · gap · minus · plus */
                       <div className="flex items-center gap-1">
-                        <IconButton
-                          variant="ghost"
+                        <Button
+                          variant="ghost-destructive"
+                          size="icon-sm"
+                          className="rounded-full"
                           onClick={() => setPendingDeleteId(id)}
                           aria-label={`Remove ${item.name}`}
                         >
                           <Trash2 className="w-4 h-4" />
-                        </IconButton>
+                        </Button>
 
                         <div className="w-3" />
 
-                        <IconButton
-                          variant="destructive"
+                        <Button
+                          variant="destructive-soft"
+                          size="icon-sm"
+                          className="rounded-full"
                           onClick={() => handleDecrement(item, qty)}
                           aria-label={`Decrease ${item.name}`}
                         >
                           <Minus className="w-4 h-4" />
-                        </IconButton>
+                        </Button>
 
-                        <IconButton
-                          variant="primary"
+                        <Button
+                          variant="soft"
+                          size="icon-sm"
+                          className="rounded-full"
                           onClick={() => onIncrement(item)}
                           aria-label={`Increase ${item.name}`}
                         >
                           <Plus className="w-4 h-4" />
-                        </IconButton>
+                        </Button>
                       </div>
                     )}
                   </div>
-                </CardPanel>
+                </Card>
               );
             })}
           </div>
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <ActionButton
+          <div className="flex gap-3 pt-2 border-t">
+            <Button
               variant="outline"
-              size="md"
+              size="lg"
               onClick={onAddMore}
               className="flex-1"
             >
               Add More
-            </ActionButton>
-            <ActionButton
-              variant="primary"
-              size="md"
+            </Button>
+            <Button
+              size="lg"
               onClick={onConfirm}
               className="flex-1"
             >
               Send to Kitchen 🚀
-            </ActionButton>
+            </Button>
           </div>
         </>
       )}
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

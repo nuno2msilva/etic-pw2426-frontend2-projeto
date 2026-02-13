@@ -1,65 +1,125 @@
 # Sushi Dash 🍣
 
-A modern sushi restaurant ordering system built with React, TypeScript, and Tailwind CSS. Features real-time order management, role-based authentication, and a comprehensive admin panel.
+A full-stack sushi restaurant ordering system with real-time order management, role-based authentication, and a comprehensive admin panel.
 
 ## ✨ Features
 
-- **Customer View** — Browse 145+ menu items with search, categories, and responsive layout. Persistent cart banner (always visible, even when empty) prevents layout shifts.
-- **Kitchen Dashboard** — Real-time order queue with status workflow (Queued → Preparing → Ready → Delivered)
-- **Manager Panel** — Full administrative control:
-  - **Order Management** — Cancel active orders, delete completed orders (delivered/cancelled)
-  - Table management, menu management, password management, order limit configuration
-- **Order Limits** — Configurable max items per order and active orders per table
-- **Role-based Auth** — SHA-256 password hashing with session management
-- **Responsive Design** — Mobile-first with Tailwind CSS dark mode support
-- **Full Test Coverage** — 97 passing tests with Jest
+- **Customer View** — Browse 145+ menu items with search, categories, and a persistent cart banner. 4-digit shuffled PinPad for table authentication with session persistence.
+- **Kitchen Dashboard** — Real-time order queue with status workflow (Queued → Preparing → Ready → Delivered).
+- **Manager Panel** — Full administrative control: menu CRUD, table & PIN management, order cancel/delete, password management, order limit configuration.
+- **PIN System** — Each table has a 4-digit PIN. Changing a PIN invalidates active sessions. Managers can set or randomize PINs.
+- **Role-based Auth** — JWT via httpOnly cookies for customers; SHA-256 password hashing for staff roles.
+- **Responsive Design** — Mobile-first with Tailwind CSS and dark mode support.
 
-## 📋 Menu
+## 🏗️ Architecture
 
-The menu includes **145 items** across 9 categories:
-- **Nigiri** (#1-25) - Salmon, Tuna, Yellowtail, Shrimp, Eel, Octopus, and more
-- **Rolls** (#26-50) - California, Dragon, Rainbow, Spicy Tuna, and classics
-- **Specialty Rolls** (#51-70) - Premium rolls like King Crab, Lobster, Samurai
-- **Sashimi** (#71-85) - Fresh cuts of various fish
-- **Hot Dishes** (#86-100) - Teriyaki, Katsu, Tempura, Donburi bowls
-- **Sides** (#101-115) - Edamame, Gyoza, Salads, Tartare
-- **Noodles** (#116-125) - Ramen, Udon, Soba, Yakisoba
-- **Drinks** (#126-135) - Tea, Sake, Beer, Ramune
-- **Desserts** (#136-145) - Mochi, Ice Cream, Dorayaki
+```
+┌─────────────┐     /api proxy     ┌──────────────┐      ┌──────────────┐
+│  React+Vite │ ──────────────── → │  Express.js  │ ── → │ PostgreSQL 15│
+│  port 8080  │                    │  port 3001   │      │  port 5432   │
+└─────────────┘                    └──────────────┘      └──────────────┘
+```
 
-## ⚙️ Order Limits (Defaults)
+- **Frontend**: React 18, TypeScript, Vite, TanStack React Query, Radix UI + shadcn/ui, Tailwind CSS
+- **Backend**: Express.js, JWT (httpOnly cookies), PostgreSQL via `pg`
+- **DevContainer**: Docker Compose with app, db (postgres:15), and Adminer
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| Max items per order | 10 | Customers cannot exceed this in a single order |
-| Max active orders per table | 2 | Tables must wait for orders to be delivered |
+## 🚀 Quick Start
 
-> Managers can change these limits from Manager Panel → Order Limits.
+### Prerequisites
 
-## 🔐 Authentication & Permissions
+- **Docker** (for DevContainer) or **Node.js 18+** & **PostgreSQL 15**
 
-The app uses role-based authentication with a unified staff login page.
+### With DevContainer (recommended)
+
+1. Open in VS Code → "Reopen in Container"
+2. Dependencies install automatically via `postCreateCommand`
+3. Initialize and seed the database:
+   ```sh
+   cd sushi-dash/server && npm run db:reset
+   ```
+4. Start the backend:
+   ```sh
+   cd sushi-dash/server && npm run dev
+   ```
+5. Start the frontend:
+   ```sh
+   cd sushi-dash && npm run dev
+   ```
+6. Open **http://localhost:8080**
+
+### Without DevContainer
+
+1. Set up PostgreSQL and create a `sushi_dash` database
+2. Create `sushi-dash/server/.env`:
+   ```env
+   DB_HOST=localhost
+   DB_PORT=5432
+   DB_USER=postgres
+   DB_PASSWORD=<your-password>
+   DB_NAME=sushi_dash
+   JWT_SECRET=<generate-a-secure-secret>
+   ```
+3. Install dependencies:
+   ```sh
+   cd sushi-dash && npm install
+   cd server && npm install
+   ```
+4. Init DB, start backend, start frontend (same as steps 3-6 above)
+
+## 📦 Available Commands
+
+### Frontend (`sushi-dash/`)
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server (port 8080) |
+| `npm run build` | Production build → `dist/` |
+| `npm test` | Run Jest test suite |
+| `npm run lint` | Run ESLint |
+
+### Backend (`sushi-dash/server/`)
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Express with tsx watch |
+| `npm run db:init` | Create database tables |
+| `npm run db:seed` | Seed menu, tables, passwords |
+| `npm run db:reset` | Init + seed (full reset) |
+
+### Makefile (`sushi-dash/`)
+
+```sh
+make help           # Show all commands
+make install        # Install dependencies
+make dev            # Start Vite dev server
+make dev-server     # Start Express API server
+make dev-all        # Start backend + frontend concurrently
+make build          # Production build
+make test           # Run all frontend tests (Jest)
+make test-watch     # Run tests in watch mode
+make test-coverage  # Run tests with coverage report
+make db-init        # Create database tables
+make db-seed        # Seed with default data
+make db-reset       # Drop & recreate (init + seed)
+make db-test        # Test database connectivity + seed integrity
+make lint           # Run ESLint
+make clean          # Remove node_modules and dist
+```
+
+## 🔐 Authentication
+
+### Customer Access
+
+Customers select a table and enter its 4-digit PIN via a shuffled PinPad. Sessions persist until the table's PIN is changed by a manager.
 
 ### Staff Login
 
-Visit `/staff` for a unified login page that automatically routes you based on your password:
-- Enter **kitchen password** → Redirected to Kitchen Dashboard
-- Enter **manager password** → Redirected to Manager Panel
+Visit `/staff` for a unified login page:
+- Enter the **kitchen password** → Kitchen Dashboard
+- Enter the **manager password** → Manager Panel
 
-### Default Passwords
-
-| Role | Password | Access |
-|------|----------|--------|
-| **Kitchen** | `kitchen-master` | Kitchen dashboard, can update order status |
-| **Manager** | `manager-admin` | Full access: cancel/delete orders, manage menu/tables/passwords |
-
-### Navigation Shortcuts
-
-- **Kitchen → Manager**: Managers see a "Manager Settings →" link in the Kitchen dashboard header
-- **Manager → Kitchen**: "← Kitchen Dashboard" link in the Manager panel header
-- **Logout**: Click "Logout" on any staff page to return to `/staff` for quick relogging
-
-> **Tables are now accessed directly via URL** (e.g., `/table/1`, `/table/2`, etc.) — no password required for customers.
+> Default credentials are defined in `server/src/db/seed.ts` (for PINs) and `src/lib/auth.ts` (for staff passwords). Change them in production.
 
 ### Permission Matrix
 
@@ -67,75 +127,31 @@ Visit `/staff` for a unified login page that automatically routes you based on y
 |--------|----------|---------|---------|
 | Place orders | ✅ (own table) | ❌ | ✅ |
 | Update order status | ❌ | ✅ | ✅ |
-| Cancel orders | ❌ | ❌ | ✅ |
+| Cancel own queued orders | ✅ (own table) | ❌ | ✅ |
 | Delete orders | ❌ | ❌ | ✅ |
-| View kitchen dashboard | ❌ | ✅ | ✅ |
-| Manage menu/tables | ❌ | ❌ | ✅ |
-
-> Managers can update all passwords from the Manager Panel → Security section.
-
-## 🚀 Quick Start
-
-### Prerequisites
-
-- **Node.js 18+** & npm - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-### Installation
-
-```sh
-# Clone the repository
-git clone <YOUR_GIT_URL>
-cd sushi-dash
-
-# Install dependencies
-make install
-# or: npm install
-
-# Start development server
-make dev
-# or: npm run dev
-```
-
-Visit **http://localhost:8080**
-
-## 📦 Available Commands (Makefile)
-
-```sh
-make help         # Show all commands
-make install      # Install dependencies
-make dev          # Start dev server (port 8080)
-make build        # Production build
-make test         # Run tests
-make test-watch   # Run tests in watch mode
-make clean        # Remove node_modules and dist
-```
+| Manage menu/tables/PINs | ❌ | ❌ | ✅ |
+| Change passwords | ❌ | ❌ | ✅ |
 
 ## 🛠️ Tech Stack
 
-### Core
-- **Vite 7.3** — Lightning-fast build tool with HMR
-- **React 18** — UI library
-- **TypeScript 5.7** — Type safety
-- **React Router 7.3** — Client-side routing
+### Frontend
+- **Vite** — Build tool with HMR
+- **React 18** + **TypeScript**
+- **TanStack React Query** — Server state & caching
+- **Radix UI / shadcn/ui** — Accessible component primitives
+- **Tailwind CSS** — Utility-first styling
+- **Sonner** — Toast notifications
+- **Lucide React** — Icons
 
-### State & Data
-- **React Query (TanStack Query 5.83)** — Data fetching, caching, and synchronization
-- **Context API** — Global state (SushiContext + AuthContext)
-- **localStorage** — Persistence layer for mock API
-
-### UI & Styling
-- **Tailwind CSS 3.4** — Utility-first CSS
-- **shadcn/ui** — Accessible component library (Radix UI primitives)
-- **Lucide React** — Icon library
+### Backend
+- **Express.js** — REST API
+- **PostgreSQL 15** — Relational database
+- **JWT** — httpOnly cookie authentication
+- **dotenv** — Environment configuration
 
 ### Testing
-- **Jest** — Test framework with 97 tests, testing API, authentication, components, data structures, and utilities, either success or fail cases
-- **Testing Library** — React component testing
-- **ts-jest** — TypeScript support for Jest
-
-### Code Quality
-- **ESLint 9.24** — Code linting
-- **TypeScript strict mode** — Type checking
+- **Jest** + **Testing Library** — 162 tests across 6 suites
+- API, auth, components, data integrity, order-status, and utility tests
 
 ## 📂 Project Structure
 
@@ -143,135 +159,104 @@ make clean        # Remove node_modules and dist
 sushi-dash/
 ├── src/
 │   ├── components/
-│   │   ├── sushi/        # App-specific components (23 files)
-│   │   └── ui/           # shadcn/ui components (40+ files)
+│   │   ├── sushi/        # App-specific components (14 files)
+│   │   └── ui/           # shadcn/ui primitives (12 files)
 │   ├── context/
-│   │   ├── AuthContext.tsx      # Authentication & sessions
+│   │   ├── AuthContext.tsx      # Auth state & sessions
 │   │   └── SushiContext.tsx     # Menu, tables, orders, settings
 │   ├── data/
-│   │   └── defaultMenu.ts       # Seed data (145 items, 6 tables)
+│   │   └── defaultMenu.ts       # Seed data (145 items)
 │   ├── hooks/
 │   │   ├── useQueries.ts        # React Query hooks
-│   │   ├── use-toast.ts         # Toast notifications
-│   │   └── use-mobile.tsx       # Responsive breakpoint hook
+│   │   ├── use-toast.ts         # Toast hook (legacy)
+│   │   └── useSound.ts         # Sound effects hook
 │   ├── lib/
-│   │   ├── api.ts              # Mock REST API (CRUD operations)
-│   │   ├── auth.ts             # SHA-256 hashing, sessions
-│   │   └── utils.ts            # Tailwind class merger (cn)
+│   │   ├── api.ts              # REST API client
+│   │   ├── auth.ts             # Auth utilities & hashing
+│   │   ├── order-status.ts     # Shared status constants
+│   │   └── utils.ts            # Tailwind class merger
 │   ├── pages/
-│   │   ├── Index.tsx           # Landing page (table selector)
-│   │   ├── TablePage.tsx       # Customer ordering page
-│   │   ├── KitchenPage.tsx     # Kitchen dashboard
+│   │   ├── CustomerPage.tsx    # Table select → PinPad → menu → order
+│   │   ├── KitchenPage.tsx     # Kitchen order dashboard
 │   │   ├── ManagerPage.tsx     # Admin panel
+│   │   ├── StaffLoginPage.tsx  # Unified staff login
 │   │   └── NotFound.tsx        # 404 page
-│   ├── test/
-│   │   ├── api.test.ts         # API layer tests (26 tests)
-│   │   ├── auth.test.ts        # Auth & permissions (36 tests)
-│   │   ├── components.test.tsx # Component rendering (8 tests)
-│   │   ├── data.test.ts        # Data structure tests (13 tests)
-│   │   ├── utils.test.ts       # Utility function tests (6 tests)
-│   │   └── setup.ts            # Test environment setup
-│   ├── types/
-│   │   └── sushi.ts            # TypeScript types
-│   ├── App.tsx                  # Router setup
-│   └── main.tsx                 # React entry point
-├── jest.config.cjs              # Jest configuration
-├── Makefile                     # Quick commands
+│   ├── test/                   # Jest test suites
+│   └── types/
+│       └── sushi.ts            # TypeScript interfaces
+├── server/
+│   └── src/
+│       ├── index.ts            # Express entry point
+│       ├── db/                 # PostgreSQL connection, init, seed
+│       ├── middleware/auth.ts  # JWT middleware
+│       └── routes/             # API routes (auth, menu, orders, tables, etc.)
 ├── package.json
-├── tailwind.config.ts
-├── tsconfig.json
-└── vite.config.ts
+├── vite.config.ts
+└── tailwind.config.ts
 ```
-
-## 🧪 Testing
-
-### Run Tests
-
-```sh
-make test
-# or: npm test
-```
-
-### Test Coverage
-
-- **97 tests** across 5 test suites
-- **API tests** (27): CRUD operations, validation, error handling, cancel/delete
-- **Auth tests** (37): Password hashing, sessions, permissions (success + fail cases)
-- **Component tests** (12): Rendering, props, DOM assertions, staff login, cart banner behavior
-- **Data tests** (13): Menu structure, table config, settings
-- **Utils tests** (6): className merging
-
-### Permission Tests
-
-Comprehensive test coverage for order management permissions:
-- ✅ Manager can cancel active orders and delete completed orders (delivered/cancelled)
-- ✅ Kitchen CANNOT cancel/delete orders (fail cases)
-- ✅ Customer CANNOT access admin functions (fail cases)
-- ✅ Unauthenticated users blocked (fail cases)
 
 ## 🗺️ Routes
 
-| Route | Description | Auth Required |
-|-------|-------------|---------------|
-| `/` | Landing page (table selector) | No |
-| `/table/:id` | Customer ordering page | No (direct URL access) |
-| `/staff` | Unified staff login (auto-routes to kitchen/manager) | Password |
-| `/kitchen` | Kitchen order dashboard | Yes (kitchen password) |
-| `/manager` | Manager administration panel | Yes (manager password) |
-| `*` | 404 Not Found page | No |
+| Route | Description | Auth |
+|-------|-------------|------|
+| `/` | Table selector | No |
+| `/table/:id` | Customer ordering (PinPad required) | PIN |
+| `/staff` | Unified staff login | Password |
+| `/kitchen` | Kitchen order dashboard | Kitchen/Manager |
+| `/manager` | Admin panel | Manager |
 
-## 🎨 UI Components
+## 🧪 Testing
 
-### Custom Components (src/components/sushi/)
-- `AppHeader` — Navigation with theme toggle
-- `SushiGrid` — Menu item grid with search
-- `OrderCard` — Order display with status updates and manager actions
-- `OrderQueueList` — Kitchen order queue
-- `MenuList` — Collapsible category list
-- `TableManager` — Add/remove tables
-- `PasswordManager` — Password update forms
-- `OrderSettingsManager` — Order limit configuration
-- `SEOHead` — Dynamic document head
-- And 14 more...
+### Frontend (Jest)
 
-### shadcn/ui Components
-40+ accessible components from Radix UI:
-Dialog, Collapsible, Button, Input, Alert, Tabs, Card, and more.
+```sh
+cd sushi-dash && npm test            # Run all tests
+cd sushi-dash && npm run test:watch  # Watch mode
+cd sushi-dash && npm run test:coverage  # With coverage
+# or via Makefile:
+make test
+make test-coverage
+```
 
-## 🔧 Configuration
+162 tests across 6 suites:
+- **API** (47): Menu, category, table, order, and settings CRUD — success + error cases, fetch mocking
+- **Auth** (52): Password hashing, initialization, backend verify, table PIN login, session management (isolation, expiry, categories), role-based access control, order permissions
+- **Components** (36): CartSummaryBanner, OrderConfirmation, SEOHead, StaffLoginModal, CollapsibleSection, SushiGrid — rendering, interaction, props
+- **Data** (13): Default menu integrity, table config, settings validation
+- **Order Status** (8): Badge variant mapping, status labels, emoji prefixes, key completeness
+- **Utils** (6): `cn()` class name merging
 
-### Environment Variables
-No environment variables needed — mock API uses localStorage.
+### Database
 
-### Order Settings
-Configurable from Manager Panel:
-- `maxItemsPerOrder`: 1-100 (default 10)
-- `maxActiveOrdersPerTable`: 1-10 (default 2)
+```sh
+make db-test   # Verify DB connectivity + seed data
+```
 
-### Table Count
-Default: 6 tables (configurable via Manager Panel)
+Checks PostgreSQL connection and verifies that tables, menu items, and settings are seeded.
+
+## 🔒 Security Notes
+
+- `.env` files are excluded via `.gitignore` — never commit secrets
+- `JWT_SECRET` is **required** in production (server throws if missing)
+- Default dev credentials exist only for local development
+- Customer sessions use httpOnly cookies (not accessible via JS)
+- PIN changes automatically invalidate all active sessions for that table
 
 ## 🚢 Deployment
 
+The frontend builds to a static `dist/` folder. The backend is a standalone Express server.
+
 ```sh
-npm run build
+cd sushi-dash && npm run build   # Frontend → dist/
+cd server && npm run build       # Backend → dist/
 ```
 
-Output: `dist/` folder (ready for static hosting)
-
-### Recommended Hosts
-- **Vercel** — Zero-config deployment
-- **Netlify** — Drag-and-drop deployment
-- **GitHub Pages** — Free static hosting
+Set `JWT_SECRET` and database connection variables in your production environment.
 
 ## 📄 License
 
 MIT
 
-## 🤝 Contributing
-
-Contributions welcome! Please open an issue or PR.
-
 ---
 
-**Built with ❤️ for academic purposes** — Demonstrating React, TypeScript, state management, testing, and modern web development practices.
+**Built for academic purposes** — ETIC 2024/26 Frontend 2 Project

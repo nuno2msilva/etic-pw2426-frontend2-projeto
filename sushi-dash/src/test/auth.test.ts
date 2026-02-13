@@ -20,6 +20,9 @@ import {
   initializePasswords,
   verifyKitchenPassword,
   verifyManagerPassword,
+  updateKitchenPassword,
+  updateManagerPassword,
+  loginTableWithPin,
   saveAuthSession,
   getAuthSession,
   clearAuthSession,
@@ -29,9 +32,21 @@ import {
 } from "@/lib/auth";
 import type { AuthSession } from "@/lib/auth";
 
-// Clear localStorage before each test
+// ---------------------------------------------------------------------------
+// Setup / Teardown
+// ---------------------------------------------------------------------------
+const originalFetch = global.fetch;
+
 beforeEach(() => {
   localStorage.clear();
+  // Mock fetch — verifyKitchen/ManagerPassword call the backend after local check
+  global.fetch = jest.fn(() =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response)
+  );
+});
+
+afterAll(() => {
+  global.fetch = originalFetch;
 });
 
 // ==========================================================================
@@ -75,7 +90,6 @@ describe("Password Initialization", () => {
 
     expect(localStorage.getItem("sushi-dash-kitchen-password")).toBeDefined();
     expect(localStorage.getItem("sushi-dash-manager-password")).toBeDefined();
-    expect(localStorage.getItem("sushi-dash-table-passwords")).toBeDefined();
   });
 
   it("initializePasswords does not overwrite existing passwords", async () => {
@@ -311,5 +325,181 @@ describe("Order Management Permissions", () => {
     it("no session CANNOT access customer area (fail case)", () => {
       expect(hasAccess(null, "customer")).toBe(false);
     });
+  });
+});
+
+// ==========================================================================
+// TABLE PIN LOGIN (fetch-based)
+// ==========================================================================
+describe("Table PIN Login", () => {
+  it("loginTableWithPin returns true on 200", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true } as Response);
+
+    const result = await loginTableWithPin("3", "1234");
+
+    expect(result).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/auth/login/table/3",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("loginTableWithPin returns false on 401", async () => {
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 401 } as Response);
+
+    const result = await loginTableWithPin("3", "0000");
+    expect(result).toBe(false);
+  });
+
+  it("loginTableWithPin returns false on network error", async () => {
+    (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
+
+    const result = await loginTableWithPin("3", "1234");
+    expect(result).toBe(false);
+  });
+});
+
+// ==========================================================================
+// BACKEND VERIFY — fetch interaction
+// ==========================================================================
+describe("Backend verify + fetch", () => {
+  it("verifyKitchenPassword calls backend after local hash match", async () => {
+    await initializePasswords();
+    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) } as Response);
+
+    const result = await verifyKitchenPassword(DEFAULT_KITCHEN_PASSWORD);
+
+    expect(result).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/auth/login/kitchen",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("verifyKitchenPassword returns false when backend rejects", async () => {
+    await initializePasswords();
+    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 401 } as Response);
+
+    const result = await verifyKitchenPassword(DEFAULT_KITCHEN_PASSWORD);
+    expect(result).toBe(false);
+  });
+
+  it("verifyManagerPassword calls backend after local hash match", async () => {
+    await initializePasswords();
+    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) } as Response);
+
+    const result = await verifyManagerPassword(DEFAULT_MANAGER_PASSWORD);
+
+    expect(result).toBe(true);
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/auth/login/manager",
+      expect.objectContaining({ method: "POST" })
+    );
+  });
+
+  it("verifyManagerPassword returns false when backend rejects", async () => {
+    await initializePasswords();
+    (global.fetch as jest.Mock).mockClear();
+    (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false } as Response);
+
+    const result = await verifyManagerPassword(DEFAULT_MANAGER_PASSWORD);
+    expect(result).toBe(false);
+  });
+
+  it("verifyKitchenPassword returns false when no hash in localStorage", async () => {
+    // Do NOT initialize passwords
+    const result = await verifyKitchenPassword("anything");
+    expect(result).toBe(false);
+  });
+
+  it("verifyManagerPassword returns false when no hash in localStorage", async () => {
+    const result = await verifyManagerPassword("anything");
+    expect(result).toBe(false);
+  });
+});
+
+// ==========================================================================
+// PASSWORD UPDATE (fetch-based)
+// ==========================================================================
+describe("Password Updates", () => {
+  it("updateKitchenPassword updates localStorage and calls backend", async () => {
+    await updateKitchenPassword("new-kitchen-pw");
+
+    const hash = localStorage.getItem("sushi-dash-kitchen-password");
+    expect(hash).toBeDefined();
+    expect(hash).toHaveLength(64); // SHA-256
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/settings/passwords",
+      expect.objectContaining({ method: "PUT" })
+    );
+  });
+
+  it("updateManagerPassword updates localStorage and calls backend", async () => {
+    await updateManagerPassword("new-manager-pw");
+
+    const hash = localStorage.getItem("sushi-dash-manager-password");
+    expect(hash).toBeDefined();
+    expect(hash).toHaveLength(64);
+
+    expect(global.fetch).toHaveBeenCalledWith(
+      "/api/settings/passwords",
+      expect.objectContaining({ method: "PUT" })
+    );
+  });
+});
+
+// ==========================================================================
+// SESSION CATEGORY ISOLATION
+// ==========================================================================
+describe("Session Category Isolation", () => {
+  it("customer and staff sessions are stored separately", () => {
+    saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
+    saveAuthSession({ role: "kitchen", authenticatedAt: Date.now() });
+
+    // Staff session is preferred when no role specified
+    const any = getAuthSession();
+    expect(any?.role).toBe("kitchen");
+
+    // Can retrieve each independently
+    const customer = getAuthSession("customer");
+    expect(customer?.role).toBe("customer");
+
+    const staff = getAuthSession("staff");
+    expect(staff?.role).toBe("kitchen");
+  });
+
+  it("clearAuthSession('customer') keeps staff session", () => {
+    saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
+    saveAuthSession({ role: "manager", authenticatedAt: Date.now() });
+
+    clearAuthSession("customer");
+
+    expect(getAuthSession("customer")).toBeNull();
+    expect(getAuthSession("staff")).not.toBeNull();
+  });
+
+  it("clearAuthSession('staff') keeps customer session", () => {
+    saveAuthSession({ role: "customer", tableId: "2", authenticatedAt: Date.now() });
+    saveAuthSession({ role: "kitchen", authenticatedAt: Date.now() });
+
+    clearAuthSession("staff");
+
+    expect(getAuthSession("staff")).toBeNull();
+    expect(getAuthSession("customer")).not.toBeNull();
+  });
+
+  it("clearAuthSession() with no argument clears everything", () => {
+    saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
+    saveAuthSession({ role: "manager", authenticatedAt: Date.now() });
+
+    clearAuthSession();
+
+    expect(getAuthSession()).toBeNull();
+    expect(getAuthSession("customer")).toBeNull();
+    expect(getAuthSession("staff")).toBeNull();
   });
 });

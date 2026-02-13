@@ -21,22 +21,31 @@
  * ==========================================================================
  */
 
-import { useState, useMemo, useCallback } from "react";
-import { useParams, Link, Navigate } from "react-router-dom";
+import { useState, useMemo, useCallback, useEffect } from "react";
+import { useParams, useSearchParams, Navigate } from "react-router-dom";
 import { toast } from "sonner";
 
 import { useSushi } from "@/context/SushiContext";
+import { useAuth } from "@/context/AuthContext";
 import {
   SushiGrid,
   OrderQueueList,
   OrderConfirmation,
   CartSummaryBanner,
   CollapsibleSection,
-  Badge,
   SEOHead,
 } from "@/components/sushi";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
 
 import type { SushiItem } from "@/types/sushi";
 
@@ -54,9 +63,9 @@ const CATEGORY_EMOJI: Record<string, string> = {
 };
 
 /** The two steps of the ordering flow */
-type Step = "menu" | "confirm";
 const TablePage = () => {
   const { tableId } = useParams<{ tableId: string }>();
+  const [searchParams] = useSearchParams();
   
   const { 
     menu, 
@@ -64,19 +73,49 @@ const TablePage = () => {
     orders, 
     categories, 
     settings,
+    isLoading,
     placeOrder,
+    cancelOrder,
     canTablePlaceOrder,
   } = useSushi();
+
+  const { loginAsCustomer, authenticatedTableId } = useAuth();
+
+  // Track whether PIN auto-auth is in progress (prevents premature redirect)
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   // Find the table from the URL param
   const table = tables.find(t => t.id === tableId);
 
+  // Auto-authenticate from QR code ?pin= param, then strip it from the URL
+  useEffect(() => {
+    const pin = searchParams.get("pin");
+    if (pin && tableId) {
+      setIsAuthenticating(true);
+      loginAsCustomer(tableId, pin)
+        .then((ok) => {
+          if (ok) {
+            toast.success(`Welcome! 🍣`);
+            // Remove PIN from URL so it isn't visible or re-used on return visits
+            const url = new URL(window.location.href);
+            url.searchParams.delete("pin");
+            window.history.replaceState({}, "", url.pathname + url.search);
+          }
+        })
+        .catch(() => { /* silently ignore */ })
+        .finally(() => setIsAuthenticating(false));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ---------------------------------------------------------------------------
   // Local state
   // ---------------------------------------------------------------------------
-  const [step, setStep] = useState<Step>("menu");
   const [cart, setCart] = useState<Record<string, number>>({});
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
+  const [showProgress, setShowProgress] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [cancellingOrderId, setCancellingOrderId] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // useMemo — derived/computed values, only recalculate when deps change
@@ -129,11 +168,11 @@ const TablePage = () => {
     return counts;
   }, [cart, menu]);
 
-  /** Active orders for this table (excludes delivered) */
+  /** Active orders for this table (excludes delivered and cancelled) */
   const tableOrders = useMemo(
     () =>
       table
-        ? orders.filter((o) => o.table.id === table.id && o.status !== "delivered")
+        ? orders.filter((o) => o.table.id === table.id && o.status !== "delivered" && o.status !== "cancelled")
         : [],
     [table, orders]
   );
@@ -141,7 +180,8 @@ const TablePage = () => {
   /** Whether this table has hit its order limit */
   const tableOrderStatus = useMemo(
     () => (table ? canTablePlaceOrder(table.id) : { allowed: true }),
-    [table, canTablePlaceOrder]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [table, canTablePlaceOrder, orders]
   );
 
   // ---------------------------------------------------------------------------
@@ -198,7 +238,7 @@ const TablePage = () => {
     
     if (result.success) {
       setCart({});
-      setStep("menu");
+      setShowConfirm(false);
       toast.success("Order sent to the kitchen! 🍣");
     } else {
       toast.error(result.error || "Failed to place order");
@@ -220,11 +260,37 @@ const TablePage = () => {
 
   /** Navigate back to the menu step */
   const handleBackToMenu = useCallback(() => {
-    setStep("menu");
+    setShowConfirm(false);
   }, []);
 
-  // Redirect if table not found (after all hooks to satisfy Rules of Hooks)
-  if (!table) {
+  /** Clear the entire cart */
+  const handleClearCart = useCallback(() => {
+    setCart({});
+    toast.info("Cart cleared");
+  }, []);
+
+  /** Queue position for a given order (global across all tables) */
+  const getQueuePosition = useCallback((orderId: string): number => {
+    const globalQueue = orders.filter(
+      (o) => o.status === "queued" || o.status === "preparing"
+    );
+    return globalQueue.findIndex((o) => o.id === orderId) + 1;
+  }, [orders]);
+
+  // Show loading while tables are still being fetched or PIN auth is running
+  if (isLoading || isAuthenticating) {
+    return (
+      <main className="max-w-5xl mx-auto px-4 py-8">
+        <div className="text-center py-20 text-muted-foreground">
+          <p className="text-5xl mb-4">🍣</p>
+          <p className="text-lg">Loading...</p>
+        </div>
+      </main>
+    );
+  }
+
+  // Redirect if table not found or user is not authenticated for this table
+  if (!table || authenticatedTableId !== tableId) {
     return <Navigate to="/" replace />;
   }
 
@@ -236,41 +302,38 @@ const TablePage = () => {
         description={`Browse and order from 100+ sushi items at ${table.label}. All-you-can-eat menu with real-time order tracking.`}
       />
 
-      {/* STEP 1: Menu Grid */}
-      {step === "menu" && (
-        <div>
-          {/* Header */}
+      {/* Menu Grid */}
+      <div>
+          {/* Header — title left, orders counter right */}
           <div className="flex items-center justify-between mb-4">
-            <div>
-              <Link
-                to="/"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors mb-1 block"
-              >
-                ← Back to tables
-              </Link>
-              <div className="flex items-center gap-3">
-                <h1 className="text-2xl font-display font-bold text-foreground">
-                  {table.label} — Order
-                </h1>
-                <span className={`text-xl font-bold ${totalItems >= settings.maxItemsPerOrder ? "text-destructive" : "text-muted-foreground"}`}>
-                  {totalItems}/{settings.maxItemsPerOrder}
-                </span>
-              </div>
-            </div>
-          </div>
+            <h1 className="text-2xl font-display font-bold text-foreground">
+              {table.label} — Order
+            </h1>
 
-          {/* Order Limit Warning */}
-          {!tableOrderStatus.allowed && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>{tableOrderStatus.reason}</AlertDescription>
-            </Alert>
-          )}
+            {/* Pending orders counter — clickable → progress modal */}
+            <button
+              onClick={() => setShowProgress(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/80 transition-colors"
+              aria-label="View order progress"
+            >
+              <span className="text-base">{!tableOrderStatus.allowed ? "⚠️" : "📋"}</span>
+              <span className={`text-sm font-bold ${
+                !tableOrderStatus.allowed
+                  ? "text-destructive"
+                  : "text-muted-foreground"
+              }`}>
+                {tableOrders.length}/{settings.maxActiveOrdersPerTable}
+              </span>
+            </button>
+          </div>
 
           {/* Cart Summary */}
           <CartSummaryBanner 
             summary={cartSummary} 
-            onReview={totalItems > 0 ? () => setStep("confirm") : undefined}
+            onReview={totalItems > 0 ? () => setShowConfirm(true) : undefined}
+            onClear={totalItems > 0 ? handleClearCart : undefined}
+            totalItems={totalItems}
+            maxItems={settings.maxItemsPerOrder}
           />
 
           {/* Menu by Category (Collapsible) */}
@@ -310,29 +373,108 @@ const TablePage = () => {
               })}
             </div>
 
-          {/* Order Queue */}
-          <OrderQueueList
-            orders={tableOrders}
-            allOrders={orders}
-            tableLabel={table.label}
-          />
-        </div>
-      )}
+      </div>
 
-      {/* STEP 2: Order Confirmation */}
-      {step === "confirm" && (
-        <OrderConfirmation
-          table={table}
-          cart={cart}
-          menu={menu}
-          onBack={handleBackToMenu}
-          onAddMore={handleBackToMenu}
-          onConfirm={handlePlaceOrder}
-          onIncrement={handleIncrement}
-          onDecrement={handleDecrement}
-          onRemove={handleRemoveItem}
-        />
-      )}
+      {/* Order Progress Modal */}
+      <Dialog open={showProgress} onOpenChange={setShowProgress}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-lg">📋 Order Progress</DialogTitle>
+          </DialogHeader>
+
+          {tableOrders.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No pending orders yet. Start picking items!
+            </p>
+          ) : (
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {tableOrders.map((order) => {
+                const position = getQueuePosition(order.id);
+                const itemsSummary = order.items
+                  .map((i) => `${i.sushi.name} (${i.quantity}x)`)
+                  .join(", ");
+
+                return (
+                  <div
+                    key={order.id}
+                    className="flex items-center justify-between rounded-lg border bg-card px-3 py-2"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
+                        #{position > 0 ? position : "—"}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate">
+                        {itemsSummary}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                      <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="sm">
+                        {STATUS_LABELS[order.status]}
+                      </Badge>
+                      {order.status === "queued" && (
+                        <button
+                          onClick={() => setCancellingOrderId(order.id)}
+                          className="text-xs text-destructive hover:text-destructive/80 transition-colors font-medium px-1.5 py-0.5 rounded hover:bg-destructive/10"
+                          title="Cancel order"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Order Confirmation */}
+      <Dialog
+        open={!!cancellingOrderId}
+        onOpenChange={(open) => !open && setCancellingOrderId(null)}
+      >
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Cancel Order</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this order? This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancellingOrderId(null)}>
+              Keep
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                if (cancellingOrderId) {
+                  cancelOrder(cancellingOrderId);
+                  toast.info("Order cancelled");
+                }
+                setCancellingOrderId(null);
+              }}
+            >
+              Cancel Order
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order Confirmation Modal */}
+      <OrderConfirmation
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        table={table}
+        cart={cart}
+        menu={menu}
+        onBack={handleBackToMenu}
+        onAddMore={handleBackToMenu}
+        onConfirm={handlePlaceOrder}
+        onIncrement={handleIncrement}
+        onDecrement={handleDecrement}
+        onRemove={handleRemoveItem}
+      />
     </main>
   );
 };

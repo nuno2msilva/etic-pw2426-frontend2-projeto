@@ -20,25 +20,14 @@
  */
 
 import type { Order } from "@/types/sushi";
-import Badge from "./Badge";
+import { Badge } from "@/components/ui/badge";
+import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
 
 interface OrderQueueListProps {
   orders: Order[];
   allOrders: Order[];
   tableLabel: string;
 }
-
-const STATUS_BADGE_VARIANT: Record<string, "accent" | "primary-soft" | "success"> = {
-  queued: "accent",
-  preparing: "primary-soft",
-  ready: "success",
-};
-
-const STATUS_LABELS: Record<string, string> = {
-  queued: "⏳ Queued",
-  preparing: "🔥 Preparing",
-  ready: "✅ Ready",
-};
 
 const OrderQueueList = ({ orders, allOrders, tableLabel }: OrderQueueListProps) => {
   const getQueuePosition = (orderId: string): number => {

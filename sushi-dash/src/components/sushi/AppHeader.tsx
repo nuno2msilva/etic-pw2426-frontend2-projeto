@@ -1,35 +1,33 @@
 /**
  * ==========================================================================
- * AppHeader — Global navigation header with dark mode toggle
+ * AppHeader — Global navigation header with dark mode toggle & logout
  * ==========================================================================
  *
  * Sticky header displayed on every page. Features:
- *   - Logo link ("🍣 Sushi Dash") → navigates to home page
+ *   - Logo ("🍣 Sushi Dash") → always navigates to / (table select)
+ *   - Context-aware logout button (customer or staff)
  *   - Dark mode toggle (persists preference in localStorage)
- *   - Navigation links (only shown on manager page for access to kitchen)
- *
- * Theme logic:
- *   1. Check localStorage for saved preference
- *   2. Fall back to system preference (prefers-color-scheme)
- *   3. Toggle adds/removes "dark" class on <html> element
+ *   - Kitchen link (shown on manager page)
  *
  * ==========================================================================
  */
 
-import { Link, useLocation } from "react-router-dom";
-import { Moon, Sun } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Moon, Sun, LogOut } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useAuth } from "@/context/AuthContext";
 
-/**
- * App header with logo and dark mode toggle
- * Navigation is only shown on the manager page
- */
 const AppHeader = () => {
   const { pathname } = useLocation();
-  const isManager = pathname === "/manager";
-  
+  const navigate = useNavigate();
+  const { customerSession, staffSession, logout, logoutStaff, checkAccess } = useAuth();
+
+  const isStaffPage = pathname === "/manager" || pathname === "/kitchen";
+  const isKitchen = pathname === "/kitchen";
+  const isManagerPage = pathname === "/manager";
+  const hasManagerAccess = checkAccess('manager');
+
   const [isDark, setIsDark] = useState(() => {
-    // Check localStorage or system preference
     if (typeof window !== 'undefined') {
       const stored = localStorage.getItem('sushi-dash-theme');
       if (stored) return stored === 'dark';
@@ -38,7 +36,6 @@ const AppHeader = () => {
     return false;
   });
 
-  // Apply theme on mount and when changed
   useEffect(() => {
     const root = document.documentElement;
     if (isDark) {
@@ -52,10 +49,22 @@ const AppHeader = () => {
 
   const toggleTheme = () => setIsDark(!isDark);
 
+  const handleLogout = () => {
+    if (isStaffPage && staffSession) {
+      logoutStaff();
+      navigate("/");
+    } else if (customerSession) {
+      logout();
+      // CustomerPage will detect session cleared and reset to table step
+    }
+  };
+
+  const showLogout = isStaffPage ? !!staffSession : !!customerSession;
+
   return (
     <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-md">
       <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/" state={{ showTableSelect: true }} className="flex items-center gap-2">
           <span className="text-2xl">🍣</span>
           <span className="font-display text-xl font-bold text-foreground">
             Sushi <span className="text-primary">Dash</span>
@@ -63,16 +72,38 @@ const AppHeader = () => {
         </Link>
 
         <div className="flex items-center gap-2">
-          {/* Navigation - only shown on manager page */}
-          {isManager && (
+          {/* Manager ↔ Kitchen nav shortcuts */}
+          {hasManagerAccess && isStaffPage && (
             <nav className="flex gap-1 mr-2">
-              <Link
-                to="/kitchen"
-                className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-              >
-                🔥 Kitchen
-              </Link>
+              {isManagerPage && (
+                <Link
+                  to="/kitchen"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  🔥 Kitchen
+                </Link>
+              )}
+              {isKitchen && (
+                <Link
+                  to="/manager"
+                  className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                >
+                  ⚙️ Manager
+                </Link>
+              )}
             </nav>
+          )}
+
+          {/* Logout */}
+          {showLogout && (
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+              aria-label="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
+            </button>
           )}
 
           {/* Dark Mode Toggle */}

@@ -26,7 +26,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import CardPanel from "./CardPanel";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface CollapsibleSectionProps {
   title: string;
@@ -53,9 +54,8 @@ const CollapsibleSection = ({
   return (
     <Collapsible open={open} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
-        <CardPanel
-          as="button"
-          className="w-full flex items-center justify-between hover:border-primary/50"
+        <button
+          className={cn(cardVariants({ variant: "item" }), "w-full flex items-center justify-between hover:border-primary/50")}
         >
           <div className="text-left">
             <div className="flex items-center gap-3">
@@ -74,7 +74,7 @@ const CollapsibleSection = ({
               open ? "rotate-180" : ""
             }`}
           />
-        </CardPanel>
+        </button>
       </CollapsibleTrigger>
       <CollapsibleContent className={contentClassName}>
         {children}

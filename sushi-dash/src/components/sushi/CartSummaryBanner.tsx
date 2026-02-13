@@ -6,21 +6,35 @@
  * re-appears fixed at the bottom of the viewport. Scrolling back up
  * slides it back to the top. Height matches the category headers.
  *
+ * Shows the items counter (e.g. "3/15") reflecting picks vs. limit.
+ *
  * Uses an IntersectionObserver on a sentinel element to detect when the
  * banner's natural position leaves the viewport.
  * ---------------------------------------------------------------------------
  */
 
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
-import CardPanel from "./CardPanel";
+import { Card } from "@/components/ui/card";
 
 interface CartSummaryBannerProps {
   summary: string;
   onReview?: () => void;
+  /** Callback to clear the entire cart */
+  onClear?: () => void;
+  /** Current number of items in the cart */
+  totalItems?: number;
+  /** Maximum items allowed per order */
+  maxItems?: number;
 }
 
-const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
+const CartSummaryBanner = ({
+  summary,
+  onReview,
+  onClear,
+  totalItems = 0,
+  maxItems = 0,
+}: CartSummaryBannerProps) => {
   const hasItems = summary && summary.trim() !== "";
   const sentinelRef = useRef<HTMLDivElement>(null);
   const [isAtBottom, setIsAtBottom] = useState(false);
@@ -36,7 +50,6 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
         const scrollingDown = !entry.isIntersecting;
 
         if (scrollingDown && !isAtBottom) {
-          // Unstick: stretch first, then move to bottom
           setPhase('stretching');
           setTimeout(() => {
             setIsAtBottom(true);
@@ -44,7 +57,6 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
             setTimeout(() => setPhase('idle'), 500);
           }, 200);
         } else if (!scrollingDown && isAtBottom) {
-          // Re-stick: animate back up
           setPhase('stretching');
           setTimeout(() => {
             setIsAtBottom(false);
@@ -54,7 +66,6 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
         }
       },
       {
-        // Trigger when sentinel passes below the header area
         rootMargin: '-80px 0px 0px 0px',
         threshold: 0,
       }
@@ -69,8 +80,6 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
       {/* Sentinel — invisible marker at the banner's natural position */}
       <div ref={sentinelRef} className="h-0 w-full" aria-hidden="true" />
 
-      {/* Positioning wrapper — handles fixed/sticky without transforms so
-           animation can use translateY freely without conflicting with centering */}
       <div
         className={
           isAtBottom
@@ -78,13 +87,11 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
             : 'sticky top-[4.3rem] z-40'
         }
       >
-        {/* The actual banner */}
-        <CardPanel
+        <Card
+          variant="item"
           className={[
-            // Override bg for banner-specific look
             'bg-secondary/95 backdrop-blur-sm text-foreground w-full max-w-5xl',
             isAtBottom ? 'shadow-2xl' : 'shadow-sm',
-            // Animation — vertical slide only
             phase === 'stretching'
               ? 'transition-[transform,opacity] duration-200 ease-in translate-y-4 opacity-80'
               : phase === 'moved'
@@ -93,43 +100,60 @@ const CartSummaryBanner = ({ summary, onReview }: CartSummaryBannerProps) => {
           ].join(' ')}
         >
         <div className="flex items-center justify-between w-full h-7">
-          <div className="flex items-center gap-3 flex-1 mr-3 min-w-0">
-            <span className="text-lg font-semibold shrink-0 leading-none">🛒 Your picks:</span>
+          {/* Left: cart icon + summary */}
+          <div className="flex items-center gap-2 flex-1 mr-2 min-w-0">
+            <span className="text-base font-semibold shrink-0 leading-none">🛒</span>
             {summary ? (
-              <span className="text-sm text-muted-foreground truncate">{summary}</span>
+              <span className="text-xs text-muted-foreground truncate">{summary}</span>
             ) : (
-              <span className="text-sm text-muted-foreground italic shrink-0">
-                Currently empty, start picking!
+              <span className="text-xs text-muted-foreground italic shrink-0">
+                Start picking!
               </span>
             )}
           </div>
 
-          {/* GO button — always reserves w-8 space to prevent height shift */}
-          <div className="flex-shrink-0 w-8 h-7 flex items-center justify-center">
-            {hasItems && onReview && (
+          {/* Right: items counter + clear + GO button */}
+          <div className="flex items-center gap-2 shrink-0">
+            {maxItems > 0 && (
+              <span className={`text-sm font-bold ${totalItems >= maxItems ? "text-destructive" : "text-muted-foreground"}`}>
+                {totalItems}/{maxItems}
+              </span>
+            )}
+
+            {/* Clear cart button */}
+            {hasItems && onClear && (
               <button
-                onClick={onReview}
-                className="w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex flex-col items-center justify-center hover:bg-destructive/90 transition-colors"
-                aria-label="Review order"
+                onClick={onClear}
+                className="w-7 h-7 rounded-full bg-muted text-muted-foreground flex items-center justify-center hover:bg-destructive/20 hover:text-destructive transition-colors"
+                aria-label="Clear cart"
               >
-                <ChevronRight className="w-4 h-4 -mb-1" />
-                <span className="text-[8px] font-bold leading-none">GO</span>
+                <Trash2 className="w-3.5 h-3.5" />
               </button>
             )}
+
+            <div className="w-7 h-7 flex items-center justify-center">
+              {hasItems && onReview && (
+                <button
+                  onClick={onReview}
+                  className="w-7 h-7 rounded-full bg-destructive text-destructive-foreground flex flex-col items-center justify-center hover:bg-destructive/90 transition-colors"
+                  aria-label="Review order"
+                >
+                  <ChevronRight className="w-4 h-4 -mb-1" />
+                  <span className="text-[8px] font-bold leading-none">GO</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
-      </CardPanel>
+      </Card>
       </div>
 
-      {/* Placeholder to prevent layout shift when banner goes fixed —
-           same p-4 + text-lg + border-2 as the banner to match its natural height */}
       {isAtBottom && (
-        <CardPanel className="border-transparent" aria-hidden="true">
+        <Card variant="item" className="border-transparent" aria-hidden="true">
           <span className="text-lg invisible">placeholder</span>
-        </CardPanel>
+        </Card>
       )}
 
-      {/* Gap below banner — matches category spacing (space-y-3 = 0.75rem) */}
       <div className="h-3" aria-hidden="true" />
     </>
   );

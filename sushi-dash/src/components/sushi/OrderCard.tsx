@@ -20,9 +20,19 @@
  */
 
 import type { Order, OrderStatus } from "@/types/sushi";
-import CardPanel from "./CardPanel";
-import Badge from "./Badge";
-import ActionButton from "./ActionButton";
+import { useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
 
 interface OrderCardProps {
   order: Order;
@@ -31,22 +41,6 @@ interface OrderCardProps {
   onDelete?: () => void;
   showActions?: boolean;
 }
-
-const STATUS_BADGE_VARIANT: Record<OrderStatus, "accent" | "primary-soft" | "success" | "muted" | "destructive"> = {
-  queued: "accent",
-  preparing: "primary-soft",
-  ready: "success",
-  delivered: "muted",
-  cancelled: "destructive",
-};
-
-const STATUS_LABELS: Record<OrderStatus, string> = {
-  queued: "⏳ Queued",
-  preparing: "🔥 Preparing",
-  ready: "✅ Ready",
-  delivered: "🎉 Delivered",
-  cancelled: "❌ Cancelled",
-};
 
 const NEXT_STATUS: Partial<Record<OrderStatus, OrderStatus>> = {
   queued: "preparing",
@@ -71,8 +65,17 @@ const OrderCard = ({
   const canCancel = onCancel && (order.status === "queued" || order.status === "preparing");
   const canDelete = onDelete && (order.status === "delivered" || order.status === "cancelled");
 
+  // Confirmation dialog state
+  const [confirmAction, setConfirmAction] = useState<"cancel" | "delete" | null>(null);
+
+  const handleConfirm = () => {
+    if (confirmAction === "cancel" && onCancel) onCancel();
+    if (confirmAction === "delete" && onDelete) onDelete();
+    setConfirmAction(null);
+  };
+
   return (
-    <CardPanel variant="section" className="p-4">
+    <Card variant="section" className="p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display font-bold text-card-foreground">{order.table.label}</h3>
         <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="md">
@@ -92,35 +95,58 @@ const OrderCard = ({
       {showActions && (
         <div className="border-t pt-3 space-y-2">
           {nextStatus && onUpdateStatus && (
-            <ActionButton
-              variant="primary"
-              fullWidth
+            <Button
+              className="w-full"
               onClick={() => onUpdateStatus(nextStatus)}
             >
               {ACTION_LABELS[order.status]}
-            </ActionButton>
+            </Button>
           )}
           {canCancel && (
-            <ActionButton
-              variant="destructive"
-              fullWidth
-              onClick={onCancel}
+            <Button
+              variant="destructive-soft"
+              className="w-full"
+              onClick={() => setConfirmAction("cancel")}
             >
               Cancel Order
-            </ActionButton>
+            </Button>
           )}
           {canDelete && (
-            <ActionButton
+            <Button
               variant="muted"
-              fullWidth
-              onClick={onDelete}
+              className="w-full"
+              onClick={() => setConfirmAction("delete")}
             >
               Delete Order
-            </ActionButton>
+            </Button>
           )}
         </div>
       )}
-    </CardPanel>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={!!confirmAction} onOpenChange={(open) => !open && setConfirmAction(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {confirmAction === "cancel" ? "Cancel Order" : "Delete Order"}
+            </DialogTitle>
+            <DialogDescription>
+              {confirmAction === "cancel"
+                ? `Are you sure you want to cancel the order for ${order.table.label}? This cannot be undone.`
+                : `Are you sure you want to delete the order for ${order.table.label}? This cannot be undone.`}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmAction(null)}>
+              Keep
+            </Button>
+            <Button variant="destructive" onClick={handleConfirm}>
+              {confirmAction === "cancel" ? "Cancel Order" : "Delete Order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
   );
 };
 

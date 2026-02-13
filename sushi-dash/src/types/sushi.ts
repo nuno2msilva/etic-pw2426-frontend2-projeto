@@ -21,10 +21,21 @@ export interface SushiItem {
   name: string;
   /** Emoji icon for visual representation */
   emoji: string;
-  /** Category for grouping (e.g., "Nigiri", "Rolls", "Sashimi") */
+  /** Category name for grouping (e.g., "Nigiri", "Rolls", "Sashimi") */
   category: string;
+  /** Category ID (for update operations) */
+  categoryId?: number;
   /** Whether this item shows a "HOT" badge (popular items) */
   isPopular?: boolean;
+  /** Whether this item is currently available for ordering */
+  isAvailable?: boolean;
+}
+
+/** A menu category */
+export interface Category {
+  id: number;
+  name: string;
+  sort_order: number;
 }
 
 /** A restaurant table */
@@ -33,6 +44,10 @@ export interface Table {
   id: string;
   /** Display label (e.g., "Table 1") */
   label: string;
+  /** 4-digit PIN (only visible to manager) */
+  pin?: string;
+  /** PIN version — incremented when PIN is randomised; used for session invalidation */
+  pin_version?: number;
 }
 
 /**

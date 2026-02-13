@@ -1,324 +1,371 @@
 /**
  * ==========================================================================
- * API Layer — Mock REST API for Sushi Dash
+ * API Layer — Backend REST API for Sushi Dash
  * ==========================================================================
  *
- * Simulates a backend REST API using localStorage as persistence.
- * All functions return Promises to mimic real async HTTP requests (fetch).
- * This layer provides full CRUD operations for:
- *   - Menu items (GET, POST, DELETE)
- *   - Tables (GET, POST, DELETE)
- *   - Orders (GET, POST, PATCH)
- *   - Settings (GET, PUT)
- *
- * In a production app, these would be replaced with real fetch() or axios
- * calls pointing to a backend (e.g., Express + Prisma).
+ * Makes actual HTTP requests to the Express.js + PostgreSQL backend.
+ * All functions return Promises and handle errors appropriately.
  * ==========================================================================
  */
 
-import type { SushiItem, Table, Order, OrderStatus } from "@/types/sushi";
-import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "@/data/defaultMenu";
+import type { SushiItem, Table, Order, OrderStatus, Category } from "@/types/sushi";
 import type { OrderSettings } from "@/context/SushiContext";
-
-// ---------------------------------------------------------------------------
-// Storage keys — centralised to avoid typos across the codebase
-// ---------------------------------------------------------------------------
-const STORAGE_KEYS = {
-  MENU: "sushi-dash-api-menu",
-  TABLES: "sushi-dash-api-tables",
-  ORDERS: "sushi-dash-api-orders",
-  SETTINGS: "sushi-dash-settings",
-} as const;
-
-// ---------------------------------------------------------------------------
-// Simulated network delay (ms) — makes the UI feel like a real API
-// ---------------------------------------------------------------------------
-const SIMULATED_DELAY = 150;
-
-/**
- * Helper: sleep for `ms` milliseconds.
- * Used to simulate network latency so loading states are visible.
- */
-function delay(ms: number = SIMULATED_DELAY): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-// ---------------------------------------------------------------------------
-// Auto-increment ID counter — persisted so IDs never collide
-// ---------------------------------------------------------------------------
-let nextId = 1000;
-
-function generateId(): string {
-  return String(nextId++);
-}
 
 // ==========================================================================
 // MENU CRUD
 // ==========================================================================
 
-/**
- * GET /api/menu — Fetch all menu items.
- * Returns the full menu array from localStorage, or defaults if empty.
- */
+/** GET /api/menu — Fetch all menu items */
 export async function fetchMenu(): Promise<SushiItem[]> {
-  await delay();
-  const stored = localStorage.getItem(STORAGE_KEYS.MENU);
-  if (stored) {
-    return JSON.parse(stored) as SushiItem[];
-  }
-  // First load: seed with defaults
-  localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(DEFAULT_MENU));
-  return [...DEFAULT_MENU];
+  const res = await fetch("/api/menu", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch menu");
+  const data = await res.json();
+  
+  // Transform backend response to frontend format
+  return data.items.map((item: any) => ({
+    id: String(item.id),
+    name: item.name,
+    emoji: item.emoji,
+    category: item.category_name,
+    categoryId: item.category_id,
+    isPopular: item.is_popular,
+    isAvailable: item.is_available,
+  }));
 }
 
-/**
- * POST /api/menu — Add a new menu item.
- * Generates a unique ID and numbered name, appends to storage.
- */
+/** POST /api/menu — Add a new menu item */
 export async function createMenuItem(
-  item: Omit<SushiItem, "id">
+  item: Omit<SushiItem, "id"> & { categoryId?: number }
 ): Promise<SushiItem> {
-  await delay();
-  const menu = await fetchMenu();
-  const newId = generateId();
-  const menuNumber = menu.length + 1;
-  const nameWithNumber = item.name.startsWith("#")
-    ? item.name
-    : `#${menuNumber} ${item.name}`;
-
-  const newItem: SushiItem = { ...item, id: newId, name: nameWithNumber };
-  const updated = [...menu, newItem];
-  localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(updated));
-  return newItem;
+  let categoryId = item.categoryId;
+  
+  // If no categoryId provided, look it up by name
+  if (!categoryId) {
+    const categories = await fetchCategories();
+    const category = categories.find((c) => c.name === item.category);
+    categoryId = category?.id;
+  }
+  
+  const res = await fetch("/api/menu", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      name: item.name,
+      emoji: item.emoji,
+      category_id: categoryId,
+      is_popular: item.isPopular ?? false,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to create menu item");
+  const data = await res.json();
+  
+  return {
+    id: String(data.id),
+    name: data.name,
+    emoji: data.emoji,
+    category: item.category,
+    isPopular: data.is_popular,
+    isAvailable: data.is_available ?? true,
+  };
 }
 
-/**
- * DELETE /api/menu/:id — Remove a menu item by ID.
- * Returns true if found and removed, false otherwise.
- */
-export async function deleteMenuItem(id: string): Promise<boolean> {
-  await delay();
-  const menu = await fetchMenu();
-  const filtered = menu.filter((item) => item.id !== id);
-  if (filtered.length === menu.length) return false;
-  localStorage.setItem(STORAGE_KEYS.MENU, JSON.stringify(filtered));
-  return true;
+/** PUT /api/menu/:id — Update a menu item (name, emoji, etc.) */
+export async function updateMenuItem(
+  id: string,
+  updates: { name?: string; emoji?: string; category_id?: number; is_popular?: boolean }
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/menu/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update menu item");
+  return res.json();
+}
+
+/** PATCH /api/menu/:id/availability — Toggle item availability */
+export async function toggleItemAvailability(
+  id: string,
+  isAvailable: boolean
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/menu/${id}/availability`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ is_available: isAvailable }),
+  });
+  if (!res.ok) throw new Error("Failed to toggle availability");
+  return res.json();
+}
+
+/** DELETE /api/menu/:id — Remove a menu item by ID */
+export async function deleteMenuItem(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/menu/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete menu item");
+  return res.json();
+}
+
+// ==========================================================================
+// CATEGORY CRUD
+// ==========================================================================
+
+/** GET /api/categories — Fetch all categories */
+export async function fetchCategories(): Promise<Category[]> {
+  const res = await fetch("/api/categories", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch categories");
+  return res.json();
+}
+
+/** POST /api/categories — Create a new category */
+export async function createCategory(name: string): Promise<Category> {
+  const res = await fetch("/api/categories", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ name }),
+  });
+  if (!res.ok) {
+    const errData = await res.json().catch(() => ({}));
+    throw new Error(errData.error || "Failed to create category");
+  }
+  return res.json();
+}
+
+/** DELETE /api/categories/:id — Delete a category (cascades items) */
+export async function deleteCategory(id: number): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/categories/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete category");
+  return res.json();
 }
 
 // ==========================================================================
 // TABLE CRUD
 // ==========================================================================
 
-/**
- * GET /api/tables — Fetch all configured tables.
- */
-export async function fetchTables(): Promise<Table[]> {
-  await delay();
-  const stored = localStorage.getItem(STORAGE_KEYS.TABLES);
-  if (stored) {
-    return JSON.parse(stored) as Table[];
-  }
-  localStorage.setItem(STORAGE_KEYS.TABLES, JSON.stringify(DEFAULT_TABLES));
-  return [...DEFAULT_TABLES];
+/** GET /api/tables — Fetch tables with PINs (manager auth required) */
+export async function fetchTablesWithPins(): Promise<Table[]> {
+  const res = await fetch("/api/tables", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch tables");
+  const data = await res.json();
+  // Convert numeric id to string for frontend type compatibility
+  return data.map((t: any) => ({
+    ...t,
+    id: String(t.id),
+  }));
 }
 
-/**
- * POST /api/tables — Create a new table.
- */
+/** Alias for backward compatibility */
+export const fetchTables = fetchTablesWithPins;
+
+/** POST /api/tables — Add new table */
 export async function createTable(label: string): Promise<Table> {
-  await delay();
-  const tables = await fetchTables();
-  const newTable: Table = { id: generateId(), label };
-  const updated = [...tables, newTable];
-  localStorage.setItem(STORAGE_KEYS.TABLES, JSON.stringify(updated));
-  return newTable;
+  const res = await fetch("/api/tables", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", 
+    body: JSON.stringify({ label }),
+  });
+  if (!res.ok) throw new Error("Failed to create table");
+  const data = await res.json();
+  return { ...data, id: String(data.id) };
 }
 
-/**
- * DELETE /api/tables/:id — Remove a table by ID.
- */
-export async function deleteTable(id: string): Promise<boolean> {
-  await delay();
-  const tables = await fetchTables();
-  const filtered = tables.filter((t) => t.id !== id);
-  if (filtered.length === tables.length) return false;
-  localStorage.setItem(STORAGE_KEYS.TABLES, JSON.stringify(filtered));
-  return true;
+/** PUT /api/tables/:id — Update table label */
+export async function updateTable(
+  id: string,
+  label: string
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/tables/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ label }),
+  });
+  if (!res.ok) throw new Error("Failed to update table");
+  return res.json();
+}
+
+/** DELETE /api/tables/:id — Delete table */
+export async function deleteTable(
+  id: string
+): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/tables/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete table");
+  return res.json();
+}
+
+/** PUT /api/tables/:id/pin — Set table PIN manually */
+export async function setTablePin(
+  id: string,
+  pin: string
+): Promise<{ success: boolean; pin: string }> {
+  const res = await fetch(`/api/tables/${id}/pin`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ pin }),
+  });
+  if (!res.ok) throw new Error("Failed to set PIN");
+  return res.json();
+}
+
+/** POST /api/tables/:id/pin/randomize — Randomize table PIN */
+export async function randomizeTablePin(
+  id: string
+): Promise<{ success: boolean; pin: string; pin_version: number }> {
+  const res = await fetch(`/api/tables/${id}/pin/randomize`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to randomize PIN");
+  return res.json();
 }
 
 // ==========================================================================
 // ORDER CRUD
 // ==========================================================================
 
-/**
- * Serialise order dates to ISO strings for storage.
- */
-function serialiseOrders(orders: Order[]): string {
-  return JSON.stringify(
-    orders.map((o) => ({ ...o, createdAt: o.createdAt.toISOString() }))
-  );
-}
-
-/**
- * Deserialise stored order dates back to Date objects.
- */
-function deserialiseOrders(raw: string): Order[] {
-  const parsed = JSON.parse(raw) as Array<Order & { createdAt: string }>;
-  return parsed.map((o) => ({ ...o, createdAt: new Date(o.createdAt) }));
-}
-
-/**
- * GET /api/orders — Fetch all orders.
- */
+/** GET /api/orders — Fetch all orders */
 export async function fetchOrders(): Promise<Order[]> {
-  await delay();
-  const stored = localStorage.getItem(STORAGE_KEYS.ORDERS);
-  if (stored) {
-    return deserialiseOrders(stored);
-  }
-  return [];
+  const res = await fetch("/api/orders", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch orders");
+  const data = await res.json();
+  
+  // Transform backend response to frontend format
+  return data.map((order: any) => ({
+    id: String(order.id),
+    table: {
+      id: String(order.table_id),
+      label: order.table_label ?? `Table ${order.table_id}`,
+    },
+    items: (order.items ?? []).map((item: any) => ({
+      sushi: {
+        id: String(item.id),
+        name: item.name,
+        emoji: item.emoji,
+        category: "",
+      },
+      quantity: item.quantity,
+    })),
+    status: order.status as OrderStatus,
+    createdAt: new Date(order.createdAt),
+  }));
 }
 
-/**
- * POST /api/orders — Place a new order.
- * Validates item count and table order limits.
- */
-export async function createOrder(
-  items: { sushiId: string; quantity: number }[],
-  table: Table,
-  menu: SushiItem[],
-  settings: OrderSettings
-): Promise<{ success: boolean; order?: Order; error?: string }> {
-  await delay();
-
-  const orders = await fetchOrders();
-
-  // Validate: check active orders for the table
-  const activeOrders = orders.filter(
-    (o) => o.table.id === table.id && o.status !== "delivered"
-  );
-  if (activeOrders.length >= settings.maxActiveOrdersPerTable) {
-    return {
-      success: false,
-      error: `Maximum ${settings.maxActiveOrdersPerTable} active orders per table. Please wait for current orders to be delivered.`,
-    };
+/** POST /api/orders/table/:tableId — Create a new order */
+export async function createOrder(orderData: {
+  items: { sushiId: string; quantity: number }[];
+  tableId: string;
+}): Promise<Order> {
+  const res = await fetch(`/api/orders/table/${orderData.tableId}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({
+      items: orderData.items.map(item => ({
+        id: Number(item.sushiId),
+        quantity: item.quantity,
+      })),
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || "Failed to create order");
   }
-
-  // Validate: item count
-  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
-  if (totalItems > settings.maxItemsPerOrder) {
-    return {
-      success: false,
-      error: `Maximum ${settings.maxItemsPerOrder} items per order. You have ${totalItems} items.`,
-    };
-  }
-
-  // Build order items from menu
-  const orderItems = items
-    .map(({ sushiId, quantity }) => {
-      const sushi = menu.find((m) => m.id === sushiId);
-      return sushi ? { sushi, quantity } : null;
-    })
-    .filter(Boolean) as { sushi: SushiItem; quantity: number }[];
-
-  if (orderItems.length === 0) {
-    return { success: false, error: "No valid items in order" };
-  }
-
-  const order: Order = {
-    id: generateId(),
-    items: orderItems,
-    status: "queued",
-    table,
-    createdAt: new Date(),
+  const data = await res.json();
+  
+  return {
+    id: String(data.id),
+    table: {
+      id: String(data.table_id),
+      label: data.table_label ?? `Table ${data.table_id}`,
+    },
+    items: (data.items ?? []).map((item: any) => ({
+      sushi: {
+        id: String(item.id),
+        name: item.name,
+        emoji: item.emoji,
+        category: "",
+      },
+      quantity: item.quantity,
+    })),
+    status: data.status as OrderStatus,
+    createdAt: new Date(data.createdAt),
   };
-
-  const updated = [order, ...orders];
-  localStorage.setItem(STORAGE_KEYS.ORDERS, serialiseOrders(updated));
-  return { success: true, order };
 }
 
-/**
- * PATCH /api/orders/:id — Update an order's status.
- */
+/** PATCH /api/orders/:id/status — Update order status */
 export async function updateOrderStatus(
-  orderId: string,
+  id: string,
   status: OrderStatus
-): Promise<Order | null> {
-  await delay();
-  const orders = await fetchOrders();
-  const idx = orders.findIndex((o) => o.id === orderId);
-  if (idx === -1) return null;
-
-  orders[idx] = { ...orders[idx], status };
-  localStorage.setItem(STORAGE_KEYS.ORDERS, serialiseOrders(orders));
-  return orders[idx];
+): Promise<{ success: boolean; id: number; status: string }> {
+  const res = await fetch(`/api/orders/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error("Failed to update order");
+  return res.json();
 }
 
-/**
- * PATCH /api/orders/:id/cancel — Cancel an active (non-delivered) order.
- * Only managers should call this. Returns null if order not found or already
- * delivered.
- */
-export async function cancelOrder(orderId: string): Promise<Order | null> {
-  await delay();
-  const orders = await fetchOrders();
-  const idx = orders.findIndex((o) => o.id === orderId);
-  if (idx === -1) return null;
-
-  // Cannot cancel a delivered order — use deleteOrder instead
-  if (orders[idx].status === "delivered") return null;
-
-  orders[idx] = { ...orders[idx], status: "cancelled" as OrderStatus };
-  localStorage.setItem(STORAGE_KEYS.ORDERS, serialiseOrders(orders));
-  return orders[idx];
+/** PATCH /api/orders/:id/cancel — Cancel an order (sets status to cancelled) */
+export async function cancelOrder(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/orders/${id}/cancel`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to cancel order");
+  return res.json();
 }
 
-/**
- * DELETE /api/orders/:id — Permanently remove a delivered/cancelled order.
- * Only managers should call this. Returns false if order not found or still
- * active (queued/preparing/ready).
- */
-export async function deleteOrder(orderId: string): Promise<boolean> {
-  await delay();
-  const orders = await fetchOrders();
-  const idx = orders.findIndex((o) => o.id === orderId);
-  if (idx === -1) return false;
-
-  // Only allow deleting delivered or cancelled orders
-  const status = orders[idx].status;
-  if (status !== "delivered" && status !== "cancelled") return false;
-
-  const filtered = orders.filter((o) => o.id !== orderId);
-  localStorage.setItem(STORAGE_KEYS.ORDERS, serialiseOrders(filtered));
-  return true;
+/** DELETE /api/orders/:id — Permanently delete an order (manager only) */
+export async function deleteOrder(id: string): Promise<{ success: boolean }> {
+  const res = await fetch(`/api/orders/${id}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+  if (!res.ok) throw new Error("Failed to delete order");
+  return res.json();
 }
 
 // ==========================================================================
-// SETTINGS CRUD
+// SETTINGS CRUD  
 // ==========================================================================
 
-/**
- * GET /api/settings — Fetch current order settings.
- */
+/** GET /api/settings — Fetch current settings */
 export async function fetchSettings(): Promise<OrderSettings> {
-  await delay();
-  const stored = localStorage.getItem(STORAGE_KEYS.SETTINGS);
-  if (stored) {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
-  }
-  return { ...DEFAULT_SETTINGS };
+  const res = await fetch("/api/settings", { credentials: "include" });
+  if (!res.ok) throw new Error("Failed to fetch settings");
+  const data = await res.json();
+  // Backend returns string values — coerce to numbers
+  return {
+    maxItemsPerOrder: Number(data.maxItemsPerOrder ?? 10),
+    maxActiveOrdersPerTable: Number(data.maxActiveOrdersPerTable ?? 2),
+  };
 }
 
-/**
- * PUT /api/settings — Update order settings.
- */
+/** PUT /api/settings — Update order settings */
 export async function updateSettings(
-  newSettings: Partial<OrderSettings>
+  updates: Partial<OrderSettings>
 ): Promise<OrderSettings> {
-  await delay();
-  const current = await fetchSettings();
-  const updated = { ...current, ...newSettings };
-  localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(updated));
-  return updated;
+  const res = await fetch("/api/settings", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", 
+    body: JSON.stringify(updates),
+  });
+  if (!res.ok) throw new Error("Failed to update settings");
+  return res.json();
 }

@@ -24,35 +24,37 @@
  */
 
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useSushi } from "@/context/SushiContext";
 import { useAuth } from "@/context/AuthContext";
 import {
-  AddMenuItemForm,
   TableManager,
-  MenuList,
+  MenuManager,
   PasswordManager,
   OrderSettingsManager,
   SEOHead,
   CollapsibleSection,
 } from "@/components/sushi";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
 const ManagerPage = () => {
   const {
     menu,
     categories,
+    categoryList,
     tables,
     settings,
     addMenuItem,
     removeMenuItem,
+    updateMenuItem,
+    toggleItemAvailability,
+    addCategory,
+    deleteCategory,
     addTable,
+    updateTable,
     removeTable,
     updateSettings,
   } = useSushi();
 
-  const { isInitialized, checkAccess, logout } = useAuth();
+  const { isInitialized, checkAccess } = useAuth();
   const navigate = useNavigate();
 
   // Collapsible state for each section
@@ -61,10 +63,10 @@ const ManagerPage = () => {
   // Check if user has manager access
   const hasManagerAccess = checkAccess('manager');
 
-  // Redirect to /staff login if not authenticated
+  // Redirect to home if not authenticated
   useEffect(() => {
     if (isInitialized && !hasManagerAccess) {
-      navigate('/staff');
+      navigate('/');
     }
   }, [isInitialized, hasManagerAccess, navigate]);
 
@@ -103,6 +105,7 @@ const ManagerPage = () => {
         <TableManager
           tables={tables}
           onAddTable={addTable}
+          onUpdateTable={updateTable}
           onRemoveTable={removeTable}
         />
       ),
@@ -114,24 +117,23 @@ const ManagerPage = () => {
       content: <PasswordManager />,
     },
     {
-      id: "add-menu",
-      title: "➕ Add Menu Item",
-      description: "Add new items to the menu",
-      content: <AddMenuItemForm onAddItem={addMenuItem} />,
-    },
-    {
-      id: "menu",
-      title: "📋 Menu Items",
+      id: "menu-management",
+      title: "📋 Menu Management",
       description: `${menu.length} items in ${categories.length} categories`,
       content: (
-        <MenuList
+        <MenuManager
           menu={menu}
-          categories={categories}
+          categoryList={categoryList}
+          onAddItem={addMenuItem}
+          onUpdateItem={updateMenuItem}
           onRemoveItem={removeMenuItem}
+          onToggleAvailability={toggleItemAvailability}
+          onAddCategory={addCategory}
+          onDeleteCategory={deleteCategory}
         />
       ),
     },
-  ], [settings, updateSettings, tables, addTable, removeTable, addMenuItem, menu, categories, removeMenuItem]);
+  ], [settings, updateSettings, tables, addTable, removeTable, updateTable, addMenuItem, menu, categories, categoryList, removeMenuItem, updateMenuItem, toggleItemAvailability, addCategory, deleteCategory]);
 
   // Show loading while auth initializes
   if (!isInitialized) {
@@ -157,24 +159,10 @@ const ManagerPage = () => {
         description="Configure menu items, tables, order limits, and passwords for Sushi Dash."
       />
       {/* Page Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="mb-2">
         <h1 className="text-3xl font-display font-bold text-foreground">
           ⚙️ Manager Panel
         </h1>
-        <div className="flex items-center gap-3">
-          <Link
-            to="/kitchen"
-            className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
-          >
-            ← Kitchen Dashboard
-          </Link>
-          <button
-            onClick={logout}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Logout
-          </button>
-        </div>
       </div>
       <p className="text-muted-foreground mb-8">
         Configure menu items, tables, order limits, and passwords.
