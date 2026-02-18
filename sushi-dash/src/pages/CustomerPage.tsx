@@ -304,7 +304,7 @@ const CustomerPage = () => {
   };
 
   return (
-    <main className="max-w-5xl mx-auto px-4 pt-8 pb-20 sm:pb-8">
+    <main className="max-w-5xl mx-auto px-4 pt-8 pb-24">
       {/* STEP 1: Table Selection */}
       {step === "table" && (
         <TableSelector

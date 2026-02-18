@@ -277,7 +277,7 @@ const TablePage = () => {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 pt-8 pb-20 sm:pb-8">
+    <main className="max-w-5xl mx-auto px-4 pt-8 pb-24">
       {/* Dynamic SEO — updates <title> for this table */}
       <SEOHead
         title={`${table.label} — Order`}
