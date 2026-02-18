@@ -181,6 +181,7 @@ const TablePage = () => {
 
   /** Add one unit of an item to the cart */
   const handleIncrement = useCallback((item: SushiItem) => {
+    if (item.isAvailable === false) return;
     if (totalItems >= settings.maxItemsPerOrder) {
       toast.error(`Maximum ${settings.maxItemsPerOrder} items per order`);
       return;

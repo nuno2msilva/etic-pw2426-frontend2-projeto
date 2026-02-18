@@ -57,12 +57,15 @@ const SushiGrid = ({
     <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-5 gap-3">
       {items.map((item) => {
         const qty = cart[item.id] || 0;
+        const available = item.isAvailable !== false;
 
         return (
           <div
             key={item.id}
             className={`relative rounded-xl border-2 bg-card p-3 min-h-[120px] transition-all hover:shadow-md ${
-              qty > 0 ? "border-primary shadow-sm" : "border-border"
+              !available
+                ? "border-border opacity-50 grayscale"
+                : qty > 0 ? "border-primary shadow-sm" : "border-border"
             }`}
           >
             {/* Item number in top-left corner with # prefix */}
@@ -86,9 +89,9 @@ const SushiGrid = ({
                 e.stopPropagation();
                 onDecrement(item);
               }}
-              disabled={qty === 0}
+              disabled={qty === 0 || !available}
               className={`rounded-full absolute left-2 md:left-4 lg:left-6 top-1/2 -translate-y-1/2 z-10 ${
-                qty === 0 ? "cursor-not-allowed" : ""
+                qty === 0 || !available ? "cursor-not-allowed" : ""
               }`}
               aria-label={`Remove ${item.name}`}
             >
@@ -98,14 +101,14 @@ const SushiGrid = ({
             {/* Plus button - closer on mobile, further on desktop */}
             <Button
               size="icon"
-              variant={canAddMore ? "soft" : "muted"}
+              variant={canAddMore && available ? "soft" : "muted"}
               onClick={(e) => {
                 e.stopPropagation();
                 onIncrement(item);
               }}
-              disabled={!canAddMore}
+              disabled={!canAddMore || !available}
               className={`rounded-full absolute right-2 md:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-10 ${
-                !canAddMore ? "cursor-not-allowed" : ""
+                !canAddMore || !available ? "cursor-not-allowed" : ""
               }`}
               aria-label={`Add ${item.name}`}
             >
@@ -130,6 +133,11 @@ const SushiGrid = ({
               <span className="text-sm font-medium text-card-foreground text-center leading-tight block">
                 {item.name.replace(/#\d+\s/, '')}
               </span>
+              {!available && (
+                <span className="text-[10px] font-bold text-destructive text-center block mt-0.5">
+                  Unavailable
+                </span>
+              )}
             </div>
           </div>
         );

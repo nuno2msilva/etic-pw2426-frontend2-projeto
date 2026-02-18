@@ -230,6 +230,7 @@ const CustomerPage = () => {
   };
 
   const handleIncrement = (item: SushiItem) => {
+    if (item.isAvailable === false) return;
     if (!canAddMore) {
       toast.error(`Maximum ${settings.maxItemsPerOrder} items per order`);
       return;

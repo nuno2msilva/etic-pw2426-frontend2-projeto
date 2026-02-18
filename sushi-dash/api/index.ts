@@ -1,8 +1,4 @@
-/**
- * Vercel Serverless Function entry point.
- * Re-exports the Express app so Vercel can handle it as a serverless function.
- * All /api/* requests are routed here via vercel.json rewrites.
- */
+// Dedicated function for Vercel deployment — simply re-export the Express app instance
 import app from "../server/src/index.js";
 
 export default app;
