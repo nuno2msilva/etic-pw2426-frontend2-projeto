@@ -83,7 +83,7 @@ const CartSummaryBanner = ({
       <div
         className={
           isAtBottom
-            ? 'fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4'
+            ? 'fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)]'
             : 'sticky top-[4.3rem] z-40'
         }
       >
