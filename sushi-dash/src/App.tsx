@@ -43,11 +43,11 @@ const queryClient = new QueryClient();
  * (when manager changes a table PIN or deletes a table).
  */
 function LiveUpdates() {
-  const { authenticatedTableId, logout, customerSession, staffSession } = useAuth();
+  const { authenticatedTableId, logout } = useAuth();
   useServerEvents({
     tableId: authenticatedTableId,
     onEjected: logout,
-    enabled: customerSession !== null || staffSession !== null,
+    enabled: true,
   });
   return null;
 }

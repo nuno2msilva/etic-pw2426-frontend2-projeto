@@ -55,7 +55,8 @@ export function useMenuQuery() {
   return useQuery({
     queryKey: queryKeys.menu,
     queryFn: api.fetchMenu,
-    staleTime: 1000 * 60 * 5, // Consider fresh for 5 minutes
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 30, // 30 s polling fallback if SSE drops
   });
 }
 
@@ -133,6 +134,7 @@ export function useCategoriesQuery() {
     queryKey: queryKeys.categories,
     queryFn: api.fetchCategories,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 30,
   });
 }
 
@@ -180,6 +182,7 @@ export function useTablesQuery() {
     queryKey: queryKeys.tables,
     queryFn: api.fetchTablesWithPins,
     staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 30,
   });
 }
 
@@ -237,7 +240,8 @@ export function useOrdersQuery(tableId?: string | null) {
   return useQuery({
     queryKey: tableId ? [...queryKeys.orders, tableId] : queryKeys.orders,
     queryFn: () => tableId ? api.fetchOrdersForTable(tableId) : api.fetchOrders(),
-    staleTime: 1000 * 30, // SSE pushes real-time updates; only refetch as fallback
+    staleTime: 1000,
+    refetchInterval: 1000, // 1 s polling fallback — essential for kitchen/customer UX
   });
 }
 
@@ -374,7 +378,8 @@ export function useSettingsQuery() {
   return useQuery({
     queryKey: queryKeys.settings,
     queryFn: api.fetchSettings,
-    staleTime: 1000 * 60 * 10, // Settings change rarely
+    staleTime: 1000 * 60 * 10,
+    refetchInterval: 1000 * 30,
   });
 }
 

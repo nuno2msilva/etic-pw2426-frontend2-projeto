@@ -83,14 +83,14 @@ const CartSummaryBanner = ({
       <div
         className={
           isAtBottom
-            ? 'fixed bottom-3 left-0 right-0 z-40 flex justify-center px-4 pb-[env(safe-area-inset-bottom)]'
+            ? 'fixed bottom-3 left-0 right-0 z-40 max-w-5xl mx-auto px-4 pb-[env(safe-area-inset-bottom)]'
             : 'sticky top-[4.3rem] z-40'
         }
       >
         <Card
           variant="item"
           className={[
-            'bg-secondary/95 backdrop-blur-sm text-foreground w-full max-w-5xl',
+            'bg-secondary/95 backdrop-blur-sm text-foreground w-full',
             isAtBottom ? 'shadow-2xl' : 'shadow-sm',
             phase === 'stretching'
               ? 'transition-[transform,opacity] duration-200 ease-in translate-y-4 opacity-80'
