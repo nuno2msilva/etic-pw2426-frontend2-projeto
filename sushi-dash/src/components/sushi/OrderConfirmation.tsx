@@ -99,7 +99,7 @@ const OrderConfirmation = ({
           <span className="text-4xl mb-3 block">🍣</span>
           <p className="text-muted-foreground">Your cart is empty.</p>
           <Button
-            variant="primary"
+            variant="default"
             size="lg"
             onClick={onAddMore}
             className="mt-4"
