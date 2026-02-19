@@ -1,18 +1,4 @@
-/**
- * ==========================================================================
- * API Layer Unit Tests
- * ==========================================================================
- *
- * Tests the REST API client (lib/api.ts) by mocking global.fetch.
- * Every exported function is tested with:
- *   ✅ Success case — 200 response, correct data transformation
- *   ❌ Failure case — non-ok response, throws expected error
- *
- * Groups: Menu, Categories, Tables, Orders, Settings
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** API layer tests — mocks global.fetch, tests success + failure for all endpoints */
 
 import {
   fetchMenu,
@@ -440,7 +426,7 @@ describe("Order API", () => {
       expect(orders[0].table.id).toBe("2");
       expect(orders[0].table.label).toBe("Table 2");
       expect(orders[0].status).toBe("queued");
-      expect(orders[0].items[0].sushi.name).toBe("Salmon Nigiri");
+      expect(orders[0].items[0].item.name).toBe("Salmon Nigiri");
       expect(orders[0].items[0].quantity).toBe(3);
       expect(orders[0].createdAt).toBeInstanceOf(Date);
     });

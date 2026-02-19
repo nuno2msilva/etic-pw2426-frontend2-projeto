@@ -1,0 +1,67 @@
+/** CollapsibleSection — reusable card with chevron toggle, title, optional icon/badge/subtitle */
+
+import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cardVariants } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+
+interface CollapsibleSectionProps {
+  title: string;
+  icon?: string;
+  badge?: ReactNode;
+  subtitle?: string;
+  open: boolean;
+  onToggle: () => void;
+  children: ReactNode;
+  /** Extra classes on the content wrapper */
+  contentClassName?: string;
+}
+
+const CollapsibleSection = ({
+  title,
+  icon,
+  badge,
+  subtitle,
+  open,
+  onToggle,
+  children,
+  contentClassName = "pt-3",
+}: CollapsibleSectionProps) => {
+  return (
+    <Collapsible open={open} onOpenChange={onToggle}>
+      <CollapsibleTrigger asChild>
+        <button
+          className={cn(cardVariants({ variant: "item" }), "w-full flex items-center justify-between hover:border-primary/50")}
+        >
+          <div className="text-left">
+            <div className="flex items-center gap-3">
+              {icon && <span className="text-lg">{icon}</span>}
+              <span className="text-lg font-semibold">{title}</span>
+              {badge}
+            </div>
+            {subtitle && (
+              <span className="text-sm text-muted-foreground block mt-0.5">
+                {subtitle}
+              </span>
+            )}
+          </div>
+          <ChevronDown
+            className={`w-5 h-5 text-muted-foreground transition-transform ${
+              open ? "rotate-180" : ""
+            }`}
+          />
+        </button>
+      </CollapsibleTrigger>
+      <CollapsibleContent className={contentClassName}>
+        {children}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+export default CollapsibleSection;

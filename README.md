@@ -15,12 +15,12 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 
 ```
 ┌─────────────┐     /api proxy     ┌──────────────┐      ┌──────────────┐
-│  React+Vite │ ──────────────── → │  Express.js  │ ── → │ PostgreSQL 15│
-│  port 8080  │                    │  port 3001   │      │  port 5432   │
+│  Next.js    │ ──────────────── → │  Express.js  │ ── → │ PostgreSQL 15│
+│  port 5173  │                    │  port 3001   │      │  port 5432   │
 └─────────────┘                    └──────────────┘      └──────────────┘
 ```
 
-- **Frontend**: React 18, TypeScript, Vite, TanStack React Query, Radix UI + shadcn/ui, Tailwind CSS
+- **Frontend**: React 18, TypeScript, Next.js (App Router + Turbopack), TanStack React Query, Radix UI + shadcn/ui, Tailwind CSS
 - **Backend**: Express.js, JWT (httpOnly cookies), PostgreSQL via **Prisma ORM**
 - **DevContainer**: Docker Compose with app, db (postgres:15), and Adminer
 
@@ -46,7 +46,7 @@ A full-stack sushi restaurant ordering system with real-time order management, r
    ```sh
    cd sushi-dash && npm run dev
    ```
-6. Open **http://localhost:8080**
+6. Open **http://localhost:5173**
 
 ### Without DevContainer
 
@@ -69,8 +69,9 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Vite dev server (port 8080) |
-| `npm run build` | Production build → `dist/` |
+| `npm run dev` | Start Next.js dev server with Turbopack (port 5173) |
+| `npm run build` | Production build |
+| `npm start` | Start production server |
 | `npm test` | Run Jest test suite |
 | `npm run lint` | Run ESLint |
 
@@ -89,7 +90,7 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 ```sh
 make help           # Show all commands
 make install        # Install dependencies
-make dev            # Start Vite dev server
+make dev            # Start Next.js dev server
 make dev-server     # Start Express API server
 make dev-all        # Start backend + frontend concurrently
 make build          # Production build
@@ -101,7 +102,7 @@ make db-seed        # Seed with default data
 make db-reset       # Drop & recreate (Prisma push + seed)
 make db-generate    # Regenerate Prisma client
 make lint           # Run ESLint
-make clean          # Remove node_modules and dist
+make clean          # Remove node_modules and build output
 ```
 
 ## 🔐 Authentication
@@ -112,7 +113,7 @@ Customers select a table and enter its 4-digit PIN via a shuffled PinPad. Sessio
 
 ### Staff Login
 
-Visit `/staff` for a unified login page:
+Click "Staff Login" on the table selector page to open the login modal:
 - Enter the **kitchen password** → Kitchen Dashboard
 - Enter the **manager password** → Manager Panel
 
@@ -132,7 +133,7 @@ Visit `/staff` for a unified login page:
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Vite** — Build tool with HMR
+- **Next.js 16** — React framework with App Router & Turbopack
 - **React 18** + **TypeScript**
 - **TanStack React Query** — Server state & caching
 - **Radix UI / shadcn/ui** — Accessible component primitives
@@ -155,40 +156,50 @@ Visit `/staff` for a unified login page:
 
 ```
 sushi-dash/
+├── app/                        # Next.js App Router pages
+│   ├── layout.tsx              # Root layout (metadata, providers)
+│   ├── providers.tsx           # Client-side provider tree
+│   ├── page.tsx                # / → CustomerPage
+│   ├── not-found.tsx           # 404 page
+│   ├── kitchen/page.tsx        # /kitchen → KitchenPage
+│   ├── manager/page.tsx        # /manager → ManagerPage
+│   └── table/[tableId]/page.tsx # /table/:id → TablePage
 ├── src/
 │   ├── components/
-│   │   ├── sushi/        # App-specific components (15 files)
-│   │   └── ui/           # shadcn/ui primitives (12 files)
+│   │   ├── app/                # App-level components (18 files)
+│   │   └── ui/                 # shadcn/ui primitives (12 files)
 │   ├── context/
 │   │   ├── AuthContext.tsx      # Auth state & sessions
-│   │   └── SushiContext.tsx     # Menu, tables, orders, settings
+│   │   └── AppContext.tsx       # Menu, tables, orders, settings
 │   ├── data/
-│   │   └── defaultMenu.ts       # Seed data (145 items)
+│   │   └── seedData.ts          # Seed data (145 items, tables, settings)
 │   ├── hooks/
-│   │   ├── useQueries.ts        # React Query hooks
-│   │   └── useSound.ts         # Sound effects hook
+│   │   ├── useApiQueries.ts     # React Query hooks (CRUD, mutations)
+│   │   ├── useOrderingFlow.ts   # Shared cart & ordering logic
+│   │   └── useServerEvents.ts   # SSE real-time updates
 │   ├── lib/
-│   │   ├── api.ts              # REST API client
-│   │   ├── auth.ts             # Auth utilities & hashing
-│   │   ├── order-status.ts     # Shared status constants
-│   │   └── utils.ts            # Tailwind class merger
-│   ├── pages/
-│   │   ├── CustomerPage.tsx    # Table select → PinPad → menu → order
-│   │   ├── KitchenPage.tsx     # Kitchen order dashboard
-│   │   ├── ManagerPage.tsx     # Admin panel
-│   │   ├── StaffLoginPage.tsx  # Unified staff login
-│   │   └── NotFound.tsx        # 404 page
-│   ├── test/                   # Jest test suites
+│   │   ├── api.ts               # REST API client
+│   │   ├── auth.ts              # Auth utilities & hashing
+│   │   ├── config.ts            # Environment config
+│   │   ├── order-status.ts      # Shared status constants
+│   │   └── utils.ts             # Tailwind class merger
+│   ├── views/
+│   │   ├── CustomerPage.tsx     # Table select → PinPad → menu → order
+│   │   ├── KitchenPage.tsx      # Kitchen order dashboard
+│   │   ├── ManagerPage.tsx      # Admin panel
+│   │   ├── TablePage.tsx        # Direct table ordering (/table/:id)
+│   │   └── NotFound.tsx         # 404 page
+│   ├── test/                    # Jest test suites (6 files)
 │   └── types/
-│       └── sushi.ts            # TypeScript interfaces
+│       └── models.ts            # TypeScript interfaces & constants
 ├── server/
 │   └── src/
-│       ├── index.ts            # Express entry point
-│       ├── db/                 # Prisma client, seed
-│       ├── middleware/auth.ts  # JWT middleware
-│       └── routes/             # API routes (auth, menu, orders, tables, etc.)
+│       ├── index.ts             # Express entry point + SSE broadcast
+│       ├── db/                  # Prisma client, seed
+│       ├── middleware/auth.ts   # JWT middleware
+│       └── routes/              # API routes (auth, menu, orders, tables, etc.)
+├── next.config.ts               # Next.js config (API proxy rewrites)
 ├── package.json
-├── vite.config.ts
 └── tailwind.config.ts
 ```
 
@@ -196,9 +207,8 @@ sushi-dash/
 
 | Route | Description | Auth |
 |-------|-------------|------|
-| `/` | Table selector | No |
-| `/table/:id` | Customer ordering (PinPad required) | PIN |
-| `/staff` | Unified staff login | Password |
+| `/` | Table selector + ordering | No (PIN required) |
+| `/table/:id` | Direct table ordering | PIN |
 | `/kitchen` | Kitchen order dashboard | Kitchen/Manager |
 | `/manager` | Admin panel | Manager |
 
@@ -218,7 +228,7 @@ make test-coverage
 162 tests across 6 suites:
 - **API** (47): Menu, category, table, order, and settings CRUD — success + error cases, fetch mocking
 - **Auth** (52): Password hashing, initialization, backend verify, table PIN login, session management (isolation, expiry, categories), role-based access control, order permissions
-- **Components** (36): CartSummaryBanner, OrderConfirmation, SEOHead, StaffLoginModal, CollapsibleSection, SushiGrid — rendering, interaction, props
+- **Components** (36): CartSummaryBanner, OrderConfirmation, SEOHead, StaffLoginModal, CollapsibleSection, MenuGrid — rendering, interaction, props
 - **Data** (13): Default menu integrity, table config, settings validation
 - **Order Status** (8): Badge variant mapping, status labels, emoji prefixes, key completeness
 - **Utils** (6): `cn()` class name merging
@@ -244,10 +254,8 @@ Uses Prisma ORM for type-safe schema management and database access.
 
 ### Local Production Build
 
-The frontend builds to a static `dist/` folder. The backend is a standalone Express server.
-
 ```sh
-cd sushi-dash && npm run build   # Frontend → dist/
+cd sushi-dash && npm run build   # Frontend → .next/
 cd server && npm run build       # Backend → dist/
 ```
 
@@ -255,7 +263,7 @@ Set `JWT_SECRET` and database connection variables in your production environmen
 
 ### 🚀 Deploy to Vercel
 
-Sushi Dash can be deployed as two separate Vercel projects: one for the **frontend** (static React app) and one for the **backend** (Express API).
+Sushi Dash can be deployed as two separate Vercel projects: one for the **frontend** (Next.js app) and one for the **backend** (Express API).
 
 #### 1. Set Up a Production Database
 
@@ -333,21 +341,16 @@ npm run db:seed
 
 2. Configure the project:
    - **Root Directory**: `sushi-dash`
-   - **Framework Preset**: Vite
-   - **Build Command**: `npm run build`
-   - **Output Directory**: `dist`
+   - **Framework Preset**: Next.js
+   - **Build Command**: `next build`
 
 3. Add an environment variable to point the frontend's API calls to your deployed backend:
+
    | Variable | Value |
    |----------|-------|
-   | `VITE_API_URL` | `https://your-backend.vercel.app` |
+   | `NEXT_PUBLIC_API_URL` | `https://your-backend.vercel.app` |
 
-4. Update the Vite proxy or API client to use `VITE_API_URL` in production. In `src/lib/api.ts`, the `BASE_URL` should resolve to the backend URL:
-   ```ts
-   const BASE_URL = import.meta.env.VITE_API_URL || "";
-   ```
-
-5. Click **Deploy**.
+4. Click **Deploy**.
 
 #### 5. Configure CORS
 
@@ -355,7 +358,7 @@ In `server/src/index.ts`, ensure the CORS origin includes your frontend's Vercel
 
 ```ts
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || "http://localhost:8080",
+  origin: process.env.CORS_ORIGIN || "http://localhost:5173",
   credentials: true,
 }));
 ```
@@ -371,8 +374,7 @@ If you prefer a single project, you can convert the Express API into a Vercel se
    ```json
    {
      "rewrites": [
-       { "source": "/api/(.*)", "destination": "/api" },
-       { "source": "/(.*)", "destination": "/index.html" }
+       { "source": "/api/(.*)", "destination": "/api" }
      ]
    }
    ```

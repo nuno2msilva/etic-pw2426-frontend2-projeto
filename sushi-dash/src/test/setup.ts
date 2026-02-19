@@ -2,8 +2,33 @@ import "@testing-library/jest-dom";
 import { TextEncoder, TextDecoder } from "util";
 import { webcrypto } from "crypto";
 
+// ── Mock next/navigation for Jest ──────────────────────────────────────────
+jest.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: jest.fn(),
+    replace: jest.fn(),
+    back: jest.fn(),
+    prefetch: jest.fn(),
+    refresh: jest.fn(),
+  }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+}));
+
+// ── Mock next/link as a plain <a> ──────────────────────────────────────────
+jest.mock("next/link", () => {
+  const React = require("react");
+  return {
+    __esModule: true,
+    default: React.forwardRef(
+      ({ href, children, ...rest }: any, ref: any) =>
+        React.createElement("a", { href, ref, ...rest }, children)
+    ),
+  };
+});
+
 // Polyfill TextEncoder/TextDecoder for jsdom
-// @ts-expect-error - TextEncoder types differ between node and dom
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder;
 

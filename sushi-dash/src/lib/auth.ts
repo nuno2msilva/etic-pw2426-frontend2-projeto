@@ -1,30 +1,6 @@
-/**
- * auth.ts
- * ---------------------------------------------------------------------------
- * Authentication utilities for the Sushi Dash app.
- *
- * Security model (localStorage-based, transitioning to backend):
- * - Kitchen/Manager passwords: SHA-256 hashed, stored in localStorage.
- * - Table PINs: 4-digit numeric PINs verified by the backend API.
- *   The frontend no longer stores table credentials — it calls
- *   POST /api/auth/login/table/:tableId with the PIN, and the server
- *   returns an httpOnly JWT cookie on success.
- *
- * Session management:
- * - `saveSession()` stores the authenticated role with a timestamp.
- * - `loadSession()` returns the role if the session is still valid
- *   (8-hour expiry), otherwise clears the session.
- *
- * Exported functions:
- *   hashPassword, verifyPassword, initializePasswords,
- *   verifyKitchenPassword, verifyManagerPassword,
- *   updateKitchenPassword, updateManagerPassword,
- *   loginTableWithPin,
- *   saveSession, loadSession, clearSession
- *
- * Used by: AuthContext, LoginModal, PasswordManager, PinPad
- * ---------------------------------------------------------------------------
- */
+/** Auth utilities — SHA-256 hashing, backend PIN verification, session persistence (8h expiry) */
+
+import { API_BASE } from "@/lib/config";
 
 export const DEFAULT_KITCHEN_PASSWORD = 'kitchen-master';
 export const DEFAULT_MANAGER_PASSWORD = 'manager-admin';
@@ -74,15 +50,10 @@ export async function initializePasswords(): Promise<void> {
   }
 }
 
-import { API_BASE as API } from '@/lib/config';
-
-/**
- * Login to a table via backend PIN verification.
- * Returns true on success (server sets httpOnly cookie).
- */
+/** Login to a table via backend PIN verification (sets httpOnly JWT cookie) */
 export async function loginTableWithPin(tableId: string, pin: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API}/api/auth/login/table/${tableId}`, {
+    const res = await fetch(`${API_BASE}/api/auth/login/table/${tableId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -106,7 +77,7 @@ export async function verifyKitchenPassword(password: string): Promise<boolean> 
 
   // Also login on the backend so the JWT cookie is set for API calls
   try {
-    const res = await fetch(`${API}/api/auth/login/kitchen`, {
+    const res = await fetch(`${API_BASE}/api/auth/login/kitchen`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -131,7 +102,7 @@ export async function verifyManagerPassword(password: string): Promise<boolean> 
 
   // Also login on the backend so the JWT cookie is set for API calls
   try {
-    const res = await fetch(`${API}/api/auth/login/manager`, {
+    const res = await fetch(`${API_BASE}/api/auth/login/manager`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -152,7 +123,7 @@ export async function updateKitchenPassword(newPassword: string): Promise<void> 
   localStorage.setItem(STORAGE_KEYS.KITCHEN_PASSWORD, hash);
   // Sync with backend
   try {
-    await fetch(`${API}/api/settings/passwords`, {
+    await fetch(`${API_BASE}/api/settings/passwords`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -171,7 +142,7 @@ export async function updateManagerPassword(newPassword: string): Promise<void> 
   localStorage.setItem(STORAGE_KEYS.MANAGER_PASSWORD, hash);
   // Sync with backend
   try {
-    await fetch(`${API}/api/settings/passwords`, {
+    await fetch(`${API_BASE}/api/settings/passwords`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',

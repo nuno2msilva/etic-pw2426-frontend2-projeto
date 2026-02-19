@@ -1,18 +1,4 @@
-/**
- * ==========================================================================
- * Authentication Unit Tests
- * ==========================================================================
- *
- * Tests the authentication utilities (lib/auth.ts):
- *   - Password hashing (SHA-256)
- *   - Password verification
- *   - Password initialization
- *   - Auth session management (save, load, expire, clear)
- *   - Role-based access control (hasAccess)
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** Auth tests — SHA-256 hashing, session management, role-based access control */
 
 import {
   hashPassword,

@@ -1,18 +1,7 @@
-/**
- * ==========================================================================
- * Order Status Constants Unit Tests
- * ==========================================================================
- *
- * Tests the shared order-status display maps (lib/order-status.ts):
- *   - STATUS_BADGE_VARIANT — maps each OrderStatus to a badge variant
- *   - STATUS_LABELS — maps each OrderStatus to an emoji + label string
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** Order status tests — badge variant mapping, status labels, emoji prefixes */
 
 import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
-import type { OrderStatus } from "@/types/sushi";
+import type { OrderStatus } from "@/types/models";
 
 const ALL_STATUSES: OrderStatus[] = [
   "queued",

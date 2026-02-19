@@ -1,14 +1,4 @@
-/**
- * ==========================================================================
- * Utility Functions Unit Tests
- * ==========================================================================
- *
- * Tests the utility functions (lib/utils.ts):
- *   - cn() — className merger using clsx + tailwind-merge
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** Utils tests — cn() className merger with clsx + tailwind-merge */
 
 import { cn } from "@/lib/utils";
 

@@ -20,7 +20,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/config";
 import { toast } from "sonner";
-import { queryKeys } from "./useQueries";
+import { queryKeys } from "./useApiQueries";
 
 /** Must match ServerEvent union in server/src/events.ts */
 type ServerEvent =

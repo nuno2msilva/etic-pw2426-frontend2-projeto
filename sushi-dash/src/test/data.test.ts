@@ -1,20 +1,6 @@
-/**
- * ==========================================================================
- * Sushi Types & Data Unit Tests
- * ==========================================================================
- *
- * Tests the default data configuration (data/defaultMenu.ts):
- *   - Menu structure and item format
- *   - Table configuration (6 tables default)
- *   - Settings defaults
- *   - Category coverage
- *   - Popular items flagging
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** Data integrity tests — seed data structure, table config, settings, category coverage */
 
-import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "@/data/defaultMenu";
+import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "@/data/seedData";
 
 // ==========================================================================
 // DEFAULT MENU

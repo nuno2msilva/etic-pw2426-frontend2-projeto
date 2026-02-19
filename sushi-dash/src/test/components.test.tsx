@@ -1,34 +1,16 @@
-/**
- * ==========================================================================
- * Component Rendering Tests
- * ==========================================================================
- *
- * Tests that key React components render correctly with proper content.
- * Uses @testing-library/react for DOM assertions.
- *
- * Components tested:
- *   - CartSummaryBanner: always visible, shows "Empty!" when cart is empty
- *   - OrderConfirmation: renders order details
- *   - SEOHead: updates document title
- *   - StaffLoginModal: staff login dialog
- *   - Logout/relogging: redirect flows for authentication
- *
- * Testing Framework: Jest
- * ==========================================================================
- */
+/** Component rendering tests — CartSummaryBanner, OrderConfirmation, SEOHead, StaffLoginModal, and more */
 
 import { render, screen, fireEvent } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import CartSummaryBanner from "@/components/sushi/CartSummaryBanner";
-import OrderConfirmation from "@/components/sushi/OrderConfirmation";
-import { SEOHead } from "@/components/sushi/SEOHead";
-import { StaffLoginModal } from "@/components/sushi";
-import CollapsibleSection from "@/components/sushi/CollapsibleSection";
-import SushiGrid from "@/components/sushi/SushiGrid";
-import OrderCard from "@/components/sushi/OrderCard";
-import KitchenPage from "@/pages/KitchenPage";
-import ManagerPage from "@/pages/ManagerPage";
+import CartSummaryBanner from "@/components/app/CartSummaryBanner";
+import OrderConfirmation from "@/components/app/OrderConfirmation";
+import { SEOHead } from "@/components/app/SEOHead";
+import { StaffLoginModal } from "@/components/app";
+import CollapsibleSection from "@/components/app/CollapsibleSection";
+import MenuGrid from "@/components/app/MenuGrid";
+import OrderCard from "@/components/app/OrderCard";
+import KitchenPage from "@/views/KitchenPage";
+import ManagerPage from "@/views/ManagerPage";
 import { AuthProvider } from "@/context/AuthContext";
 
 /** Wrapper with all providers needed for components using AuthProvider */
@@ -38,9 +20,7 @@ function AllProviders({ children }: { children: React.ReactNode }) {
   });
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <AuthProvider>{children}</AuthProvider>
-      </BrowserRouter>
+      <AuthProvider>{children}</AuthProvider>
     </QueryClientProvider>
   );
 }
@@ -208,9 +188,9 @@ describe("Logout and relogging flow", () => {
     const kitchenPageSource = KitchenPage.toString();
     const managerPageSource = ManagerPage.toString();
     
-    // Both pages should use useNavigate and navigate('/')
-    expect(kitchenPageSource).toContain("navigate");
-    expect(managerPageSource).toContain("navigate");
+    // Both pages should use useRouter and router.push('/')
+    expect(kitchenPageSource).toContain("push");
+    expect(managerPageSource).toContain("push");
   });
 
   it("staff login modal renders correctly for relogging", () => {
@@ -288,7 +268,7 @@ describe("CollapsibleSection", () => {
 // ==========================================================================
 // SUSHI GRID
 // ==========================================================================
-describe("SushiGrid", () => {
+describe("MenuGrid", () => {
   const mockItems = [
     { id: "1", name: "#1 Salmon Nigiri", emoji: "🍣", category: "Nigiri", isPopular: true },
     { id: "2", name: "#2 Tuna Roll", emoji: "🍙", category: "Rolls", isPopular: false },
@@ -296,7 +276,7 @@ describe("SushiGrid", () => {
 
   it("renders all items", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{}}
         maxItems={10}
@@ -312,7 +292,7 @@ describe("SushiGrid", () => {
 
   it("renders emoji icons for each item", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{}}
         maxItems={10}
@@ -328,7 +308,7 @@ describe("SushiGrid", () => {
 
   it("shows HOT badge only for popular items", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{}}
         maxItems={10}
@@ -344,7 +324,7 @@ describe("SushiGrid", () => {
 
   it("shows quantity badge when item is in cart", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{ "1": 3 }}
         maxItems={10}
@@ -360,7 +340,7 @@ describe("SushiGrid", () => {
   it("calls onIncrement when + button is clicked", () => {
     const increment = jest.fn();
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{}}
         maxItems={10}
@@ -378,7 +358,7 @@ describe("SushiGrid", () => {
   it("calls onDecrement when - button is clicked", () => {
     const decrement = jest.fn();
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{ "1": 2 }}
         maxItems={10}
@@ -395,7 +375,7 @@ describe("SushiGrid", () => {
 
   it("disables + buttons when at max items", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{ "1": 10 }}
         maxItems={10}
@@ -413,7 +393,7 @@ describe("SushiGrid", () => {
 
   it("disables - buttons when quantity is 0", () => {
     render(
-      <SushiGrid
+      <MenuGrid
         items={mockItems}
         cart={{}}
         maxItems={10}
@@ -438,7 +418,7 @@ describe("OrderCard", () => {
     id: "order-1",
     table: { id: "1", label: "Table 1" },
     items: [
-      { sushi: { id: "s1", name: "Salmon Nigiri", emoji: "🍣", category: "Nigiri" }, quantity: 2 },
+      { item: { id: "s1", name: "Salmon Nigiri", emoji: "🍣", category: "Nigiri" }, quantity: 2 },
     ],
     status: "queued" as const,
     createdAt: new Date().toISOString(),
@@ -517,8 +497,8 @@ describe("OrderCard", () => {
 // ==========================================================================
 describe("AppHeader navigation shortcuts", () => {
   it("contains kitchen and manager navigation links for staff pages", () => {
-    // The AppHeader component handles the nav shortcuts between kitchen/manager
-    const src = require("@/components/sushi/AppHeader").default.toString();
+    // Verify AppHeader source contains the expected route paths
+    const src = require("@/components/app/AppHeader").default.toString();
     expect(src).toContain("/kitchen");
     expect(src).toContain("/manager");
   });

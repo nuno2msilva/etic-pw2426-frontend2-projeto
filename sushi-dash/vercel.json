@@ -1,9 +1,5 @@
 {
-  "buildCommand": "prisma generate --schema=server/prisma/schema.prisma && vite build",
-  "outputDirectory": "dist",
+  "buildCommand": "prisma generate --schema=server/prisma/schema.prisma && next build",
   "installCommand": "npm install && cd server && npm install",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" },
-    { "source": "/(.*)", "destination": "/index.html" }
-  ]
+  "framework": "nextjs"
 }

@@ -1,0 +1,93 @@
+/** Core data models — MenuItem, Category, Table, Order, OrderSettings */
+
+/** A single menu item (e.g., "#1 Salmon Nigiri") */
+export interface MenuItem {
+  /** Unique identifier */
+  id: string;
+  /** Display name with number prefix (e.g., "#1 Salmon Nigiri") */
+  name: string;
+  /** Emoji icon for visual representation */
+  emoji: string;
+  /** Category name for grouping (e.g., "Nigiri", "Rolls", "Sashimi") */
+  category: string;
+  /** Category ID (for update operations) */
+  categoryId?: number;
+  /** Whether this item shows a "HOT" badge (popular items) */
+  isPopular?: boolean;
+  /** Whether this item is currently available for ordering */
+  isAvailable?: boolean;
+}
+
+/** A menu category */
+export interface Category {
+  id: number;
+  name: string;
+  sort_order: number;
+}
+
+/** A restaurant table */
+export interface Table {
+  /** Unique identifier */
+  id: string;
+  /** Display label (e.g., "Table 1") */
+  label: string;
+  /** 4-digit PIN (only visible to manager) */
+  pin?: string;
+  /** PIN version — incremented when PIN is randomised; used for session invalidation */
+  pin_version?: number;
+}
+
+/**
+ * Order status — represents the lifecycle of an order:
+ *   queued → preparing → ready → delivered
+ *   Any active order can also be "cancelled" by a manager.
+ */
+export type OrderStatus = "queued" | "preparing" | "ready" | "delivered" | "cancelled";
+
+/** A single item within an order, with its quantity */
+export interface OrderItem {
+  /** The sushi item that was ordered */
+  item: MenuItem;
+  /** How many of this item were ordered */
+  quantity: number;
+}
+
+/**
+ * A complete order — created when a customer confirms their cart.
+ * Progresses through status stages managed by kitchen staff.
+ */
+export interface Order {
+  /** Unique identifier */
+  id: string;
+  /** List of items in this order */
+  items: OrderItem[];
+  /** Current status in the kitchen workflow */
+  status: OrderStatus;
+  /** The table that placed this order */
+  table: Table;
+  /** When the order was placed */
+  createdAt: Date;
+  /** Position in the queue (computed, not stored) */
+  queuePosition?: number;
+}
+
+/** Configurable limits for the ordering system */
+export interface OrderSettings {
+  /** Max items a customer can add to a single order */
+  maxItemsPerOrder: number;
+  /** Max concurrent active orders per table */
+  maxActiveOrdersPerTable: number;
+}
+
+/** Emoji icons for each menu category (shared between pages) */
+export const CATEGORY_EMOJI: Record<string, string> = {
+  Nigiri: "🍣",
+  Rolls: "🍙",
+  "Specialty Rolls": "👑",
+  Sashimi: "🐟",
+  "Hot Dishes": "🍗",
+  Sides: "🥗",
+  Noodles: "🍜",
+  Drinks: "🍵",
+  Desserts: "🍡",
+};

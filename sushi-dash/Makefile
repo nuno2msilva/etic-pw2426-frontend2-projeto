@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-push db-seed db-reset lint preview
+.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-push db-seed db-reset lint start
 
 help:
 	@echo "Sushi Dash — Makefile Commands"
@@ -7,11 +7,11 @@ help:
 	@echo "  Development"
 	@echo "  -----------"
 	@echo "  make install       Install all dependencies (frontend + server)"
-	@echo "  make dev           Start Vite dev server (frontend)"
+	@echo "  make dev           Start Next.js dev server (frontend)"
 	@echo "  make dev-server    Start Express API server (backend)"
 	@echo "  make dev-all       Start both frontend + backend concurrently"
 	@echo "  make lint          Run ESLint"
-	@echo "  make preview       Preview production build locally"
+	@echo "  make start         Start production server"
 	@echo ""
 	@echo "  Build & Test"
 	@echo "  ------------"
@@ -28,7 +28,7 @@ help:
 	@echo ""
 	@echo "  Cleanup"
 	@echo "  -------"
-	@echo "  make clean         Remove node_modules and dist"
+	@echo "  make clean         Remove node_modules and build output"
 
 # ── Dependencies ─────────────────────────────────────────────
 install:
@@ -54,8 +54,8 @@ build:
 lint:
 	npm run lint
 
-preview:
-	npm run preview
+start:
+	npm start
 
 test:
 	npm test
@@ -78,4 +78,4 @@ db-reset:
 
 # ── Cleanup ──────────────────────────────────────────────────
 clean:
-	rm -rf node_modules dist server/node_modules server/dist
+	rm -rf node_modules .next server/node_modules server/dist

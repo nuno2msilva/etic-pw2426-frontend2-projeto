@@ -6,7 +6,7 @@
  * ---------------------------------------------------------------------------
  */
 
-import type { OrderStatus } from "@/types/sushi";
+import type { OrderStatus } from "@/types/models";
 
 export const STATUS_BADGE_VARIANT: Record<
   OrderStatus,

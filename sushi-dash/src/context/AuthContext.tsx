@@ -1,23 +1,4 @@
-/**
- * ==========================================================================
- * AuthContext — Authentication state management (dual-session)
- * ==========================================================================
- *
- * Manages TWO independent auth sessions simultaneously:
- *   - Customer session: stored in `sushi_customer` cookie + localStorage
- *   - Staff session: stored in `sushi_staff` cookie + localStorage
- *
- * This allows a user to be logged in as both a customer (at a table) and
- * a manager/kitchen at the same time — even in the same browser.
- * Logging in as one role never overwrites the other.
- *
- * Roles:
- *   - Customer: access to their assigned table only
- *   - Kitchen: access to the kitchen order dashboard
- *   - Manager: access to everything (settings, passwords, menu, tables)
- *
- * ==========================================================================
- */
+/** AuthContext — dual-session auth (customer PIN + staff password), role-based access control */
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
