@@ -1,8 +1,5 @@
 {
   "buildCommand": "next build",
   "installCommand": "npm install && cd server && npm install",
-  "framework": "nextjs",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ]
+  "framework": "nextjs"
 }
