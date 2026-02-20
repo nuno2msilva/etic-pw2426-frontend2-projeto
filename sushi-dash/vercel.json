@@ -2,11 +2,6 @@
   "buildCommand": "cd server && prisma generate && cd .. && next build",
   "installCommand": "npm install && cd server && npm install",
   "framework": "nextjs",
-  "functions": {
-    "api/**/*.ts": {
-      "includeFiles": "server/**"
-    }
-  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api" }
   ]
