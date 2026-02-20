@@ -1,5 +1,8 @@
 {
   "buildCommand": "prisma generate --schema=server/prisma/schema.prisma && next build",
   "installCommand": "npm install && cd server && npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ]
 }
