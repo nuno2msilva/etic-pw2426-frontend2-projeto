@@ -1,14 +1,4 @@
-/**
- * StaffLoginForm.tsx
- * ---------------------------------------------------------------------------
- * Shared staff login form used by both StaffLoginPage (full-page) and
- * StaffLoginModal (dialog). Handles password entry, eye toggle, auto-routing
- * to /kitchen or /manager on success.
- *
- * Props:
- * @prop {Function} [onSuccess] — Called after a successful login (e.g. to close a modal).
- * ---------------------------------------------------------------------------
- */
+// StaffLoginForm — Shared staff login form with password entry, visibility toggle, and auto-routing on success.
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";

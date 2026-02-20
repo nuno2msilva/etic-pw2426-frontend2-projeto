@@ -37,11 +37,7 @@ export interface Table {
   pin_version?: number;
 }
 
-/**
- * Order status — represents the lifecycle of an order:
- *   queued → preparing → ready → delivered
- *   Any active order can also be "cancelled" by a manager.
- */
+// Order status — lifecycle of an order: queued → preparing → ready → delivered. Any active order can also be "cancelled" by a manager.
 export type OrderStatus = "queued" | "preparing" | "ready" | "delivered" | "cancelled";
 
 /** A single item within an order, with its quantity */
@@ -52,10 +48,7 @@ export interface OrderItem {
   quantity: number;
 }
 
-/**
- * A complete order — created when a customer confirms their cart.
- * Progresses through status stages managed by kitchen staff.
- */
+// A complete order — created when a customer confirms their cart. Progresses through status stages managed by kitchen staff.
 export interface Order {
   /** Unique identifier */
   id: string;

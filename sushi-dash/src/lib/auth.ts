@@ -14,9 +14,7 @@ const STORAGE_KEYS = {
   STAFF_SESSION: 'sushi-dash-staff-session',
 } as const;
 
-/**
- * Hash a password using SHA-256
- */
+// Hash a password using SHA-256
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder();
   const data = encoder.encode(password);
@@ -25,17 +23,13 @@ export async function hashPassword(password: string): Promise<string> {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-/**
- * Verify a password against a hash
- */
+// Verify a password against a hash
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
   const passwordHash = await hashPassword(password);
   return passwordHash === hash;
 }
 
-/**
- * Initialize default passwords if not set (kitchen + manager only)
- */
+// Initialize default passwords if not set (kitchen + manager only)
 export async function initializePasswords(): Promise<void> {
   const storedKitchenPassword = localStorage.getItem(STORAGE_KEYS.KITCHEN_PASSWORD);
   if (!storedKitchenPassword) {
@@ -65,10 +59,7 @@ export async function loginTableWithPin(tableId: string, pin: string): Promise<b
   }
 }
 
-/**
- * Verify kitchen password — checks localStorage hash,
- * then authenticates with backend to set httpOnly JWT cookie.
- */
+// Verify kitchen password — checks localStorage hash, then authenticates with backend to set httpOnly JWT cookie
 export async function verifyKitchenPassword(password: string): Promise<boolean> {
   const hash = localStorage.getItem(STORAGE_KEYS.KITCHEN_PASSWORD);
   if (!hash) return false;
@@ -90,10 +81,7 @@ export async function verifyKitchenPassword(password: string): Promise<boolean> 
   }
 }
 
-/**
- * Verify manager password — checks localStorage hash,
- * then authenticates with backend to set httpOnly JWT cookie.
- */
+// Verify manager password — checks localStorage hash, then authenticates with backend to set httpOnly JWT cookie
 export async function verifyManagerPassword(password: string): Promise<boolean> {
   const hash = localStorage.getItem(STORAGE_KEYS.MANAGER_PASSWORD);
   if (!hash) return false;
@@ -115,9 +103,7 @@ export async function verifyManagerPassword(password: string): Promise<boolean> 
   }
 }
 
-/**
- * Update kitchen password (manager only) — updates both localStorage and backend
- */
+// Update kitchen password (manager only) — updates both localStorage and backend
 export async function updateKitchenPassword(newPassword: string): Promise<void> {
   const hash = await hashPassword(newPassword);
   localStorage.setItem(STORAGE_KEYS.KITCHEN_PASSWORD, hash);
@@ -134,9 +120,7 @@ export async function updateKitchenPassword(newPassword: string): Promise<void> 
   }
 }
 
-/**
- * Update manager password (manager only) — updates both localStorage and backend
- */
+// Update manager password (manager only) — updates both localStorage and backend
 export async function updateManagerPassword(newPassword: string): Promise<void> {
   const hash = await hashPassword(newPassword);
   localStorage.setItem(STORAGE_KEYS.MANAGER_PASSWORD, hash);
@@ -162,9 +146,7 @@ export interface AuthSession {
   authenticatedAt: number;
 }
 
-/**
- * Save auth session — stored per role category (customer vs staff)
- */
+// Save auth session — stored per role category (customer vs staff)
 export function saveAuthSession(session: AuthSession): void {
   const key = session.role === 'customer' ? STORAGE_KEYS.CUSTOMER_SESSION : STORAGE_KEYS.STAFF_SESSION;
   localStorage.setItem(key, JSON.stringify(session));
@@ -172,11 +154,7 @@ export function saveAuthSession(session: AuthSession): void {
   localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(session));
 }
 
-/**
- * Get current auth session.
- * @param role - If specified, returns only the session for that category.
- *               If omitted, returns any valid session (staff preferred).
- */
+// Get current auth session. If role is specified, returns only that category; otherwise returns any valid session (staff preferred)
 export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null {
   const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
@@ -204,10 +182,7 @@ export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null 
       ?? read(STORAGE_KEYS.AUTH_SESSION);
 }
 
-/**
- * Clear auth session.
- * @param role - If specified, only clears that category. Otherwise clears all.
- */
+// Clear auth session. If role is specified, only clears that category; otherwise clears all
 export function clearAuthSession(role?: 'customer' | 'staff'): void {
   if (!role || role === 'customer') {
     localStorage.removeItem(STORAGE_KEYS.CUSTOMER_SESSION);
@@ -221,9 +196,7 @@ export function clearAuthSession(role?: 'customer' | 'staff'): void {
   }
 }
 
-/**
- * Check if user has access to a specific area
- */
+// Check if user has access to a specific area
 export function hasAccess(session: AuthSession | null, requiredRole: AuthRole, tableId?: string): boolean {
   if (!session) return false;
   

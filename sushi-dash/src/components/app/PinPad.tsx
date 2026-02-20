@@ -1,26 +1,4 @@
-/**
- * PinPad.tsx
- * ---------------------------------------------------------------------------
- * Custom numpad for entering a 4-digit table PIN. Features:
- *
- * - 4 dots/circles showing PIN progress (filled as digits are entered).
- * - 3×3 grid of digits 1-9, with 0 centred at the bottom row.
- * - After each digit entry the numpad keys shuffle randomly.
- * - Backspace button to delete the last digit.
- * - Auto-submits once 4 digits are entered.
- * - Success / error visual feedback states.
- * - Rendered inside a shadcn Dialog for modal usage.
- *
- * Props:
- * @prop {boolean}  isOpen     — Whether the dialog is visible.
- * @prop {string}   tableLabel — Name of the table (for the title).
- * @prop {Function} onSubmit   — Async callback receiving the 4-digit PIN string,
- *                                returns `true` on success.
- * @prop {Function} onClose    — Called when the dialog is dismissed.
- *
- * Used in: CustomerPage (table authentication)
- * ---------------------------------------------------------------------------
- */
+// PinPad — Modal numpad for entering a 4-digit table PIN with shuffle, auto-submit, and visual feedback.
 
 import { useState, useCallback, useEffect, useRef } from "react";
 import {

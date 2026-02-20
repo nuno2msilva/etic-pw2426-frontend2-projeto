@@ -1,19 +1,4 @@
-/**
- * ==========================================================================
- * CustomerPage — Landing page with table selection + ordering
- * ==========================================================================
- *
- * Route: / (home page)
- *
- * Two-step flow:
- *   1. "table" — pick a table → PIN pad → authenticate
- *   2. "menu"  — browse menu, build cart, send to kitchen
- *
- * Uses the shared useOrderingFlow hook for all cart/ordering logic.
- * Only page-specific concerns live here: table selection, PIN auth,
- * session restore, and staff login modal.
- * ==========================================================================
- */
+// CustomerPage — Landing page with table selection, PIN authentication, and menu ordering flow.
 
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";

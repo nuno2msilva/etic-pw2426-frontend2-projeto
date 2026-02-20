@@ -1,27 +1,4 @@
-/**
- * ==========================================================================
- * ManagerPage — Restaurant management panel
- * ==========================================================================
- *
- * Provides administrative controls for the restaurant:
- *   - Order Settings: Configure max items per order and active order limits
- *   - Table Management: Add/remove tables
- *   - Password Management: Update kitchen and manager passwords
- *   - Menu Management: Add/remove menu items
- *
- * All sections are collapsible for a clean interface.
- *
- * Note: For order management (cancel/delete), use the Kitchen page with
- *       manager credentials. This page focuses on restaurant settings only.
- *
- * Security:
- *   - Password-protected via LoginModal (manager password)
- *   - Third-party users can close the modal and see "Access Denied"
- *
- * Route: /manager
- * Auth: Manager password required
- * ==========================================================================
- */
+// ManagerPage — Password-protected admin panel for managing tables, menu, passwords, and order settings.
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";

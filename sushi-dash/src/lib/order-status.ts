@@ -1,10 +1,4 @@
-/**
- * order-status.ts
- * ---------------------------------------------------------------------------
- * Shared order-status display maps used by OrderCard and OrderProgressModal.
- * Keeps the badge variant + emoji label in one place so they stay in sync.
- * ---------------------------------------------------------------------------
- */
+// order-status.ts — Shared order-status display maps used by OrderCard and OrderProgressModal. Keeps the badge variant + emoji label in one place so they stay in sync.
 
 import type { OrderStatus } from "@/types/models";
 

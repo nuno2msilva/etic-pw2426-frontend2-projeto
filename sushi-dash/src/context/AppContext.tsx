@@ -29,9 +29,7 @@ import {
 // Re-export OrderSettings so existing consumers don't break
 export type { OrderSettings } from "@/types/models";
 
-// ---------------------------------------------------------------------------
 // Context type — all data and actions available to consumers via useApp()
-// ---------------------------------------------------------------------------
 interface AppContextType {
   /** Full menu item list */
   menu: MenuItem[];
@@ -81,36 +79,24 @@ interface AppContextType {
   canTablePlaceOrder: (tableId: string) => { allowed: boolean; reason?: string };
 }
 
-// ---------------------------------------------------------------------------
 // Context + consumer hook
-// ---------------------------------------------------------------------------
 const AppContext = createContext<AppContextType | null>(null);
 
-/**
- * Custom hook to access the Sushi context.
- * Must be called within a <AppProvider>.
- * @throws Error if used outside the provider tree
- */
+// Custom hook to access the Sushi context. Must be called within a <AppProvider>.
 export const useApp = () => {
   const ctx = useContext(AppContext);
   if (!ctx) throw new Error("useApp must be used within AppProvider");
   return ctx;
 };
 
-// ==========================================================================
 // Provider Component
-// ==========================================================================
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // ---------------------------------------------------------------------------
   // Auth — determines whether to fetch all orders or just for the customer's table
-  // ---------------------------------------------------------------------------
   const { authenticatedTableId, staffSession } = useAuth();
   const isStaff = staffSession !== null;
 
-  // ---------------------------------------------------------------------------
   // React Query hooks — fetch data from the backend API
-  // ---------------------------------------------------------------------------
   const menuQuery = useMenuQuery();
   const tablesQuery = useTablesQuery();
   // Staff (kitchen/manager) fetch all orders; customers fetch only their table
@@ -134,10 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deleteOrderMutation = useDeleteOrder();
   const updateSettingsMutation = useUpdateSettings();
 
-  // ---------------------------------------------------------------------------
-  // Derived data with defaults for loading states — wrapped in useMemo
-  // to maintain stable references and avoid re-renders
-  // ---------------------------------------------------------------------------
+  // Derived data with defaults for loading states — wrapped in useMemo to maintain stable references and avoid re-renders
   const menu = useMemo(() => menuQuery.data ?? [], [menuQuery.data]);
   const tables = useMemo(() => tablesQuery.data ?? [], [tablesQuery.data]);
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
@@ -145,10 +128,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const settings = settingsQuery.data ?? DEFAULT_SETTINGS;
   const isLoading = menuQuery.isLoading || tablesQuery.isLoading;
 
-  // ---------------------------------------------------------------------------
-  // useRef — mutable refs to always read the latest data inside callbacks
-  // without needing them as dependencies (avoids stale closures)
-  // ---------------------------------------------------------------------------
+  // useRef — mutable refs to always read the latest data inside callbacks without needing them as dependencies (avoids stale closures)
   const menuRef = useRef(menu);
   menuRef.current = menu;
   const settingsRef = useRef(settings);
@@ -156,18 +136,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const ordersRef = useRef(orders);
   ordersRef.current = orders;
 
-  // ---------------------------------------------------------------------------
-  // useMemo — derive unique categories from the menu (only recalculates
-  // when the menu array reference changes)
-  // ---------------------------------------------------------------------------
+  // useMemo — derive unique categories from the menu (only recalculates when the menu array reference changes)
   const categories = useMemo(() => {
     const cats = new Set(menu.map((m) => m.category));
     return Array.from(cats);
   }, [menu]);
 
-  // ---------------------------------------------------------------------------
   // useCallback — memoised action handlers to prevent child re-renders
-  // ---------------------------------------------------------------------------
 
   /** Returns active (non-delivered, non-cancelled) orders for a specific table */
   const getActiveOrdersForTable = useCallback(
@@ -264,10 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [removeTableMutation]
   );
 
-  /**
-   * Place an order — validates limits, then calls the API.
-   * Returns synchronous result for immediate UI feedback.
-   */
+  // Place an order — validates limits, then calls the API. Returns synchronous result for immediate UI feedback.
   const placeOrder = useCallback(
     (
       items: { sushiId: string; quantity: number }[],
@@ -340,10 +312,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [updateSettingsMutation]
   );
 
-  // ---------------------------------------------------------------------------
-  // useMemo — memoise the entire context value object so consumers only
-  // re-render when actual data changes, not on every provider render
-  // ---------------------------------------------------------------------------
+  // useMemo — memoise the entire context value object so consumers only re-render when actual data changes, not on every provider render
   const value: AppContextType = useMemo(
     () => ({
       menu,

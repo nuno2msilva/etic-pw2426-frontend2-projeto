@@ -1,20 +1,4 @@
-/**
- * useServerEvents.ts — Real-time SSE listener
- * ---------------------------------------------------------------------------
- * Connects to GET /api/events and reacts to server-pushed events:
- *
- *   pin-changed / table-deleted  → eject customer for that table
- *   order-*                      → invalidate orders cache
- *   menu-changed                 → invalidate menu + categories cache
- *   settings-changed             → invalidate settings cache
- *   table-added / table-updated  → invalidate tables cache
- *   table-presence               → update presence cache (in-use badges)
- *
- * The hook auto-reconnects on disconnects (with 2 s backoff).
- * When the customer's tableId changes the SSE reconnects so the server
- * can track per-table presence correctly.
- * ---------------------------------------------------------------------------
- */
+// useServerEvents.ts — Real-time SSE listener. Connects to GET /api/events and reacts to server-pushed events. Auto-reconnects on disconnects (with 2s backoff).
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";

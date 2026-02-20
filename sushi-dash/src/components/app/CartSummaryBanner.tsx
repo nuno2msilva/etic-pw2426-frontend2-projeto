@@ -1,17 +1,4 @@
-/**
- * CartSummaryBanner.tsx
- * ---------------------------------------------------------------------------
- * A cart summary banner that sticks below the header, and when the user
- * scrolls past it, it slides down with a smooth animation and
- * re-appears fixed at the bottom of the viewport. Scrolling back up
- * slides it back to the top. Height matches the category headers.
- *
- * Shows the items counter (e.g. "3/15") reflecting picks vs. limit.
- *
- * Uses an IntersectionObserver on a sentinel element to detect when the
- * banner's natural position leaves the viewport.
- * ---------------------------------------------------------------------------
- */
+// CartSummaryBanner — Sticky cart banner that auto-docks to top or bottom with scroll-aware animation.
 
 import { ChevronRight, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";

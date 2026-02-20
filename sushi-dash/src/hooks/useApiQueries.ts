@@ -15,14 +15,9 @@ export const queryKeys = {
   categories: ["categories"] as const,
 };
 
-// ==========================================================================
-// MENU HOOKS
-// ==========================================================================
+// Menu hooks
 
-/**
- * Fetches the full menu from the API.
- * Cached and only refetches on window focus or after mutations.
- */
+// Fetches the full menu with 5-min cache and 30s polling fallback
 export function useMenuQuery() {
   return useQuery({
     queryKey: queryKeys.menu,
@@ -32,10 +27,7 @@ export function useMenuQuery() {
   });
 }
 
-/**
- * Mutation: add a new menu item.
- * Invalidates the menu cache so the list re-renders.
- */
+// Mutation: adds a new menu item and invalidates the menu cache
 export function useAddMenuItem() {
   const queryClient = useQueryClient();
 
@@ -47,10 +39,7 @@ export function useAddMenuItem() {
   });
 }
 
-/**
- * Mutation: remove a menu item by ID.
- * Invalidates the menu cache after successful deletion.
- */
+// Mutation: deletes a menu item by ID and invalidates the cache
 export function useRemoveMenuItem() {
   const queryClient = useQueryClient();
 
@@ -62,10 +51,7 @@ export function useRemoveMenuItem() {
   });
 }
 
-/**
- * Mutation: update a menu item (name, emoji, etc.).
- * Invalidates the menu cache after successful update.
- */
+// Mutation: updates a menu item and invalidates the cache
 export function useUpdateMenuItem() {
   const queryClient = useQueryClient();
 
@@ -78,10 +64,7 @@ export function useUpdateMenuItem() {
   });
 }
 
-/**
- * Mutation: toggle item availability.
- * Invalidates the menu cache after successful toggle.
- */
+// Mutation: toggles item availability and invalidates the cache
 export function useToggleItemAvailability() {
   const queryClient = useQueryClient();
 
@@ -94,13 +77,9 @@ export function useToggleItemAvailability() {
   });
 }
 
-// ==========================================================================
-// CATEGORY HOOKS
-// ==========================================================================
+// Category hooks
 
-/**
- * Fetches all categories from the API.
- */
+// Fetches all categories with 5-min cache
 export function useCategoriesQuery() {
   return useQuery({
     queryKey: queryKeys.categories,
@@ -110,10 +89,7 @@ export function useCategoriesQuery() {
   });
 }
 
-/**
- * Mutation: add a new category.
- * Invalidates both categories and menu caches.
- */
+// Mutation: adds a new category and invalidates categories + menu caches
 export function useAddCategory() {
   const queryClient = useQueryClient();
 
@@ -126,10 +102,7 @@ export function useAddCategory() {
   });
 }
 
-/**
- * Mutation: delete a category (cascades to items).
- * Invalidates both categories and menu caches.
- */
+// Mutation: deletes a category and invalidates categories + menu caches
 export function useDeleteCategory() {
   const queryClient = useQueryClient();
 
@@ -142,13 +115,9 @@ export function useDeleteCategory() {
   });
 }
 
-// ==========================================================================
-// TABLE HOOKS
-// ==========================================================================
+// Table hooks
 
-/**
- * Fetches all configured tables from the API.
- */
+// Fetches all tables with PIN info
 export function useTablesQuery() {
   return useQuery({
     queryKey: queryKeys.tables,
@@ -158,9 +127,7 @@ export function useTablesQuery() {
   });
 }
 
-/**
- * Mutation: create a new table.
- */
+// Mutation: creates a new table
 export function useAddTable() {
   const queryClient = useQueryClient();
 
@@ -172,9 +139,7 @@ export function useAddTable() {
   });
 }
 
-/**
- * Mutation: update a table by ID.
- */
+// Mutation: updates a table's label
 export function useUpdateTable() {
   const queryClient = useQueryClient();
 
@@ -186,9 +151,7 @@ export function useUpdateTable() {
   });
 }
 
-/**
- * Mutation: delete a table by ID.
- */
+// Mutation: deletes a table by ID
 export function useRemoveTable() {
   const queryClient = useQueryClient();
 
@@ -200,14 +163,9 @@ export function useRemoveTable() {
   });
 }
 
-// ==========================================================================
-// ORDER HOOKS
-// ==========================================================================
+// Order hooks
 
-/**
- * Fetches orders. When tableId is provided, fetches only that table's orders
- * (for customers). When omitted, fetches all orders (kitchen/manager).
- */
+// Fetches orders — scoped to a table for customers, or all orders for staff
 export function useOrdersQuery(tableId?: string | null) {
   return useQuery({
     queryKey: tableId ? [...queryKeys.orders, tableId] : queryKeys.orders,
@@ -217,10 +175,7 @@ export function useOrdersQuery(tableId?: string | null) {
   });
 }
 
-/**
- * Mutation: place a new order.
- * Requires the current menu and settings for validation.
- */
+// Mutation: places a new order and invalidates the orders cache
 export function usePlaceOrder() {
   const queryClient = useQueryClient();
 
@@ -238,9 +193,7 @@ export function usePlaceOrder() {
   });
 }
 
-/**
- * Mutation: update an order's status (e.g., queued → preparing → ready → delivered).
- */
+// Mutation: advances an order's status through the workflow
 export function useUpdateOrder() {
   const queryClient = useQueryClient();
 
@@ -253,11 +206,7 @@ export function useUpdateOrder() {
   });
 }
 
-/**
- * Mutation: cancel an active order (manager only).
- * Changes status to "cancelled".
- * Uses optimistic updates for immediate UI feedback.
- */
+// Mutation: cancels an order with optimistic UI update (manager only)
 export function useCancelOrder() {
   const queryClient = useQueryClient();
 
@@ -295,11 +244,7 @@ export function useCancelOrder() {
   });
 }
 
-/**
- * Mutation: delete a delivered order (manager only).
- * Permanently removes from the order list.
- * Uses optimistic updates for immediate UI feedback.
- */
+// Mutation: deletes a delivered order with optimistic UI update (manager only)
 export function useDeleteOrder() {
   const queryClient = useQueryClient();
 
@@ -335,13 +280,9 @@ export function useDeleteOrder() {
   });
 }
 
-// ==========================================================================
-// SETTINGS HOOKS
-// ==========================================================================
+// Settings hooks
 
-/**
- * Fetches order settings (max items per order, max active orders per table).
- */
+// Fetches order settings (max items, max active orders)
 export function useSettingsQuery() {
   return useQuery({
     queryKey: queryKeys.settings,
@@ -351,9 +292,7 @@ export function useSettingsQuery() {
   });
 }
 
-/**
- * Mutation: update order settings.
- */
+// Mutation: updates order settings
 export function useUpdateSettings() {
   const queryClient = useQueryClient();
 

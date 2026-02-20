@@ -1,14 +1,4 @@
-/**
- * ==========================================================================
- * TablePage — Customer ordering page for a specific table
- * ==========================================================================
- *
- * Route: /table/:tableId (accessed via QR code with ?pin= param)
- *
- * Uses the shared useOrderingFlow hook for cart, menu grouping, and
- * order submission. Only table-specific auth (QR PIN) lives here.
- * ==========================================================================
- */
+// TablePage — QR-authenticated customer ordering page for a specific table.
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";

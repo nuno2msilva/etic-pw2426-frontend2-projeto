@@ -1,20 +1,4 @@
-/**
- * ==========================================================================
- * KitchenPage — Kitchen staff order dashboard
- * ==========================================================================
- *
- * Shows all incoming orders for kitchen staff to process.
- * Orders flow through: Queued → Preparing → Ready → Delivered.
- *
- * Security:
- *   - Password-protected via LoginModal (kitchen password)
- *   - Third-party users can close the modal and see "Access Denied"
- *   - Access denied screen offers navigation back to table selection
- *
- * Route: /kitchen
- * Auth: Kitchen password required
- * ==========================================================================
- */
+// KitchenPage — Password-protected kitchen dashboard for processing orders through their lifecycle.
 
 import { useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";

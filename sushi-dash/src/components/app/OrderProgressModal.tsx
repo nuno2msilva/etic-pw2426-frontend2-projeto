@@ -1,17 +1,4 @@
-/**
- * OrderProgressModal.tsx
- * ---------------------------------------------------------------------------
- * Shared order progress dialog used by both CustomerPage and TablePage.
- * Displays active orders with queue position, status badge, and cancel button.
- *
- * Props:
- * @prop {boolean}  open           — Controls dialog visibility.
- * @prop {Function} onOpenChange   — Toggle open state.
- * @prop {Order[]}  orders         — Active orders for the table.
- * @prop {Order[]}  allOrders      — All orders (for queue position calc).
- * @prop {Function} onCancelOrder  — Called with orderId when cancel is clicked.
- * ---------------------------------------------------------------------------
- */
+// OrderProgressModal — Shared dialog showing active orders with queue position, status badge, and cancel support.
 
 import { useState } from "react";
 import { toast } from "sonner";

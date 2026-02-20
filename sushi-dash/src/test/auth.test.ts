@@ -1,4 +1,4 @@
-/** Auth tests — SHA-256 hashing, session management, role-based access control */
+// Can we keep secrets without losing our keys?
 
 import {
   hashPassword,
@@ -35,11 +35,8 @@ afterAll(() => {
   global.fetch = originalFetch;
 });
 
-// ==========================================================================
-// PASSWORD HASHING
-// ==========================================================================
-describe("Password Hashing", () => {
-  it("hashPassword produces a consistent SHA-256 hex string", async () => {
+describe("Does SHA-256 actually hash things properly?", () => {
+  it("produces the same hash for the same input (consistency is key)", async () => {
     const hash1 = await hashPassword("test-password");
     const hash2 = await hashPassword("test-password");
 
@@ -47,73 +44,67 @@ describe("Password Hashing", () => {
     expect(hash1).toHaveLength(64); // SHA-256 = 64 hex chars
   });
 
-  it("different passwords produce different hashes", async () => {
+  it("doesn't pretend two different passwords are the same", async () => {
     const hash1 = await hashPassword("password-a");
     const hash2 = await hashPassword("password-b");
 
     expect(hash1).not.toBe(hash2);
   });
 
-  it("verifyPassword returns true for correct password", async () => {
+  it("says 'yes' when the password is actually correct", async () => {
     const hash = await hashPassword("my-secret");
     const result = await verifyPassword("my-secret", hash);
     expect(result).toBe(true);
   });
 
-  it("verifyPassword returns false for wrong password", async () => {
+  it("says 'nope' when the password is wrong", async () => {
     const hash = await hashPassword("my-secret");
     const result = await verifyPassword("wrong-password", hash);
     expect(result).toBe(false);
   });
 });
 
-// ==========================================================================
-// PASSWORD INITIALIZATION
-// ==========================================================================
-describe("Password Initialization", () => {
-  it("initializePasswords sets default passwords in localStorage", async () => {
+describe("Can we set up default passwords without shooting ourselves in the foot?", () => {
+  it("seeds kitchen and manager passwords into localStorage on first run", async () => {
     await initializePasswords();
 
     expect(localStorage.getItem("sushi-dash-kitchen-password")).toBeDefined();
     expect(localStorage.getItem("sushi-dash-manager-password")).toBeDefined();
   });
 
-  it("initializePasswords does not overwrite existing passwords", async () => {
+  it("respects existing passwords and doesn't bulldoze them", async () => {
     localStorage.setItem("sushi-dash-kitchen-password", "custom-hash");
     await initializePasswords();
 
     expect(localStorage.getItem("sushi-dash-kitchen-password")).toBe("custom-hash");
   });
 
-  it("verifyKitchenPassword works with default password", async () => {
+  it("lets the default kitchen password in the front door", async () => {
     await initializePasswords();
     const result = await verifyKitchenPassword(DEFAULT_KITCHEN_PASSWORD);
     expect(result).toBe(true);
   });
 
-  it("verifyKitchenPassword rejects wrong password", async () => {
+  it("slams the door on wrong kitchen passwords", async () => {
     await initializePasswords();
     const result = await verifyKitchenPassword("wrong");
     expect(result).toBe(false);
   });
 
-  it("verifyManagerPassword works with default password", async () => {
+  it("lets the default manager password through too", async () => {
     await initializePasswords();
     const result = await verifyManagerPassword(DEFAULT_MANAGER_PASSWORD);
     expect(result).toBe(true);
   });
 });
 
-// ==========================================================================
-// AUTH SESSION
-// ==========================================================================
-describe("Auth Session", () => {
-  it("getAuthSession returns null when no session exists", () => {
+describe("Does session storage actually remember who you are?", () => {
+  it("returns null when nobody has logged in (shocker)", () => {
     const session = getAuthSession();
     expect(session).toBeNull();
   });
 
-  it("saveAuthSession + getAuthSession round-trips correctly", () => {
+  it("round-trips a session through save and load without data loss", () => {
     const session: AuthSession = {
       role: "kitchen",
       authenticatedAt: Date.now(),
@@ -126,7 +117,7 @@ describe("Auth Session", () => {
     expect(loaded!.role).toBe("kitchen");
   });
 
-  it("clearAuthSession removes the session", () => {
+  it("actually clears the session when told to forget", () => {
     saveAuthSession({
       role: "manager",
       authenticatedAt: Date.now(),
@@ -136,7 +127,7 @@ describe("Auth Session", () => {
     expect(getAuthSession()).toBeNull();
   });
 
-  it("expired sessions (>8 hours) are cleared automatically", () => {
+  it("auto-expires sessions older than 8 hours (no squatting)", () => {
     const NINE_HOURS_AGO = Date.now() - 9 * 60 * 60 * 1000;
 
     saveAuthSession({
@@ -148,7 +139,7 @@ describe("Auth Session", () => {
     expect(session).toBeNull();
   });
 
-  it("non-expired sessions (<8 hours) are returned", () => {
+  it("keeps recent sessions alive and well", () => {
     const ONE_HOUR_AGO = Date.now() - 1 * 60 * 60 * 1000;
 
     saveAuthSession({
@@ -161,15 +152,12 @@ describe("Auth Session", () => {
   });
 });
 
-// ==========================================================================
-// ACCESS CONTROL (hasAccess)
-// ==========================================================================
-describe("Access Control", () => {
-  it("returns false when no session", () => {
+describe("Does the bouncer let the right people through?", () => {
+  it("blocks everyone when there's no session at all", () => {
     expect(hasAccess(null, "kitchen")).toBe(false);
   });
 
-  it("manager has access to everything", () => {
+  it("gives the manager keys to every room", () => {
     const session: AuthSession = { role: "manager", authenticatedAt: Date.now() };
 
     expect(hasAccess(session, "manager")).toBe(true);
@@ -177,7 +165,7 @@ describe("Access Control", () => {
     expect(hasAccess(session, "customer")).toBe(true);
   });
 
-  it("kitchen staff can access kitchen and customer areas", () => {
+  it("lets kitchen staff into kitchen and customer areas but not the vault", () => {
     const session: AuthSession = { role: "kitchen", authenticatedAt: Date.now() };
 
     expect(hasAccess(session, "kitchen")).toBe(true);
@@ -185,7 +173,7 @@ describe("Access Control", () => {
     expect(hasAccess(session, "manager")).toBe(false);
   });
 
-  it("customer can access own table only", () => {
+  it("locks customers to their own table like a well-behaved seatbelt", () => {
     const session: AuthSession = {
       role: "customer",
       tableId: "3",
@@ -199,64 +187,61 @@ describe("Access Control", () => {
   });
 });
 
-// ==========================================================================
-// ORDER MANAGEMENT PERMISSIONS
-// ==========================================================================
-describe("Order Management Permissions", () => {
-  describe("Manager Permissions", () => {
+describe("Who gets to cancel, delete, and boss orders around?", () => {
+  describe("The manager — overlord of all orders", () => {
     const managerSession: AuthSession = {
       role: "manager",
       authenticatedAt: Date.now(),
     };
 
-    it("manager can cancel active orders (success case)", () => {
+    it("can cancel orders because they run this place", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
       // Manager has full access to cancel/delete orders
     });
 
-    it("manager can delete delivered orders (success case)", () => {
+    it("can delete old orders like yesterday's news", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
       // Manager has full access to delete completed orders
     });
 
-    it("manager can delete cancelled orders (success case)", () => {
+    it("can delete cancelled orders too because why not", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
       // Manager can delete both delivered AND cancelled orders
     });
 
-    it("manager can update order status (success case)", () => {
+    it("can also play kitchen staff when they feel like it", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
       expect(hasAccess(managerSession, "kitchen")).toBe(true);
       // Manager has kitchen access too
     });
 
-    it("manager can view all orders (success case)", () => {
+    it("can see every order across all tables", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
     });
   });
 
-  describe("Kitchen Permissions", () => {
+  describe("Kitchen staff — can cook but can't fire people", () => {
     const kitchenSession: AuthSession = {
       role: "kitchen",
       authenticatedAt: Date.now(),
     };
 
-    it("kitchen can update order status (success case)", () => {
+    it("can push orders through the workflow", () => {
       expect(hasAccess(kitchenSession, "kitchen")).toBe(true);
       // Kitchen can advance orders through workflow
     });
 
-    it("kitchen CANNOT cancel orders (fail case)", () => {
+    it("can NOT cancel orders (nice try though)", () => {
       expect(hasAccess(kitchenSession, "manager")).toBe(false);
       // Only manager can cancel
     });
 
-    it("kitchen CANNOT delete orders (fail case)", () => {
+    it("can NOT delete orders either (not your job)", () => {
       expect(hasAccess(kitchenSession, "manager")).toBe(false);
       // Only manager can delete
     });
 
-    it("kitchen can view all orders (success case)", () => {
+    it("can see the full order board", () => {
       expect(hasAccess(kitchenSession, "kitchen")).toBe(true);
     });
   });
@@ -294,31 +279,28 @@ describe("Order Management Permissions", () => {
       expect(hasAccess(customerSession, "kitchen")).toBe(false);
     });
 
-    it("customer CANNOT access manager panel (fail case)", () => {
+    it("customers dream of management but can't have it", () => {
       expect(hasAccess(customerSession, "manager")).toBe(false);
     });
   });
 
-  describe("Unauthenticated Permissions", () => {
-    it("no session CANNOT access kitchen (fail case)", () => {
+  describe("Randos off the street get nothing", () => {
+    it("no session, no kitchen — go away", () => {
       expect(hasAccess(null, "kitchen")).toBe(false);
     });
 
-    it("no session CANNOT access manager (fail case)", () => {
+    it("no session, no manager panel — nice try", () => {
       expect(hasAccess(null, "manager")).toBe(false);
     });
 
-    it("no session CANNOT access customer area (fail case)", () => {
+    it("no session, no customer area — not even that", () => {
       expect(hasAccess(null, "customer")).toBe(false);
     });
   });
 });
 
-// ==========================================================================
-// TABLE PIN LOGIN (fetch-based)
-// ==========================================================================
-describe("Table PIN Login", () => {
-  it("loginTableWithPin returns true on 200", async () => {
+describe("Can you get into a table with a PIN or are you locked out?", () => {
+  it("correct PIN gets a thumbs up from the server", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true } as Response);
 
     const result = await loginTableWithPin("3", "1234");
@@ -330,14 +312,14 @@ describe("Table PIN Login", () => {
     );
   });
 
-  it("loginTableWithPin returns false on 401", async () => {
+  it("wrong PIN gets the cold shoulder", async () => {
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 401 } as Response);
 
     const result = await loginTableWithPin("3", "0000");
     expect(result).toBe(false);
   });
 
-  it("loginTableWithPin returns false on network error", async () => {
+  it("network dies mid-login? that's a no from us", async () => {
     (global.fetch as jest.Mock).mockRejectedValueOnce(new Error("Network error"));
 
     const result = await loginTableWithPin("3", "1234");
@@ -345,11 +327,8 @@ describe("Table PIN Login", () => {
   });
 });
 
-// ==========================================================================
-// BACKEND VERIFY — fetch interaction
-// ==========================================================================
-describe("Backend verify + fetch", () => {
-  it("verifyKitchenPassword calls backend after local hash match", async () => {
+describe("Does the backend actually agree with the frontend on passwords?", () => {
+  it("kitchen password passes local check then phones home to confirm", async () => {
     await initializePasswords();
     (global.fetch as jest.Mock).mockClear();
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) } as Response);
@@ -363,7 +342,7 @@ describe("Backend verify + fetch", () => {
     );
   });
 
-  it("verifyKitchenPassword returns false when backend rejects", async () => {
+  it("backend says 'nope' to kitchen password — local match doesn't save you", async () => {
     await initializePasswords();
     (global.fetch as jest.Mock).mockClear();
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false, status: 401 } as Response);
@@ -372,7 +351,7 @@ describe("Backend verify + fetch", () => {
     expect(result).toBe(false);
   });
 
-  it("verifyManagerPassword calls backend after local hash match", async () => {
+  it("manager password passes locally then checks with the backend too", async () => {
     await initializePasswords();
     (global.fetch as jest.Mock).mockClear();
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) } as Response);
@@ -386,7 +365,7 @@ describe("Backend verify + fetch", () => {
     );
   });
 
-  it("verifyManagerPassword returns false when backend rejects", async () => {
+  it("backend vetoes manager password — tough luck", async () => {
     await initializePasswords();
     (global.fetch as jest.Mock).mockClear();
     (global.fetch as jest.Mock).mockResolvedValueOnce({ ok: false } as Response);
@@ -395,23 +374,20 @@ describe("Backend verify + fetch", () => {
     expect(result).toBe(false);
   });
 
-  it("verifyKitchenPassword returns false when no hash in localStorage", async () => {
+  it("no stored hash means kitchen password auto-fails", async () => {
     // Do NOT initialize passwords
     const result = await verifyKitchenPassword("anything");
     expect(result).toBe(false);
   });
 
-  it("verifyManagerPassword returns false when no hash in localStorage", async () => {
+  it("no stored hash means manager password auto-fails too", async () => {
     const result = await verifyManagerPassword("anything");
     expect(result).toBe(false);
   });
 });
 
-// ==========================================================================
-// PASSWORD UPDATE (fetch-based)
-// ==========================================================================
-describe("Password Updates", () => {
-  it("updateKitchenPassword updates localStorage and calls backend", async () => {
+describe("Can we change passwords without locking everyone out?", () => {
+  it("new kitchen password lands in localStorage AND pings the backend", async () => {
     await updateKitchenPassword("new-kitchen-pw");
 
     const hash = localStorage.getItem("sushi-dash-kitchen-password");
@@ -424,7 +400,7 @@ describe("Password Updates", () => {
     );
   });
 
-  it("updateManagerPassword updates localStorage and calls backend", async () => {
+  it("new manager password stored locally and synced to the server", async () => {
     await updateManagerPassword("new-manager-pw");
 
     const hash = localStorage.getItem("sushi-dash-manager-password");
@@ -438,11 +414,8 @@ describe("Password Updates", () => {
   });
 });
 
-// ==========================================================================
-// SESSION CATEGORY ISOLATION
-// ==========================================================================
-describe("Session Category Isolation", () => {
-  it("customer and staff sessions are stored separately", () => {
+describe("Do customer and staff sessions mind their own business?", () => {
+  it("customer and staff sessions live in separate drawers", () => {
     saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
     saveAuthSession({ role: "kitchen", authenticatedAt: Date.now() });
 
@@ -458,7 +431,7 @@ describe("Session Category Isolation", () => {
     expect(staff?.role).toBe("kitchen");
   });
 
-  it("clearAuthSession('customer') keeps staff session", () => {
+  it("clearing customer session doesn't nuke the staff's login", () => {
     saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
     saveAuthSession({ role: "manager", authenticatedAt: Date.now() });
 
@@ -468,7 +441,7 @@ describe("Session Category Isolation", () => {
     expect(getAuthSession("staff")).not.toBeNull();
   });
 
-  it("clearAuthSession('staff') keeps customer session", () => {
+  it("clearing staff session leaves the customer alone", () => {
     saveAuthSession({ role: "customer", tableId: "2", authenticatedAt: Date.now() });
     saveAuthSession({ role: "kitchen", authenticatedAt: Date.now() });
 
@@ -478,7 +451,7 @@ describe("Session Category Isolation", () => {
     expect(getAuthSession("customer")).not.toBeNull();
   });
 
-  it("clearAuthSession() with no argument clears everything", () => {
+  it("nuclear option: clear everything, no survivors", () => {
     saveAuthSession({ role: "customer", tableId: "1", authenticatedAt: Date.now() });
     saveAuthSession({ role: "manager", authenticatedAt: Date.now() });
 

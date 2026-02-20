@@ -1,18 +1,4 @@
-/**
- * ==========================================================================
- * MenuManager — Category-first menu management for the Manager Panel
- * ==========================================================================
- *
- * Replaces AddMenuItemForm + MenuList with a unified view:
- *   - Categories displayed as collapsible cards
- *   - "Add Item" button on the right of each category header
- *   - "Add Category" button at the bottom
- *   - Inline item editing (name, emoji)
- *   - Toggle availability / delete items
- *   - Delete entire category (with confirmation)
- *
- * ==========================================================================
- */
+// MenuManager — Category-first menu management with collapsible cards, inline editing, and item/category CRUD.
 
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";

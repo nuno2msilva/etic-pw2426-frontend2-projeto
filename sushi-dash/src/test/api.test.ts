@@ -1,4 +1,4 @@
-/** API layer tests — mocks global.fetch, tests success + failure for all endpoints */
+// Can the API survive a round trip without losing the sushi?
 
 import {
   fetchMenu,
@@ -28,7 +28,7 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Build a minimal Response-like object for fetch mocking */
+// Builds a minimal Response-like object so we can pretend fetch works
 function mockResponse(body: unknown, ok = true, status = 200): Response {
   return {
     ok,
@@ -52,13 +52,9 @@ afterAll(() => {
   global.fetch = originalFetch;
 });
 
-// ==========================================================================
-// MENU CRUD
-// ==========================================================================
-describe("Menu API", () => {
-  // ── fetchMenu ───────────────────────────────────────────────
-  describe("fetchMenu", () => {
-    it("returns transformed menu items on success", async () => {
+describe("Can we manage the menu without breaking the kitchen?", () => {
+  describe("fetchMenu — does the backend even speak sushi?", () => {
+    it("transforms raw backend data into civilized frontend objects", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({
           items: [
@@ -101,15 +97,14 @@ describe("Menu API", () => {
       expect(global.fetch).toHaveBeenCalledWith("/api/menu", { credentials: "include" });
     });
 
-    it("throws on server error", async () => {
+    it("throws a fit when the server is having a bad day", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(fetchMenu()).rejects.toThrow("Failed to fetch menu");
     });
   });
 
-  // ── createMenuItem ──────────────────────────────────────────
-  describe("createMenuItem", () => {
-    it("creates and returns a new menu item", async () => {
+  describe("createMenuItem — adding sushi to the lineup", () => {
+    it("resolves category by name and returns the shiny new item", async () => {
       // First call: fetchCategories (to resolve category name → id)
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce(mockResponse([{ id: 3, name: "Sashimi", sort_order: 3 }]))
@@ -135,7 +130,7 @@ describe("Menu API", () => {
       expect(item.isAvailable).toBe(true);
     });
 
-    it("skips category lookup when categoryId is provided", async () => {
+    it("skips the category detour when categoryId is already known", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ id: 11, name: "Test", emoji: "🍱", is_popular: false, is_available: true })
       );
@@ -147,11 +142,10 @@ describe("Menu API", () => {
         categoryId: 5,
       });
 
-      // Only one call (no fetchCategories)
       expect(global.fetch).toHaveBeenCalledTimes(1);
     });
 
-    it("throws on server error", async () => {
+    it("refuses to create garbage items on a 400", async () => {
       (global.fetch as jest.Mock)
         .mockResolvedValueOnce(mockResponse([{ id: 1, name: "Nigiri", sort_order: 1 }]))
         .mockResolvedValueOnce(mockResponse({}, false, 400));
@@ -162,9 +156,8 @@ describe("Menu API", () => {
     });
   });
 
-  // ── updateMenuItem ──────────────────────────────────────────
-  describe("updateMenuItem", () => {
-    it("sends PUT with updates and returns success", async () => {
+  describe("updateMenuItem — renaming sushi mid-service", () => {
+    it("sends the rename to the server and gets a thumbs up", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await updateMenuItem("5", { name: "New Name" });
@@ -173,15 +166,14 @@ describe("Menu API", () => {
       expect(global.fetch).toHaveBeenCalledWith("/api/menu/5", expect.objectContaining({ method: "PUT" }));
     });
 
-    it("throws on server error", async () => {
+    it("throws when the server says you can't rename that", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 403));
       await expect(updateMenuItem("5", { name: "X" })).rejects.toThrow("Failed to update menu item");
     });
   });
 
-  // ── toggleItemAvailability ──────────────────────────────────
-  describe("toggleItemAvailability", () => {
-    it("sends PATCH to toggle availability", async () => {
+  describe("toggleItemAvailability — the 86'd list", () => {
+    it("patches availability without drama", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await toggleItemAvailability("7", false);
@@ -193,15 +185,14 @@ describe("Menu API", () => {
       );
     });
 
-    it("throws on server error", async () => {
+    it("explodes gracefully on server meltdown", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(toggleItemAvailability("7", true)).rejects.toThrow("Failed to toggle availability");
     });
   });
 
-  // ── deleteMenuItem ──────────────────────────────────────────
-  describe("deleteMenuItem", () => {
-    it("deletes item and returns success", async () => {
+  describe("deleteMenuItem — goodbye forever, old sushi", () => {
+    it("removes the item and confirms the deed", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await deleteMenuItem("3");
@@ -210,19 +201,16 @@ describe("Menu API", () => {
       expect(global.fetch).toHaveBeenCalledWith("/api/menu/3", expect.objectContaining({ method: "DELETE" }));
     });
 
-    it("throws on server error", async () => {
+    it("throws when trying to delete a ghost item", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(deleteMenuItem("99")).rejects.toThrow("Failed to delete menu item");
     });
   });
 });
 
-// ==========================================================================
-// CATEGORY CRUD
-// ==========================================================================
-describe("Category API", () => {
-  describe("fetchCategories", () => {
-    it("returns categories array on success", async () => {
+describe("Can we organize categories without losing our mind?", () => {
+  describe("fetchCategories — loading the filing cabinet", () => {
+    it("returns the full category list looking respectable", async () => {
       const cats = [
         { id: 1, name: "Nigiri", sort_order: 1 },
         { id: 2, name: "Rolls", sort_order: 2 },
@@ -233,14 +221,14 @@ describe("Category API", () => {
       expect(result).toEqual(cats);
     });
 
-    it("throws on server error", async () => {
+    it("throws when the server forgets what categories are", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(fetchCategories()).rejects.toThrow("Failed to fetch categories");
     });
   });
 
-  describe("createCategory", () => {
-    it("creates and returns a category", async () => {
+  describe("createCategory — inventing new sushi genres", () => {
+    it("brings a new category into existence", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ id: 5, name: "Desserts", sort_order: 5 })
       );
@@ -249,7 +237,7 @@ describe("Category API", () => {
       expect(cat.name).toBe("Desserts");
     });
 
-    it("throws with server error message when available", async () => {
+    it("tells you off when the category already exists", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 409,
@@ -259,7 +247,7 @@ describe("Category API", () => {
       await expect(createCategory("Nigiri")).rejects.toThrow("Category already exists");
     });
 
-    it("throws generic message when no error body", async () => {
+    it("falls back to a generic error when the server is speechless", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -270,8 +258,8 @@ describe("Category API", () => {
     });
   });
 
-  describe("deleteCategory", () => {
-    it("deletes and returns success", async () => {
+  describe("deleteCategory — scorched earth policy", () => {
+    it("nukes the category and everything in it", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await deleteCategory(3);
@@ -279,19 +267,16 @@ describe("Category API", () => {
       expect(global.fetch).toHaveBeenCalledWith("/api/categories/3", expect.objectContaining({ method: "DELETE" }));
     });
 
-    it("throws on server error", async () => {
+    it("throws when trying to delete a nonexistent category", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(deleteCategory(99)).rejects.toThrow("Failed to delete category");
     });
   });
 });
 
-// ==========================================================================
-// TABLE CRUD
-// ==========================================================================
-describe("Table API", () => {
-  describe("fetchTablesWithPins", () => {
-    it("returns tables with string IDs", async () => {
+describe("Can we juggle tables without flipping any?", () => {
+  describe("fetchTablesWithPins — revealing the secret PINs", () => {
+    it("converts numeric IDs to strings because TypeScript said so", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse([
           { id: 1, label: "Table 1", pin: "1234", pin_version: 1 },
@@ -307,14 +292,14 @@ describe("Table API", () => {
       expect(tables[1].id).toBe("2");
     });
 
-    it("throws on server error", async () => {
+    it("throws when excluded from the table list", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 401));
       await expect(fetchTablesWithPins()).rejects.toThrow("Failed to fetch tables");
     });
   });
 
-  describe("createTable", () => {
-    it("creates and returns table with string id", async () => {
+  describe("createTable — manifesting furniture from thin air", () => {
+    it("creates a table with a stringified ID", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ id: 7, label: "Bar", pin: "9999", pin_version: 1 })
       );
@@ -324,14 +309,14 @@ describe("Table API", () => {
       expect(table.label).toBe("Bar");
     });
 
-    it("throws on server error", async () => {
+    it("throws when the restaurant is full of tables", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 400));
       await expect(createTable("Bad")).rejects.toThrow("Failed to create table");
     });
   });
 
-  describe("updateTable", () => {
-    it("updates label and returns success", async () => {
+  describe("updateTable — table identity crisis", () => {
+    it("renames a table without existential panic", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await updateTable("3", "VIP Table");
@@ -342,28 +327,28 @@ describe("Table API", () => {
       );
     });
 
-    it("throws on server error", async () => {
+    it("throws when the table doesn't exist to rename", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(updateTable("99", "X")).rejects.toThrow("Failed to update table");
     });
   });
 
-  describe("deleteTable", () => {
-    it("deletes table and returns success", async () => {
+  describe("deleteTable — making tables vanish", () => {
+    it("removes the table from existence", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await deleteTable("2");
       expect(result.success).toBe(true);
     });
 
-    it("throws on server error", async () => {
+    it("throws when there's nothing to delete", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(deleteTable("99")).rejects.toThrow("Failed to delete table");
     });
   });
 
-  describe("setTablePin", () => {
-    it("sets PIN and returns success + pin", async () => {
+  describe("setTablePin — changing the secret handshake", () => {
+    it("sets the PIN and confirms it stuck", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ success: true, pin: "4321" })
       );
@@ -373,14 +358,14 @@ describe("Table API", () => {
       expect(result.pin).toBe("4321");
     });
 
-    it("throws on server error", async () => {
+    it("throws when the PIN is rejected", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 400));
       await expect(setTablePin("1", "bad")).rejects.toThrow("Failed to set PIN");
     });
   });
 
-  describe("randomizeTablePin", () => {
-    it("randomizes PIN and returns new pin + version", async () => {
+  describe("randomizeTablePin — chaos mode for PINs", () => {
+    it("generates a fresh random PIN and bumps the version", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ success: true, pin: "7890", pin_version: 3 })
       );
@@ -391,19 +376,16 @@ describe("Table API", () => {
       expect(result.pin_version).toBe(3);
     });
 
-    it("throws on server error", async () => {
+    it("throws when randomization goes sideways", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(randomizeTablePin("1")).rejects.toThrow("Failed to randomize PIN");
     });
   });
 });
 
-// ==========================================================================
-// ORDER CRUD
-// ==========================================================================
-describe("Order API", () => {
-  describe("fetchOrders", () => {
-    it("returns transformed orders on success", async () => {
+describe("Can we handle orders without losing anyone's dinner?", () => {
+  describe("fetchOrders — loading the queue without amnesia", () => {
+    it("parses raw order data into proper Order objects with Dates", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse([
           {
@@ -431,7 +413,7 @@ describe("Order API", () => {
       expect(orders[0].createdAt).toBeInstanceOf(Date);
     });
 
-    it("handles orders with no items array", async () => {
+    it("gracefully handles orders that somehow have no items", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse([{ id: 1, table_id: 1, status: "queued", createdAt: "2025-01-01T00:00:00Z" }])
       );
@@ -440,14 +422,14 @@ describe("Order API", () => {
       expect(orders[0].items).toEqual([]);
     });
 
-    it("throws on server error", async () => {
+    it("throws when the kitchen lost the order list", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(fetchOrders()).rejects.toThrow("Failed to fetch orders");
     });
   });
 
-  describe("createOrder", () => {
-    it("creates and returns a transformed order", async () => {
+  describe("createOrder — sending sushi wishes to the kitchen", () => {
+    it("places the order and gets back a properly shaped confirmation", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({
           id: 5,
@@ -473,7 +455,7 @@ describe("Order API", () => {
       );
     });
 
-    it("throws with server error message when available", async () => {
+    it("relays the server's specific complaint when order creation fails", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
@@ -485,7 +467,7 @@ describe("Order API", () => {
       ).rejects.toThrow("Order limit reached");
     });
 
-    it("throws generic message when no error body", async () => {
+    it("falls back to generic error when server returns unparseable nonsense", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 500,
@@ -498,8 +480,8 @@ describe("Order API", () => {
     });
   });
 
-  describe("updateOrderStatus", () => {
-    it("updates status and returns result", async () => {
+  describe("updateOrderStatus — pushing orders through the pipeline", () => {
+    it("advances the status and gets confirmation", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ success: true, id: 1, status: "preparing" })
       );
@@ -509,14 +491,14 @@ describe("Order API", () => {
       expect(result.status).toBe("preparing");
     });
 
-    it("throws on server error", async () => {
+    it("throws when trying to update a phantom order", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(updateOrderStatus("99", "ready")).rejects.toThrow("Failed to update order");
     });
   });
 
-  describe("cancelOrder", () => {
-    it("cancels order and returns success", async () => {
+  describe("cancelOrder — the customer changed their mind", () => {
+    it("cancels the order without remorse", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await cancelOrder("4");
@@ -527,14 +509,14 @@ describe("Order API", () => {
       );
     });
 
-    it("throws on server error", async () => {
+    it("throws when cancellation is denied", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 403));
       await expect(cancelOrder("4")).rejects.toThrow("Failed to cancel order");
     });
   });
 
-  describe("deleteOrder", () => {
-    it("deletes order and returns success", async () => {
+  describe("deleteOrder — erasing the evidence", () => {
+    it("permanently deletes the order record", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({ success: true }));
 
       const result = await deleteOrder("2");
@@ -545,19 +527,16 @@ describe("Order API", () => {
       );
     });
 
-    it("throws on server error", async () => {
+    it("throws when the order is already gone", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 404));
       await expect(deleteOrder("99")).rejects.toThrow("Failed to delete order");
     });
   });
 });
 
-// ==========================================================================
-// SETTINGS CRUD
-// ==========================================================================
-describe("Settings API", () => {
-  describe("fetchSettings", () => {
-    it("returns coerced numeric settings", async () => {
+describe("Can we tweak settings without the whole thing falling apart?", () => {
+  describe("fetchSettings — reading the restaurant's rulebook", () => {
+    it("coerces string values to numbers because the backend is quirky", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ maxItemsPerOrder: "15", maxActiveOrdersPerTable: "3" })
       );
@@ -569,7 +548,7 @@ describe("Settings API", () => {
       expect(typeof settings.maxItemsPerOrder).toBe("number");
     });
 
-    it("applies defaults when values are missing", async () => {
+    it("fills in sensible defaults when the backend shrugs", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}));
 
       const settings = await fetchSettings();
@@ -578,14 +557,14 @@ describe("Settings API", () => {
       expect(settings.maxActiveOrdersPerTable).toBe(2);
     });
 
-    it("throws on server error", async () => {
+    it("throws when the settings endpoint is on strike", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 500));
       await expect(fetchSettings()).rejects.toThrow("Failed to fetch settings");
     });
   });
 
-  describe("updateSettings", () => {
-    it("updates and returns new settings", async () => {
+  describe("updateSettings — rewriting the rules", () => {
+    it("persists new settings and returns the updated values", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(
         mockResponse({ maxItemsPerOrder: 20, maxActiveOrdersPerTable: 5 })
       );
@@ -594,7 +573,7 @@ describe("Settings API", () => {
       expect(result.maxItemsPerOrder).toBe(20);
     });
 
-    it("throws on server error", async () => {
+    it("throws when the server won't let you change the rules", async () => {
       (global.fetch as jest.Mock).mockResolvedValueOnce(mockResponse({}, false, 403));
       await expect(updateSettings({ maxItemsPerOrder: 99 })).rejects.toThrow("Failed to update settings");
     });

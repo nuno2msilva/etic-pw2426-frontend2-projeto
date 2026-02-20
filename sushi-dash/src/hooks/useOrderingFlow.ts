@@ -35,20 +35,17 @@ export interface OrderingFlow {
   handleBackToMenu: () => void;
 }
 
-/**
- * Shared ordering flow hook.
- * @param table - The active table (null = not yet selected)
- */
+// Shared ordering flow hook. @param table — the active table (null = not yet selected)
 export function useOrderingFlow(table: Table | null | undefined): OrderingFlow {
   const { menu, orders, settings, placeOrder, canTablePlaceOrder } = useApp();
 
-  // ── State ─────────────────────────────────────────────────────────────────
+  // State
   const [cart, setCart] = useState<Record<string, number>>({});
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
 
-  // ── Derived values ────────────────────────────────────────────────────────
+  // Derived values
 
   const totalItems = useMemo(
     () => Object.values(cart).reduce((sum, qty) => sum + qty, 0),
@@ -108,7 +105,7 @@ export function useOrderingFlow(table: Table | null | undefined): OrderingFlow {
     [table, canTablePlaceOrder, orders],
   );
 
-  // ── Prune cart when menu changes (e.g. item deleted by manager via SSE) ──
+  // Prune cart when menu changes (e.g. item deleted by manager via SSE)
   useEffect(() => {
     if (menu.length === 0) return;
     setCart((prev) => {
@@ -127,7 +124,7 @@ export function useOrderingFlow(table: Table | null | undefined): OrderingFlow {
     });
   }, [menu]);
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
+  // Handlers
 
   const handleIncrement = useCallback(
     (item: MenuItem) => {

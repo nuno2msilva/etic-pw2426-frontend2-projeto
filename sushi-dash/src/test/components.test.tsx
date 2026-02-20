@@ -25,36 +25,30 @@ function AllProviders({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ==========================================================================
-// CART SUMMARY BANNER
-// ==========================================================================
-describe("CartSummaryBanner", () => {
-  it("shows empty message when cart is empty", () => {
+describe("Does the cart banner actually tell you what you're ordering?", () => {
+  it("shows a nudge when the cart is tragically empty", () => {
     render(<CartSummaryBanner summary="" />);
     expect(screen.getByText(/Start picking/)).toBeDefined();
   });
 
-  it("renders the cart summary text when items are added", () => {
+  it("shows the actual sushi you picked like a good banner", () => {
     render(<CartSummaryBanner summary="#1 Salmon Nigiri (2x)" />);
     expect(screen.getByText(/Salmon Nigiri/)).toBeDefined();
   });
 
-  it("always shows the cart emoji", () => {
+  it("always flexes the cart emoji no matter what", () => {
     render(<CartSummaryBanner summary="" />);
     expect(screen.getByText(/🛒/)).toBeDefined();
   });
 
-  it("prevents layout shift by always being visible", () => {
+  it("never vanishes — layout shift is not a vibe", () => {
     const { container } = render(<CartSummaryBanner summary="" />);
     // Banner should always render (not null)
     expect(container.firstChild).not.toBeNull();
   });
 });
 
-// ==========================================================================
-// ORDER CONFIRMATION
-// ==========================================================================
-describe("OrderConfirmation", () => {
+describe("Can you review your order before the kitchen judges you?", () => {
   const mockMenu = [
     { id: "1", name: "#1 Salmon Nigiri", emoji: "🍣", category: "Nigiri" },
     { id: "2", name: "#2 Tuna Nigiri", emoji: "🍣", category: "Nigiri" },
@@ -62,7 +56,7 @@ describe("OrderConfirmation", () => {
 
   const mockTable = { id: "1", label: "Table 1" };
 
-  it("renders order items from the cart", () => {
+  it("lists every sushi roll you added to the cart", () => {
     render(
       <OrderConfirmation
         open={true}
@@ -83,7 +77,7 @@ describe("OrderConfirmation", () => {
     expect(screen.getByText("3x")).toBeDefined();
   });
 
-  it("shows the table name in the title", () => {
+  it("tells you which table is about to get fed", () => {
     render(
       <OrderConfirmation
         open={true}
@@ -103,7 +97,7 @@ describe("OrderConfirmation", () => {
     expect(screen.getByText(/Table 1/)).toBeDefined();
   });
 
-  it("has Send to Kitchen button", () => {
+  it("has the big scary 'Send to Kitchen' button", () => {
     render(
       <OrderConfirmation
         open={true}
@@ -124,20 +118,17 @@ describe("OrderConfirmation", () => {
   });
 });
 
-// ==========================================================================
-// SEO HEAD
-// ==========================================================================
-describe("SEOHead", () => {
+describe("Does SEOHead make search engines happy?", () => {
   beforeEach(() => {
     document.title = "";
   });
 
-  it("updates the document title with brand suffix", () => {
+  it("slaps the brand name on the document title", () => {
     render(<SEOHead title="Kitchen Dashboard" />);
     expect(document.title).toBe("Kitchen Dashboard | Sushi Dash");
   });
 
-  it("updates the meta description tag", () => {
+  it("writes the meta description for the crawlers", () => {
     render(<SEOHead title="Test" description="Test description for SEO" />);
 
     const meta = document.querySelector('meta[name="description"]');
@@ -146,11 +137,8 @@ describe("SEOHead", () => {
   });
 });
 
-// ==========================================================================
-// STAFF LOGIN MODAL
-// ==========================================================================
-describe("StaffLoginModal", () => {
-  it("renders the staff login modal when open", () => {
+describe("Does the staff login modal gate the kitchen or just look pretty?", () => {
+  it("shows a password field when the modal is open", () => {
     render(
       <AllProviders>
         <StaffLoginModal isOpen={true} onClose={() => {}} />
@@ -161,7 +149,7 @@ describe("StaffLoginModal", () => {
     expect(screen.getByPlaceholderText(/Enter staff password/)).toBeDefined();
   });
 
-  it("has a login button", () => {
+  it("has a login button (you'd hope so)", () => {
     render(
       <AllProviders>
         <StaffLoginModal isOpen={true} onClose={() => {}} />
@@ -171,7 +159,7 @@ describe("StaffLoginModal", () => {
     expect(screen.getByText("Login")).toBeDefined();
   });
 
-  it("does not render content when closed", () => {
+  it("hides everything when the modal is closed — out of sight, out of DOM", () => {
     render(
       <AllProviders>
         <StaffLoginModal isOpen={false} onClose={() => {}} />
@@ -182,8 +170,8 @@ describe("StaffLoginModal", () => {
   });
 });
 
-describe("Logout and relogging flow", () => {
-  it("kitchen and manager pages have redirect logic for unauthenticated users", () => {
+describe("Can staff log out and back in without a meltdown?", () => {
+  it("kitchen and manager pages boot unauthenticated users to home", () => {
     // These pages check authentication and redirect to /
     const kitchenPageSource = KitchenPage.toString();
     const managerPageSource = ManagerPage.toString();
@@ -193,7 +181,7 @@ describe("Logout and relogging flow", () => {
     expect(managerPageSource).toContain("push");
   });
 
-  it("staff login modal renders correctly for relogging", () => {
+  it("staff login modal still works fine for a re-login", () => {
     render(
       <AllProviders>
         <StaffLoginModal isOpen={true} onClose={() => {}} />
@@ -207,11 +195,8 @@ describe("Logout and relogging flow", () => {
   });
 });
 
-// ==========================================================================
-// COLLAPSIBLE SECTION
-// ==========================================================================
-describe("CollapsibleSection", () => {
-  it("renders title and icon", () => {
+describe("Do collapsible sections actually collapse or just lie about it?", () => {
+  it("shows the title and icon like a good header", () => {
     render(
       <CollapsibleSection title="Nigiri" icon="🍣" open={false} onToggle={() => {}}>
         <p>Content</p>
@@ -222,7 +207,7 @@ describe("CollapsibleSection", () => {
     expect(screen.getByText("🍣")).toBeDefined();
   });
 
-  it("renders subtitle when provided", () => {
+  it("shows the subtitle when you bother to pass one", () => {
     render(
       <CollapsibleSection
         title="Drinks"
@@ -237,7 +222,7 @@ describe("CollapsibleSection", () => {
     expect(screen.getByText("12 items")).toBeDefined();
   });
 
-  it("renders badge when provided", () => {
+  it("renders a badge if you're feeling fancy", () => {
     render(
       <CollapsibleSection
         title="Rolls"
@@ -252,7 +237,7 @@ describe("CollapsibleSection", () => {
     expect(screen.getByTestId("badge")).toBeDefined();
   });
 
-  it("calls onToggle when header is clicked", () => {
+  it("fires the toggle callback when you click the header", () => {
     const toggle = jest.fn();
     render(
       <CollapsibleSection title="Section" open={false} onToggle={toggle}>
@@ -265,16 +250,13 @@ describe("CollapsibleSection", () => {
   });
 });
 
-// ==========================================================================
-// SUSHI GRID
-// ==========================================================================
-describe("MenuGrid", () => {
+describe("Does the sushi grid render all the fish or drop some on the floor?", () => {
   const mockItems = [
     { id: "1", name: "#1 Salmon Nigiri", emoji: "🍣", category: "Nigiri", isPopular: true },
     { id: "2", name: "#2 Tuna Roll", emoji: "🍙", category: "Rolls", isPopular: false },
   ];
 
-  it("renders all items", () => {
+  it("shows every item on the menu — no favoritism", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -290,7 +272,7 @@ describe("MenuGrid", () => {
     expect(screen.getByText("Tuna Roll")).toBeDefined();
   });
 
-  it("renders emoji icons for each item", () => {
+  it("shows the right emoji for each sushi piece", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -306,7 +288,7 @@ describe("MenuGrid", () => {
     expect(screen.getByText("🍙")).toBeDefined();
   });
 
-  it("shows HOT badge only for popular items", () => {
+  it("only popular items get the HOT badge flex", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -322,7 +304,7 @@ describe("MenuGrid", () => {
     expect(hotBadges).toHaveLength(1);
   });
 
-  it("shows quantity badge when item is in cart", () => {
+  it("shows how many of each item you're hoarding", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -337,7 +319,7 @@ describe("MenuGrid", () => {
     expect(screen.getByText("3x")).toBeDefined();
   });
 
-  it("calls onIncrement when + button is clicked", () => {
+  it("the + button actually adds stuff (shocking)", () => {
     const increment = jest.fn();
     render(
       <MenuGrid
@@ -355,7 +337,7 @@ describe("MenuGrid", () => {
     expect(increment).toHaveBeenCalledWith(mockItems[0]);
   });
 
-  it("calls onDecrement when - button is clicked", () => {
+  it("the - button removes stuff (equally shocking)", () => {
     const decrement = jest.fn();
     render(
       <MenuGrid
@@ -373,7 +355,7 @@ describe("MenuGrid", () => {
     expect(decrement).toHaveBeenCalledWith(mockItems[0]);
   });
 
-  it("disables + buttons when at max items", () => {
+  it("locks the + button when you've maxed out — no more sushi for you", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -391,7 +373,7 @@ describe("MenuGrid", () => {
     }
   });
 
-  it("disables - buttons when quantity is 0", () => {
+  it("locks the - button when there's nothing left to remove", () => {
     render(
       <MenuGrid
         items={mockItems}
@@ -410,10 +392,7 @@ describe("MenuGrid", () => {
   });
 });
 
-// ==========================================================================
-// ORDER CARD — confirmation dialogs
-// ==========================================================================
-describe("OrderCard", () => {
+describe("Can you cancel and delete orders without accidentally nuking dinner?", () => {
   const mockOrder = {
     id: "order-1",
     table: { id: "1", label: "Table 1" },
@@ -421,28 +400,28 @@ describe("OrderCard", () => {
       { item: { id: "s1", name: "Salmon Nigiri", emoji: "🍣", category: "Nigiri" }, quantity: 2 },
     ],
     status: "queued" as const,
-    createdAt: new Date().toISOString(),
+    createdAt: new Date(),
   };
 
-  it("renders order details", () => {
+  it("shows the table, items, and quantity — the basics", () => {
     render(<OrderCard order={mockOrder} />);
     expect(screen.getByText("Table 1")).toBeDefined();
     expect(screen.getByText(/Salmon Nigiri/)).toBeDefined();
     expect(screen.getByText("2x")).toBeDefined();
   });
 
-  it("shows cancel button for queued orders when onCancel is provided", () => {
+  it("queued orders get a cancel button (regret is valid)", () => {
     render(<OrderCard order={mockOrder} showActions onCancel={() => {}} />);
     expect(screen.getByText("Cancel Order")).toBeDefined();
   });
 
-  it("shows confirmation dialog when cancel is clicked", () => {
+  it("asks 'are you sure?' before cancelling — safety first", () => {
     render(<OrderCard order={mockOrder} showActions onCancel={() => {}} />);
     fireEvent.click(screen.getByText("Cancel Order"));
     expect(screen.getByText(/Are you sure you want to cancel/)).toBeDefined();
   });
 
-  it("does not call onCancel until confirmation", () => {
+  it("doesn't cancel just because you clicked the button once", () => {
     const cancel = jest.fn();
     render(<OrderCard order={mockOrder} showActions onCancel={cancel} />);
     fireEvent.click(screen.getByText("Cancel Order"));
@@ -450,7 +429,7 @@ describe("OrderCard", () => {
     expect(cancel).not.toHaveBeenCalled();
   });
 
-  it("calls onCancel only after confirming", () => {
+  it("really cancels after you double-down on your decision", () => {
     const cancel = jest.fn();
     render(<OrderCard order={mockOrder} showActions onCancel={cancel} />);
     fireEvent.click(screen.getByText("Cancel Order"));
@@ -460,20 +439,20 @@ describe("OrderCard", () => {
     expect(cancel).toHaveBeenCalledTimes(1);
   });
 
-  it("shows delete button for delivered orders when onDelete is provided", () => {
+  it("delivered orders can be deleted (out with the old)", () => {
     const delivered = { ...mockOrder, status: "delivered" as const };
     render(<OrderCard order={delivered} showActions onDelete={() => {}} />);
     expect(screen.getByText("Delete Order")).toBeDefined();
   });
 
-  it("shows confirmation dialog when delete is clicked", () => {
+  it("delete also asks for confirmation — we're not barbarians", () => {
     const delivered = { ...mockOrder, status: "delivered" as const };
     render(<OrderCard order={delivered} showActions onDelete={() => {}} />);
     fireEvent.click(screen.getByText("Delete Order"));
     expect(screen.getByText(/Are you sure you want to delete/)).toBeDefined();
   });
 
-  it("calls onDelete only after confirming", () => {
+  it("actually deletes after confirmation", () => {
     const deleteFn = jest.fn();
     const delivered = { ...mockOrder, status: "delivered" as const };
     render(<OrderCard order={delivered} showActions onDelete={deleteFn} />);
@@ -483,7 +462,7 @@ describe("OrderCard", () => {
     expect(deleteFn).toHaveBeenCalledTimes(1);
   });
 
-  it("dismisses dialog when Keep is clicked without calling handler", () => {
+  it("clicking 'Keep' saves the order from destruction", () => {
     const cancel = jest.fn();
     render(<OrderCard order={mockOrder} showActions onCancel={cancel} />);
     fireEvent.click(screen.getByText("Cancel Order"));
@@ -492,11 +471,8 @@ describe("OrderCard", () => {
   });
 });
 
-// ==========================================================================
-// APP HEADER — Manager ↔ Kitchen nav shortcuts
-// ==========================================================================
-describe("AppHeader navigation shortcuts", () => {
-  it("contains kitchen and manager navigation links for staff pages", () => {
+describe("Does the app header let staff bounce between kitchen and manager?", () => {
+  it("has links to both /kitchen and /manager in the source", () => {
     // Verify AppHeader source contains the expected route paths
     const src = require("@/components/app/AppHeader").default.toString();
     expect(src).toContain("/kitchen");

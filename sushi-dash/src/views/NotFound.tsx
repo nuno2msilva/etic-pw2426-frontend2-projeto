@@ -1,15 +1,4 @@
-/**
- * ==========================================================================
- * NotFound — 404 error page
- * ==========================================================================
- *
- * Displayed when a user navigates to a non-existent route.
- * Logs the attempted path to console for debugging.
- * Provides a link back to the home page.
- *
- * Route: * (catch-all)
- * ==========================================================================
- */
+// NotFound — 404 error page that logs the attempted path and links back to home.
 
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";

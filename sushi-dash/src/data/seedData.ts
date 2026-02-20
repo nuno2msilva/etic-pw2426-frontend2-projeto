@@ -2,12 +2,9 @@
 
 import type { MenuItem } from "@/types/models";
 
-/**
- * Default menu with 100+ items organized by category
- * Each item has a numbered prefix for easy ordering
- */
+// Default menu with 100+ items organized by category. Each item has a numbered prefix for easy ordering.
 export const DEFAULT_MENU: MenuItem[] = [
-  // ===== NIGIRI (1-25) =====
+  // NIGIRI (1-25)
   { id: "1", name: "#1 Salmon Nigiri", emoji: "🍣", category: "Nigiri", isPopular: true },
   { id: "2", name: "#2 Tuna Nigiri", emoji: "🍣", category: "Nigiri", isPopular: true },
   { id: "3", name: "#3 Yellowtail Nigiri", emoji: "🍣", category: "Nigiri" },
@@ -34,7 +31,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "24", name: "#24 Spicy Tuna Nigiri", emoji: "🌶️", category: "Nigiri" },
   { id: "25", name: "#25 Flamed Salmon Nigiri", emoji: "🔥", category: "Nigiri" },
 
-  // ===== CLASSIC ROLLS (26-50) =====
+  // CLASSIC ROLLS (26-50)
   { id: "26", name: "#26 California Roll", emoji: "🍙", category: "Rolls", isPopular: true },
   { id: "27", name: "#27 Salmon Roll", emoji: "🍙", category: "Rolls" },
   { id: "28", name: "#28 Tuna Roll", emoji: "🍙", category: "Rolls" },
@@ -61,7 +58,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "49", name: "#49 Volcano Roll", emoji: "🌋", category: "Rolls" },
   { id: "50", name: "#50 Dynamite Roll", emoji: "💥", category: "Rolls" },
 
-  // ===== SPECIALTY ROLLS (51-70) =====
+  // SPECIALTY ROLLS (51-70)
   { id: "51", name: "#51 King Crab Roll", emoji: "🦀", category: "Specialty Rolls", isPopular: true },
   { id: "52", name: "#52 Lobster Roll", emoji: "🦞", category: "Specialty Rolls" },
   { id: "53", name: "#53 Surf & Turf Roll", emoji: "🥩", category: "Specialty Rolls" },
@@ -83,7 +80,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "69", name: "#69 Tokyo Roll", emoji: "🗼", category: "Specialty Rolls" },
   { id: "70", name: "#70 Osaka Roll", emoji: "🏯", category: "Specialty Rolls" },
 
-  // ===== SASHIMI (71-85) =====
+  // SASHIMI (71-85)
   { id: "71", name: "#71 Salmon Sashimi", emoji: "🐟", category: "Sashimi", isPopular: true },
   { id: "72", name: "#72 Tuna Sashimi", emoji: "🐟", category: "Sashimi" },
   { id: "73", name: "#73 Yellowtail Sashimi", emoji: "🐟", category: "Sashimi" },
@@ -100,7 +97,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "84", name: "#84 Sea Urchin Sashimi", emoji: "🍣", category: "Sashimi" },
   { id: "85", name: "#85 Sashimi Platter", emoji: "🐟", category: "Sashimi" },
 
-  // ===== HOT DISHES (86-100) =====
+  // HOT DISHES (86-100)
   { id: "86", name: "#86 Teriyaki Chicken", emoji: "🍗", category: "Hot Dishes", isPopular: true },
   { id: "87", name: "#87 Teriyaki Salmon", emoji: "🐟", category: "Hot Dishes" },
   { id: "88", name: "#88 Teriyaki Beef", emoji: "🥩", category: "Hot Dishes" },
@@ -117,7 +114,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "99", name: "#99 Salmon Donburi", emoji: "🍚", category: "Hot Dishes" },
   { id: "100", name: "#100 Chirashi Bowl", emoji: "🍚", category: "Hot Dishes" },
 
-  // ===== SIDES (101-115) =====
+  // SIDES (101-115)
   { id: "101", name: "#101 Edamame", emoji: "🫘", category: "Sides", isPopular: true },
   { id: "102", name: "#102 Miso Soup", emoji: "🍜", category: "Sides", isPopular: true },
   { id: "103", name: "#103 Gyoza (5pc)", emoji: "🥟", category: "Sides", isPopular: true },
@@ -134,7 +131,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "114", name: "#114 Yellowtail Jalapeño", emoji: "🌶️", category: "Sides" },
   { id: "115", name: "#115 Tuna Tataki", emoji: "🐟", category: "Sides" },
 
-  // ===== NOODLES & SOUPS (116-125) =====
+  // NOODLES & SOUPS (116-125)
   { id: "116", name: "#116 Udon Noodle Soup", emoji: "🍜", category: "Noodles" },
   { id: "117", name: "#117 Ramen", emoji: "🍜", category: "Noodles", isPopular: true },
   { id: "118", name: "#118 Miso Ramen", emoji: "🍜", category: "Noodles" },
@@ -146,7 +143,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "124", name: "#124 Tempura Udon", emoji: "🍜", category: "Noodles" },
   { id: "125", name: "#125 Seafood Ramen", emoji: "🍜", category: "Noodles" },
 
-  // ===== DRINKS (126-135) =====
+  // DRINKS (126-135)
   { id: "126", name: "#126 Green Tea", emoji: "🍵", category: "Drinks", isPopular: true },
   { id: "127", name: "#127 Jasmine Tea", emoji: "🍵", category: "Drinks" },
   { id: "128", name: "#128 Oolong Tea", emoji: "🍵", category: "Drinks" },
@@ -158,7 +155,7 @@ export const DEFAULT_MENU: MenuItem[] = [
   { id: "134", name: "#134 Matcha Latte", emoji: "🍵", category: "Drinks" },
   { id: "135", name: "#135 Lychee Juice", emoji: "🧃", category: "Drinks" },
 
-  // ===== DESSERTS (136-145) =====
+  // DESSERTS (136-145)
   { id: "136", name: "#136 Mochi Ice Cream", emoji: "🍡", category: "Desserts", isPopular: true },
   { id: "137", name: "#137 Green Tea Ice Cream", emoji: "🍨", category: "Desserts" },
   { id: "138", name: "#138 Red Bean Ice Cream", emoji: "🍨", category: "Desserts" },

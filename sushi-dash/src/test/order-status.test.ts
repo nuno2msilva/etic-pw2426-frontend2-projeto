@@ -11,17 +11,14 @@ const ALL_STATUSES: OrderStatus[] = [
   "cancelled",
 ];
 
-// ==========================================================================
-// STATUS_BADGE_VARIANT
-// ==========================================================================
-describe("STATUS_BADGE_VARIANT", () => {
-  it("has an entry for every OrderStatus", () => {
+describe("Do order statuses get the right badge color or just wing it?", () => {
+  it("every status has a badge variant assigned", () => {
     for (const status of ALL_STATUSES) {
       expect(STATUS_BADGE_VARIANT[status]).toBeDefined();
     }
   });
 
-  it("maps to correct badge variants", () => {
+  it("maps each status to its correct color personality", () => {
     expect(STATUS_BADGE_VARIANT.queued).toBe("accent");
     expect(STATUS_BADGE_VARIANT.preparing).toBe("primary-soft");
     expect(STATUS_BADGE_VARIANT.ready).toBe("success");
@@ -29,30 +26,27 @@ describe("STATUS_BADGE_VARIANT", () => {
     expect(STATUS_BADGE_VARIANT.cancelled).toBe("destructive");
   });
 
-  it("has no extra keys beyond known statuses", () => {
+  it("no mystery keys lurking in the badge map", () => {
     const keys = Object.keys(STATUS_BADGE_VARIANT);
     expect(keys.sort()).toEqual([...ALL_STATUSES].sort());
   });
 });
 
-// ==========================================================================
-// STATUS_LABELS
-// ==========================================================================
-describe("STATUS_LABELS", () => {
-  it("has an entry for every OrderStatus", () => {
+describe("Do status labels actually say something useful?", () => {
+  it("every status has a human-readable label", () => {
     for (const status of ALL_STATUSES) {
       expect(STATUS_LABELS[status]).toBeDefined();
     }
   });
 
-  it("each label is a non-empty string", () => {
+  it("labels are non-empty strings (not blank stares)", () => {
     for (const status of ALL_STATUSES) {
       expect(typeof STATUS_LABELS[status]).toBe("string");
       expect(STATUS_LABELS[status].length).toBeGreaterThan(0);
     }
   });
 
-  it("labels contain expected keywords", () => {
+  it("labels contain the right keywords — no identity crisis", () => {
     expect(STATUS_LABELS.queued).toContain("Queued");
     expect(STATUS_LABELS.preparing).toContain("Preparing");
     expect(STATUS_LABELS.ready).toContain("Ready");
@@ -60,7 +54,7 @@ describe("STATUS_LABELS", () => {
     expect(STATUS_LABELS.cancelled).toContain("Cancelled");
   });
 
-  it("each label contains an emoji prefix", () => {
+  it("every label leads with an emoji because we have standards", () => {
     // Each label should start with a non-ASCII character (emoji)
     for (const status of ALL_STATUSES) {
       const firstChar = STATUS_LABELS[status].codePointAt(0)!;
@@ -68,7 +62,7 @@ describe("STATUS_LABELS", () => {
     }
   });
 
-  it("has no extra keys beyond known statuses", () => {
+  it("no rogue keys sneaking into the label map", () => {
     const keys = Object.keys(STATUS_LABELS);
     expect(keys.sort()).toEqual([...ALL_STATUSES].sort());
   });

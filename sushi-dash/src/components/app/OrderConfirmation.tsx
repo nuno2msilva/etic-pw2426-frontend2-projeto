@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -70,6 +71,7 @@ const OrderConfirmation = ({
       <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-lg">Confirm Order — {table.label}</DialogTitle>
+          <DialogDescription>Review your items before sending to the kitchen.</DialogDescription>
         </DialogHeader>
 
       {totalItems === 0 ? (

@@ -2,15 +2,12 @@
 
 import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "@/data/seedData";
 
-// ==========================================================================
-// DEFAULT MENU
-// ==========================================================================
-describe("Default Menu", () => {
-  it("has at least 100 menu items", () => {
+describe("Is the menu big enough to impress or just sad?", () => {
+  it("has at least 100 items — we're not running a food truck", () => {
     expect(DEFAULT_MENU.length).toBeGreaterThanOrEqual(100);
   });
 
-  it("every item has required fields", () => {
+  it("every item has an id, name, emoji, and category (no naked sushi)", () => {
     for (const item of DEFAULT_MENU) {
       expect(item.id).toBeDefined();
       expect(item.name).toBeDefined();
@@ -21,24 +18,24 @@ describe("Default Menu", () => {
     }
   });
 
-  it("every item name starts with a number prefix", () => {
+  it("all items are numbered because chaos is not a menu", () => {
     for (const item of DEFAULT_MENU) {
       expect(item.name).toMatch(/^#\d+/);
     }
   });
 
-  it("has unique IDs for all items", () => {
+  it("no duplicate IDs — every sushi piece is a unique snowflake", () => {
     const ids = DEFAULT_MENU.map((item) => item.id);
     const uniqueIds = new Set(ids);
     expect(uniqueIds.size).toBe(ids.length);
   });
 
-  it("includes popular items flagged with isPopular", () => {
+  it("some items are flagged as popular (the cool kids of the menu)", () => {
     const popular = DEFAULT_MENU.filter((item) => item.isPopular);
     expect(popular.length).toBeGreaterThan(0);
   });
 
-  it("covers all expected categories", () => {
+  it("covers nigiri, rolls, sashimi, hot dishes, sides, noodles, drinks, and desserts", () => {
     const categories = new Set(DEFAULT_MENU.map((item) => item.category));
     expect(categories.has("Nigiri")).toBe(true);
     expect(categories.has("Rolls")).toBe(true);
@@ -51,20 +48,17 @@ describe("Default Menu", () => {
   });
 });
 
-// ==========================================================================
-// DEFAULT TABLES
-// ==========================================================================
-describe("Default Tables", () => {
-  it("has exactly 6 tables", () => {
+describe("Are the tables set up or is everyone eating on the floor?", () => {
+  it("has exactly 6 tables — no more, no less", () => {
     expect(DEFAULT_TABLES).toHaveLength(6);
   });
 
-  it("tables have sequential IDs from 1 to 6", () => {
+  it("tables are numbered 1 through 6 in order", () => {
     const ids = DEFAULT_TABLES.map((t) => t.id);
     expect(ids).toEqual(["1", "2", "3", "4", "5", "6"]);
   });
 
-  it("every table has a label", () => {
+  it("every table has a name — we're civilized here", () => {
     for (const table of DEFAULT_TABLES) {
       expect(table.label).toBeDefined();
       expect(table.label.length).toBeGreaterThan(0);
@@ -72,23 +66,20 @@ describe("Default Tables", () => {
   });
 });
 
-// ==========================================================================
-// DEFAULT SETTINGS
-// ==========================================================================
-describe("Default Settings", () => {
-  it("has maxItemsPerOrder set", () => {
+describe("Are the order limits reasonable or are we enabling chaos?", () => {
+  it("maxItemsPerOrder is set and positive", () => {
     expect(DEFAULT_SETTINGS.maxItemsPerOrder).toBeGreaterThan(0);
   });
 
-  it("has maxActiveOrdersPerTable set", () => {
+  it("maxActiveOrdersPerTable is set and positive", () => {
     expect(DEFAULT_SETTINGS.maxActiveOrdersPerTable).toBeGreaterThan(0);
   });
 
-  it("maxItemsPerOrder is reasonable (≤ 50)", () => {
+  it("maxItemsPerOrder won't let you order the entire ocean", () => {
     expect(DEFAULT_SETTINGS.maxItemsPerOrder).toBeLessThanOrEqual(50);
   });
 
-  it("maxActiveOrdersPerTable is reasonable (≤ 10)", () => {
+  it("maxActiveOrdersPerTable won't let you flood the kitchen", () => {
     expect(DEFAULT_SETTINGS.maxActiveOrdersPerTable).toBeLessThanOrEqual(10);
   });
 });
