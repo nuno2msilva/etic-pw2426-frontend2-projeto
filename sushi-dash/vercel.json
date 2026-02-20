@@ -1,5 +1,5 @@
 {
-  "buildCommand": "cd server && prisma generate && cd .. && next build",
+  "buildCommand": "next build",
   "installCommand": "npm install && cd server && npm install",
   "framework": "nextjs",
   "rewrites": [
