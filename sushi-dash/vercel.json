@@ -1,8 +1,5 @@
 {
-  "buildCommand": "cd server && npx prisma generate && cd .. && npx prisma generate && next build",
+  "buildCommand": "cd server && npx prisma generate && cd .. && npx prisma generate && next build --webpack",
   "installCommand": "npm install && cd server && npm install",
-  "framework": "nextjs",
-  "rewrites": [
-    { "source": "/api/(.*)", "destination": "/api" }
-  ]
+  "framework": "nextjs"
 }
