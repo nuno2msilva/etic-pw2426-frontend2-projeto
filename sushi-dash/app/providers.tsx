@@ -22,6 +22,7 @@ import { AppProvider } from "@/context/AppContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useServerEvents } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
+import CRTScreen from "@/components/app/CRTScreen";
 
 const queryClient = new QueryClient();
 
@@ -44,8 +45,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           <LiveUpdates />
           <AppProvider>
-            <AppHeader />
-            {children}
+            <CRTScreen>
+              <AppHeader />
+              {children}
+            </CRTScreen>
           </AppProvider>
         </AuthProvider>
       </TooltipProvider>
