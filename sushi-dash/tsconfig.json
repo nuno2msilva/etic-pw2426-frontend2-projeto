@@ -39,12 +39,12 @@
     "src/**/*.tsx",
     "app/**/*.ts",
     "app/**/*.tsx",
+    "pages/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
   "exclude": [
     "node_modules",
-    "server",
-    "api"
+    "server"
   ]
 }

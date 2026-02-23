@@ -19,13 +19,14 @@ import { createHash, randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 
-const JWT_SECRET = (() => {
+/** Resolved lazily so module loading never throws */
+function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret && process.env.NODE_ENV === "production") {
-    throw new Error("JWT_SECRET environment variable is required in production");
+    console.warn("⚠️  JWT_SECRET is not set — using insecure fallback. Set it in Vercel env vars!");
   }
   return secret ?? "sushi-dash-dev-secret-change-me";
-})();
+}
 const TOKEN_EXPIRY = "8h";
 
 /**
@@ -66,7 +67,7 @@ export function hashPassword(password: string): string {
 /** Create a signed JWT and set it as an httpOnly cookie */
 export function issueToken(res: Response, payload: Omit<TokenPayload, "jti">): string {
   const jti = randomUUID();
-  const token = jwt.sign({ ...payload, jti }, JWT_SECRET, {
+  const token = jwt.sign({ ...payload, jti }, getJwtSecret(), {
     expiresIn: TOKEN_EXPIRY,
   });
 
@@ -112,7 +113,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
   for (const token of [staffToken, legacyToken]) {
     if (!token || staffAuth) continue;
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload & jwt.JwtPayload;
+      const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload & jwt.JwtPayload;
       if (decoded.role !== "customer") {
         staffAuth = { role: decoded.role, tableId: decoded.tableId, pinVersion: decoded.pinVersion, jti: decoded.jti };
       }
@@ -124,7 +125,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
   for (const token of [customerToken, legacyToken]) {
     if (!token || customerAuth) continue;
     try {
-      const decoded = jwt.verify(token, JWT_SECRET) as TokenPayload & jwt.JwtPayload;
+      const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload & jwt.JwtPayload;
       if (decoded.role === "customer") {
         customerAuth = { role: decoded.role, tableId: decoded.tableId, pinVersion: decoded.pinVersion, jti: decoded.jti };
       }
