@@ -136,8 +136,8 @@ const CustomerPage = () => {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <main className="max-w-5xl mx-auto px-4 pt-8 pb-24">
-      {/* Step 1: Table Selection */}
+    <>
+      {/* Step 1: Table Selection — full-width layout (no constrained wrapper) */}
       {step === "table" && (
         <TableSelector
           tables={tables}
@@ -146,8 +146,9 @@ const CustomerPage = () => {
         />
       )}
 
-      {/* Step 2: Menu + Cart */}
+      {/* Step 2: Menu + Cart — constrained layout */}
       {step === "menu" && liveTable && (
+      <main className="max-w-5xl mx-auto px-4 pt-8 pb-24">
         <div>
           <div className="flex items-center justify-between mb-4">
             <h1 className="text-2xl font-display font-bold text-foreground">
@@ -210,6 +211,7 @@ const CustomerPage = () => {
             })}
           </div>
         </div>
+      </main>
       )}
 
       {/* Modals */}
@@ -248,7 +250,7 @@ const CustomerPage = () => {
       />
 
       <StaffLoginModal isOpen={showStaffLogin} onClose={() => setShowStaffLogin(false)} />
-    </main>
+    </>
   );
 };
 
