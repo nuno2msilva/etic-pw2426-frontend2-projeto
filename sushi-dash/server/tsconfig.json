@@ -15,10 +15,10 @@
     "declarationMap": true,
     "sourceMap": true,
     "paths": {
-      "@/types/*": ["../src/types/*"]
+      "@/*": ["../src/*"]
     },
     "baseUrl": "."
   },
-  "include": ["src/**/*", "api/**/*", "../src/data/defaultMenu.ts", "../src/types/sushi.ts"],
+  "include": ["src/**/*", "api/**/*", "../src/data/seedData.ts", "../src/types/models.ts"],
   "exclude": ["node_modules", "dist"]
 }
