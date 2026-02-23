@@ -1,17 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Dev: proxy to local Express server
-  // Vercel: rewrite to the serverless function at /api (api/index.ts)
+  // Dev: proxy API requests to local Express server
+  // Vercel: the api/index.ts serverless function handles /api/* natively
   async rewrites() {
-    if (process.env.VERCEL) {
-      return [
-        {
-          source: "/api/:path*",
-          destination: "/api",
-        },
-      ];
-    }
+    if (process.env.VERCEL) return [];
     return [
       {
         source: "/api/:path*",
