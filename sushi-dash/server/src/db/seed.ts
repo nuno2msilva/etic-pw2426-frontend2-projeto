@@ -3,7 +3,7 @@
  *
  * Run with: npm run db:seed
  *
- * Imports data directly from the frontend's seedData.ts and
+ * Imports data directly from the frontend's defaultMenu.ts and
  * seeds all tables. Passwords are hashed with SHA-256.
  */
 
@@ -11,8 +11,8 @@ import "dotenv/config";
 import { createHash } from "crypto";
 import prisma from "./prisma.js";
 
-// Import default data from the frontend source (dynamic import for cross-package-boundary compatibility)
-const { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } = await import("../../../src/data/seedData.js");
+// Import default data from the frontend source
+import { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } from "../../../src/data/defaultMenu.js";
 
 /** SHA-256 hash matching the frontend's hashPassword() */
 function hashPassword(password: string): string {

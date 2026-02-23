@@ -11,7 +11,6 @@ import cookieParser from "cookie-parser";
 
 import { authenticate } from "./middleware/auth.js";
 import { sseHandler } from "./events.js";
-import prisma from "./db/prisma.js";
 import authRoutes from "./routes/auth.js";
 import categoriesRoutes from "./routes/categories.js";
 import menuRoutes from "./routes/menu.js";
@@ -56,26 +55,8 @@ app.use("/api/settings", settingsRoutes);
 app.get("/api/events", sseHandler);      // SSE real-time stream
 
 // ─── Health check ────────────────────────────────────────────
-app.get("/api/health", async (_req, res) => {
-  const checks: Record<string, string> = {
-    status: "ok",
-    timestamp: new Date().toISOString(),
-    database_url: process.env.DATABASE_URL ? "set" : "MISSING",
-    jwt_secret: process.env.JWT_SECRET ? "set" : "MISSING",
-    vercel: process.env.VERCEL ? "true" : "false",
-  };
-
-  // Test DB connection
-  try {
-    const result = await prisma.$queryRaw`SELECT 1 as ok`;
-    checks.database = "connected";
-  } catch (err: any) {
-    checks.database = `error: ${err.message}`;
-    checks.status = "degraded";
-  }
-
-  const statusCode = checks.status === "ok" ? 200 : 503;
-  res.status(statusCode).json(checks);
+app.get("/api/health", (_req, res) => {
+  res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
 // ─── Start (skip in serverless environments like Vercel) ─────

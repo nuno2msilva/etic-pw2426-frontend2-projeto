@@ -47,58 +47,56 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin }: TableSelectorPro
   });
 
   return (
-    <div className="h-[calc(100dvh-4rem)] flex flex-col">
-      <div className="flex-1 flex flex-col items-center justify-start px-4 pt-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-display font-bold text-foreground">
-            🍣 <span className="text-primary">Sushi Dash</span>
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            All-you-can-eat! Select your table to start ordering.
-          </p>
-        </div>
-
-        {tables.length === 0 ? (
-          <div className="flex items-center justify-center" style={{ height: "calc(100dvh - 16rem)" }}>
-            <div className="text-center px-6">
-              <span className="text-5xl block mb-4">🪑</span>
-              <p className="text-lg font-semibold text-muted-foreground">
-                No tables available
-              </p>
-              <p className="text-sm text-muted-foreground mt-2">
-                If you believe this is an error, please contact management.
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
-            {tables.map((table) => {
-              const users = presence[Number(table.id)] ?? 0;
-              return (
-                <button
-                  key={table.id}
-                  onClick={() => onSelectTable(table)}
-                  className={cn(cardVariants({ variant: "item" }), "p-6 text-center hover:border-primary hover:shadow-lg relative")}
-                >
-                  {users > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 border-green-200"
-                    >
-                      IN USE
-                    </Badge>
-                  )}
-                  <span className="text-3xl block mb-2">🪑</span>
-                  <span className="font-bold text-card-foreground">{table.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
+    <div className="pb-14">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-display font-bold text-foreground">
+          🍣 <span className="text-primary">Sushi Dash</span>
+        </h1>
+        <p className="text-muted-foreground mt-2">
+          All-you-can-eat! Select your table to start ordering.
+        </p>
       </div>
 
-      {/* Staff access shortcut — full-width bar pinned to bottom by flex layout */}
-      <div className="w-full shrink-0 pb-4 pt-2 text-center text-sm text-muted-foreground border-t border-border/40">
+      {tables.length === 0 ? (
+        <div className="flex items-center justify-center" style={{ height: "calc(100vh - 16rem)" }}>
+          <div className="text-center px-6">
+            <span className="text-5xl block mb-4">🪑</span>
+            <p className="text-lg font-semibold text-muted-foreground">
+              No tables available
+            </p>
+            <p className="text-sm text-muted-foreground mt-2">
+              If you believe this is an error, please contact management.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+          {tables.map((table) => {
+            const users = presence[Number(table.id)] ?? 0;
+            return (
+              <button
+                key={table.id}
+                onClick={() => onSelectTable(table)}
+                className={cn(cardVariants({ variant: "item" }), "p-6 text-center hover:border-primary hover:shadow-lg relative")}
+              >
+                {users > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 border-green-200"
+                  >
+                    IN USE
+                  </Badge>
+                )}
+                <span className="text-3xl block mb-2">🪑</span>
+                <span className="font-bold text-card-foreground">{table.label}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Staff access shortcut — fixed to viewport bottom */}
+      <div className="fixed bottom-0 left-0 w-full pb-4 pt-2 text-center text-sm text-muted-foreground bg-background">
         <button
           onClick={onStaffLogin}
           className="hover:text-foreground transition-colors underline"

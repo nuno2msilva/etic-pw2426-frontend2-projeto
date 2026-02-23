@@ -7,10 +7,10 @@
 
 	"forwardPorts": [5173, 3001, 5432, 8080],
 	"portsAttributes": {
-                "5173": { "label": "Next.js Dev Server", "onAutoForward": "openBrowser" },
-                "3001": { "label": "Express API", "onAutoForward": "silent" },
-                "5432": { "label": "PostgreSQL", "onAutoForward": "silent" },
-                "8080": { "label": "Adminer", "onAutoForward": "silent" }
+                "5173": { "label": "Vite Dev Server", "onAutoForward": "openBrowser" },
+		"8080": { "label": "Adminer" }
+	},
+
 	//"postCreateCommand": "cd sushi-dash && npm install && cd server && npm install",
 
 	"customizations": {
