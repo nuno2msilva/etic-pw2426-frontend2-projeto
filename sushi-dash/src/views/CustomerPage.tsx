@@ -46,6 +46,17 @@ const CustomerPage = () => {
 
   // ── Session effects ───────────────────────────────────────────────────────
 
+  // Logo click: reset to table selection when ?select=true appears in the URL
+  useEffect(() => {
+    if (searchParams.get("select") === "true" && step !== "table") {
+      setStep("table");
+      setSelectedTable(null);
+      flow.setCart({});
+      flow.setOpenCategories(new Set());
+      skipAutoRestore.current = true;
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // React to session being cleared (e.g. PIN changed by manager via SSE)
   useEffect(() => {
     if (isInitialized && !isCustomerAuthenticated && step !== "table") {
