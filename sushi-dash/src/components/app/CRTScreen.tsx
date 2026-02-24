@@ -6,7 +6,7 @@ export default function CRTScreen({ children }: { children: React.ReactNode }) {
   return (
     <div className="crt">
       <div className="crt-screen">{children}</div>
-      <div className="crt-overlay">AV-1</div>
+      <div className="crt-overlay">AV1</div>
     </div>
   );
 }
