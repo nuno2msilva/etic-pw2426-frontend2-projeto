@@ -1,4 +1,4 @@
-/** React Query hooks — data fetching & mutations for menu, tables, orders, settings */
+// useApiQueries — React Query hooks for all CRUD operations (menu, tables, orders, settings, categories).
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/lib/api";

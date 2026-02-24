@@ -1,4 +1,4 @@
-// CartSummaryBanner — Sticky cart banner that auto-docks to top or bottom with scroll-aware animation.
+// CartSummaryBanner — sticky cart bar that auto-docks to top or bottom with IntersectionObserver scroll detection.
 
 import { ChevronRight, Trash2 } from "lucide-react";
 import { useState, useEffect, useRef } from "react";

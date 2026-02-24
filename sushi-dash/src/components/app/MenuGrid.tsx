@@ -1,4 +1,4 @@
-/** MenuGrid — responsive grid of menu items with +/- quantity controls and HOT badges */
+// MenuGrid — responsive grid of menu items with +/- quantity controls and HOT badges.
 
 import { Plus, Minus, Flame } from "lucide-react";
 import type { MenuItem } from "@/types/models";
@@ -14,11 +14,6 @@ interface MenuGridProps {
   onDecrement: (item: MenuItem) => void;
 }
 
-/**
- * Displays a grid of sushi menu items with +/- controls
- * - Shows "HOT" badge for popular items
- * - Only +/- buttons change quantity (clicking item does nothing)
- */
 const MenuGrid = ({ 
   items, 
   cart, 

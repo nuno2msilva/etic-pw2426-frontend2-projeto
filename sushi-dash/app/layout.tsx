@@ -1,16 +1,4 @@
-/**
- * ==========================================================================
- * RootLayout — Next.js root layout
- * ==========================================================================
- *
- * Wraps the full application with the HTML shell that was formerly in
- * index.html, plus the provider tree (React Query, Auth, App Context).
- *
- * Next.js App Router requires a root layout that exports metadata and
- * renders <html> and <body>. All client-side providers are extracted
- * into a separate <Providers> client component.
- * ==========================================================================
- */
+// RootLayout — HTML shell + metadata + provider tree wrapping every page.
 
 import type { Metadata } from "next";
 import "@/index.css";

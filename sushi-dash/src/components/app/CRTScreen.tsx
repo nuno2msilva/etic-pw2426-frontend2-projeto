@@ -1,4 +1,4 @@
-/** CRT monitor effect — scanlines, flicker, turn-on animation, and AV-1 overlay */
+// CRTScreen — wraps children with CSS scanlines, flicker, turn-on animation, and Samsung CRT "AV1" overlay.
 
 "use client";
 

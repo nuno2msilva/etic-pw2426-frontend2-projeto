@@ -1,4 +1,4 @@
-/** Default seed data — 145 menu items across 10 categories, 6 tables, order limits */
+// Default seed data — 145 menu items across 10 categories, 6 tables, and order limits.
 
 import type { MenuItem } from "@/types/models";
 

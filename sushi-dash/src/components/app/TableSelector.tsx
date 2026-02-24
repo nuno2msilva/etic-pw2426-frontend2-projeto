@@ -1,29 +1,4 @@
-/**
- * TableSelector.tsx
- * ---------------------------------------------------------------------------
- * Landing component that displays a grid of restaurant tables for the
- * customer to choose from. Each table is a large button with a chair emoji
- * and the table's label.
- *
- * Features:
- * - "In use" badge when at least one customer is connected (via SSE presence)
- * - Empty state message when no tables are configured
- *
- * Layout:
- * - Centered heading with the Sushi Dash branding.
- * - 2-column grid on mobile, 3-column on sm+ breakpoints.
- * - Max width constrained (`max-w-lg`) for a compact, balanced look.
- *
- * When a table button is clicked, `onSelectTable` fires and the parent
- * (CustomerPage) navigates to the menu step.
- *
- * Props:
- * @prop {Table[]}  tables         — Array of available tables from the context.
- * @prop {Function} onSelectTable  — Callback receiving the selected Table object.
- *
- * Used in: CustomerPage.tsx
- * ---------------------------------------------------------------------------
- */
+// TableSelector — Landing grid of table buttons with SSE presence badges and staff-login shortcut.
 
 import { useQuery } from "@tanstack/react-query";
 import type { Table } from "@/types/models";

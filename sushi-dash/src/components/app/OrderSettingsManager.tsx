@@ -1,4 +1,4 @@
-/** OrderSettingsManager — manager-only card for max items/order and max active orders/table */
+// OrderSettingsManager — manager card for configuring max items/order and max active orders/table.
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

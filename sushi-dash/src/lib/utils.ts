@@ -1,4 +1,4 @@
-/** cn() — merges CSS class names via clsx + tailwind-merge (resolves Tailwind conflicts) */
+// cn() — merges CSS class names via clsx + tailwind-merge (resolves Tailwind conflicts).
 
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";

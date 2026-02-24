@@ -1,4 +1,4 @@
-/** OrderConfirmation — review/edit cart before sending to kitchen, with +/- and trash controls */
+// OrderConfirmation — review/edit cart before sending to kitchen, with +/- and trash controls.
 
 import { useState } from "react";
 import { Plus, Minus, Trash2, Check, X } from "lucide-react";
@@ -43,10 +43,10 @@ const OrderConfirmation = ({
 }: OrderConfirmationProps) => {
   const totalItems = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
 
-  /** Track which item is pending deletion confirmation */
+  // Track which item is pending deletion confirmation
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
-  /** Handle decrement — if qty would reach 0, ask for confirmation instead */
+  // Decrement qty — if it would drop to 0, prompt for removal confirmation instead
   const handleDecrement = (item: MenuItem, qty: number) => {
     if (qty <= 1) {
       setPendingDeleteId(item.id);
@@ -55,13 +55,11 @@ const OrderConfirmation = ({
     }
   };
 
-  /** Confirm deletion */
   const confirmDelete = (item: MenuItem) => {
     onRemove(item);
     setPendingDeleteId(null);
   };
 
-  /** Cancel deletion */
   const cancelDelete = () => {
     setPendingDeleteId(null);
   };

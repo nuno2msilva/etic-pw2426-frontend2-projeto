@@ -1,23 +1,4 @@
-/**
- * PasswordManager.tsx
- * ---------------------------------------------------------------------------
- * Manager-only card that lets the admin change the Kitchen and Manager
- * passwords. Renders a tabbed interface (Kitchen / Manager) using
- * shadcn/ui Tabs, each containing a `SinglePasswordSection` sub-component.
- *
- * Features:
- * - Two tabs for each protected role (Kitchen, Manager).
- * - Password confirmation required only for the Manager tab.
- * - Minimum 4-character validation.
- * - Calls `updateKitchenPassword` / `updateManagerPassword` from lib/auth
- *   which hashes with SHA-256 and stores in localStorage.
- * - Toast notifications for success/error feedback.
- *
- * Table passwords were removed — tables are now accessed directly via URL.
- *
- * Used in: ManagerPage (Security section)
- * ---------------------------------------------------------------------------
- */
+// PasswordManager — Tabbed kitchen/manager password reset form with SHA-256 hashing and visibility toggle.
 
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

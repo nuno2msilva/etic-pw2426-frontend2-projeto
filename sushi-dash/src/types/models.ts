@@ -1,4 +1,4 @@
-/** Core data models — MenuItem, Category, Table, Order, OrderSettings */
+// Core data models — MenuItem, Category, Table, Order, OrderSettings.
 
 /** A single menu item (e.g., "#1 Salmon Nigiri") */
 export interface MenuItem {

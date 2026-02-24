@@ -1,4 +1,4 @@
-/** OrderCard — displays a single order with status badge, items, and action buttons (cancel/advance/delete) */
+// OrderCard — single order card with status badge, items list, and action buttons (cancel/advance/delete).
 
 import type { Order, OrderStatus } from "@/types/models";
 import { useState } from "react";

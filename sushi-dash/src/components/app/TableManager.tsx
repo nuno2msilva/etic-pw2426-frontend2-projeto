@@ -1,19 +1,4 @@
-/**
- * ==========================================================================
- * TableManager — Add/remove tables + PIN management
- * ==========================================================================
- *
- * Manager-only component for table configuration:
- *   - Add new tables
- *   - Remove existing tables
- *   - View each table's 4-digit PIN in plaintext
- *   - Randomize a table's PIN (invalidates customer sessions)
- *   - Manually set a table's PIN
- *
- * PINs are managed via the backend API. Changes are reflected immediately.
- *
- * ==========================================================================
- */
+// TableManager — CRUD for restaurant tables with inline PIN editing, QR codes, and session invalidation.
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";

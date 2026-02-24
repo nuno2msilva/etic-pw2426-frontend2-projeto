@@ -1,4 +1,4 @@
-/** useOrderingFlow — shared cart state, derived values, and order handlers for TablePage & CustomerPage */
+// useOrderingFlow — shared cart state, derived values, and order handlers used by both CustomerPage and TablePage.
 
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { toast } from "sonner";

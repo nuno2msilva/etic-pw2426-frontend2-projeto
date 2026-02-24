@@ -1,4 +1,4 @@
-/** AppContext — central state (menu, tables, orders, settings) via React Query + Context API */
+// AppContext — central state provider: menu, tables, orders, settings via React Query + Context API.
 
 import React, { createContext, useContext, useCallback, useMemo, useRef } from "react";
 import type { MenuItem, Table, Order, OrderStatus, Category, OrderSettings } from "@/types/models";

@@ -1,17 +1,4 @@
-/**
- * ==========================================================================
- * Providers — Client-side provider tree
- * ==========================================================================
- *
- * Wraps the application with all client-side context providers.
- * Extracted from the layout because Next.js layouts are Server Components
- * by default, but React Query / Auth / App contexts require "use client".
- *
- * Provider hierarchy (outermost → innermost):
- *   QueryClientProvider → TooltipProvider → Sonner →
- *   AuthProvider → LiveUpdates → AppProvider → AppHeader → {children}
- * ==========================================================================
- */
+// Providers — Client-side context tree: QueryClient → Tooltip → Sonner → Auth → SSE → App → CRT.
 
 "use client";
 

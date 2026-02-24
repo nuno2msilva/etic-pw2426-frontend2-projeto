@@ -10,16 +10,10 @@ import { useAuth } from "@/context/AuthContext";
 import { useOrderingFlow } from "@/hooks/useOrderingFlow";
 import {
   TableSelector,
-  MenuGrid,
-  OrderConfirmation,
-  CartSummaryBanner,
-  CollapsibleSection,
+  MenuOrderingView,
   PinPad,
   StaffLoginModal,
-  OrderProgressModal,
 } from "@/components/app";
-import { Badge } from "@/components/ui/badge";
-import { CATEGORY_EMOJI } from "@/types/models";
 import type { Table } from "@/types/models";
 
 type Step = "table" | "menu";
@@ -30,7 +24,7 @@ const CustomerPage = () => {
   // Skip auto-restore when user explicitly navigated here (e.g. logo click)
   const skipAutoRestore = useRef(searchParams.get("select") === "true");
 
-  const { menu, tables, orders, categories, settings, cancelOrder } = useApp();
+  const { tables, settings } = useApp();
   const { isInitialized, customerSession, loginAsCustomer, logout } = useAuth();
 
   const isCustomerAuthenticated = customerSession !== null;
@@ -127,17 +121,11 @@ const CustomerPage = () => {
     return success;
   };
 
-  const handleBackToTables = () => {
-    flow.setCart({});
-    flow.setOpenCategories(new Set());
-    setStep("table");
-  };
-
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
     <>
-      {/* Step 1: Table Selection — full-width layout (no constrained wrapper) */}
+      {/* Step 1: Table Selection */}
       {step === "table" && (
         <TableSelector
           tables={tables}
@@ -146,91 +134,12 @@ const CustomerPage = () => {
         />
       )}
 
-      {/* Step 2: Menu + Cart — constrained layout */}
+      {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
       {step === "menu" && liveTable && (
-      <main className="max-w-5xl mx-auto px-4 pt-8 pb-24">
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-2xl font-display font-bold text-foreground">
-              {liveTable.label} — Order
-            </h1>
-
-            <button
-              onClick={() => flow.setShowProgress(true)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-secondary/80 transition-colors"
-              aria-label="View order progress"
-            >
-              <span className="text-base">
-                {flow.tableOrders.length >= settings.maxActiveOrdersPerTable ? "⚠️" : "📋"}
-              </span>
-              <span
-                className={`text-sm font-bold ${
-                  flow.tableOrders.length >= settings.maxActiveOrdersPerTable
-                    ? "text-destructive"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {flow.tableOrders.length}/{settings.maxActiveOrdersPerTable}
-              </span>
-            </button>
-          </div>
-
-          <CartSummaryBanner
-            summary={flow.cartSummary}
-            onReview={flow.totalItems > 0 ? () => flow.setShowConfirm(true) : undefined}
-            totalItems={flow.totalItems}
-            maxItems={settings.maxItemsPerOrder}
-          />
-
-          <div className="space-y-3">
-            {categories.map((category) => {
-              const items = flow.menuByCategory[category] || [];
-              const cartCount = flow.cartByCategory[category] || 0;
-              const isOpen = flow.openCategories.has(category);
-              if (items.length === 0) return null;
-
-              return (
-                <CollapsibleSection
-                  key={category}
-                  title={category}
-                  icon={CATEGORY_EMOJI[category] || "📋"}
-                  badge={cartCount > 0 ? <Badge size="sm">{cartCount} in cart</Badge> : undefined}
-                  open={isOpen}
-                  onToggle={() => flow.toggleCategory(category)}
-                >
-                  <MenuGrid
-                    items={items}
-                    cart={flow.cart}
-                    maxItems={settings.maxItemsPerOrder}
-                    currentTotal={flow.totalItems}
-                    onIncrement={flow.handleIncrement}
-                    onDecrement={flow.handleDecrement}
-                  />
-                </CollapsibleSection>
-              );
-            })}
-          </div>
-        </div>
-      </main>
+        <MenuOrderingView table={liveTable} flow={flow} />
       )}
 
       {/* Modals */}
-      {liveTable && (
-        <OrderConfirmation
-          open={flow.showConfirm}
-          onOpenChange={flow.setShowConfirm}
-          table={liveTable}
-          cart={flow.cart}
-          menu={menu}
-          onBack={flow.handleBackToMenu}
-          onAddMore={flow.handleBackToMenu}
-          onConfirm={flow.handlePlaceOrder}
-          onIncrement={flow.handleIncrement}
-          onDecrement={flow.handleDecrement}
-          onRemove={flow.handleRemoveItem}
-        />
-      )}
-
       <PinPad
         isOpen={showPinPad}
         tableLabel={pendingTable?.label || "Table"}
@@ -239,14 +148,6 @@ const CustomerPage = () => {
           setShowPinPad(false);
           setPendingTable(null);
         }}
-      />
-
-      <OrderProgressModal
-        open={flow.showProgress}
-        onOpenChange={flow.setShowProgress}
-        orders={flow.tableOrders}
-        allOrders={orders}
-        onCancelOrder={cancelOrder}
       />
 
       <StaffLoginModal isOpen={showStaffLogin} onClose={() => setShowStaffLogin(false)} />

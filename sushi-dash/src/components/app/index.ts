@@ -1,4 +1,4 @@
-/** Barrel export — re-exports all app-level components from a single entry point */
+// Barrel export — re-exports all app-level components from a single entry point.
 
 // Core UI components
 export { default as CollapsibleSection } from "./CollapsibleSection";
@@ -9,6 +9,7 @@ export { default as MenuGrid } from "./MenuGrid";
 export { default as OrderConfirmation } from "./OrderConfirmation";
 export { default as CartSummaryBanner } from "./CartSummaryBanner";
 export { default as OrderProgressModal } from "./OrderProgressModal";
+export { default as MenuOrderingView } from "./MenuOrderingView";
 export { default as TableManager } from "./TableManager";
 export { default as MenuManager } from "./MenuManager";
 

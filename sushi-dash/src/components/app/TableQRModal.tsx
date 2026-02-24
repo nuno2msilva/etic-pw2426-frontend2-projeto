@@ -1,18 +1,4 @@
-/**
- * TableQRModal.tsx
- * ---------------------------------------------------------------------------
- * Displays a QR code for a table that auto-authenticates customers.
- * The QR encodes a URL like: https://host/table/<id>?pin=<pin>
- *
- * The /table/:tableId page reads the `pin` query param and auto-submits it.
- *
- * Props:
- * @prop {boolean}      isOpen   — Controls dialog visibility.
- * @prop {Function}     onClose  — Called when dialog should close.
- * @prop {Table | null} table    — The table to generate a QR for.
- * @prop {string | null} pin     — The table's current PIN.
- * ---------------------------------------------------------------------------
- */
+// TableQRModal — Displays a scannable QR code that auto-authenticates customers to a specific table.
 
 import {
   Dialog,

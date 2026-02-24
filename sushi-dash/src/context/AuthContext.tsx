@@ -1,4 +1,4 @@
-/** AuthContext — dual-session auth (customer PIN + staff password), role-based access control */
+// AuthContext — dual-session auth (customer PIN + staff password) with role-based access control.
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';

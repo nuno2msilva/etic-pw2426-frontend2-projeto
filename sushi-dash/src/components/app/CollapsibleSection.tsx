@@ -1,4 +1,4 @@
-/** CollapsibleSection — reusable card with chevron toggle, title, optional icon/badge/subtitle */
+// CollapsibleSection — reusable card with animated chevron toggle, title, optional icon/badge/subtitle.
 
 import type { ReactNode } from "react";
 import { ChevronDown } from "lucide-react";

@@ -1,4 +1,4 @@
-/** SEOHead — dynamically updates document title and meta description per page */
+// SEOHead — dynamically updates document.title and meta description via useEffect side-effects.
 
 import { useEffect } from "react";
 

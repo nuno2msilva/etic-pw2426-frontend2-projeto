@@ -1,4 +1,4 @@
-/** AppHeader — sticky nav header with logo, dark mode toggle, context-aware logout, and kitchen link */
+// AppHeader — sticky nav bar with logo, dark-mode toggle, context-aware logout, and kitchen/manager shortcuts.
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
