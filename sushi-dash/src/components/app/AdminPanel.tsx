@@ -58,7 +58,7 @@ export const AdminPanel = () => {
   // Add user form
   const [newUsername, setNewUsername] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPermission, setNewUserPermission] = useState<Permission>('kitchen');
+  const [newUserPermission, setNewUserPermission] = useState<Permission | ''>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit user form
@@ -105,6 +105,11 @@ export const AdminPanel = () => {
       return;
     }
 
+    if (!newUserPermission) {
+      toast.error('Permission level is required');
+      return;
+    }
+
     setIsSubmitting(true);
 
     try {
@@ -123,7 +128,7 @@ export const AdminPanel = () => {
         toast.success(`User ${newUsername} created. Random password generated.`);
         setNewUsername('');
         setNewUserEmail('');
-        setNewUserPermission('kitchen');
+        setNewUserPermission('');
         setShowAddDialog(false);
         fetchUsers();
       } else {
@@ -437,7 +442,7 @@ export const AdminPanel = () => {
               </Label>
               <Select value={editUserPermission} onValueChange={(v) => setEditUserPermission(v as Permission)}>
                 <SelectTrigger id="edit-permission" className="mt-1.5">
-                  <SelectValue />
+                  <SelectValue placeholder="Select a permission level" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kitchen">Kitchen</SelectItem>
@@ -512,11 +517,12 @@ export const AdminPanel = () => {
               </Label>
               <Select value={newUserPermission} onValueChange={(v) => setNewUserPermission(v as Permission)}>
                 <SelectTrigger id="permission" className="mt-1.5">
-                  <SelectValue />
+                  <SelectValue placeholder="Select a permission level" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kitchen">Kitchen</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
