@@ -3,7 +3,18 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { API_BASE } from '@/lib/config';
-import {AuthSession, AuthRole, getAuthSession, saveAuthSession, clearAuthSession, initializePasswords, loginTableWithPin, verifyKitchenPassword,  verifyManagerPassword, hasAccess,} from '@/lib/auth';
+import {
+  AuthSession,
+  AuthRole,
+  getAuthSession,
+  saveAuthSession,
+  clearAuthSession,
+  loginTableWithPin,
+  loginAsStaff,
+  changePassword as changePasswordApi,
+  skipPasswordResetReminder as skipPasswordResetReminderApi,
+  hasAccess,
+} from '@/lib/auth';
 
 interface AuthContextType {
   /** Current customer session (if any) */
@@ -18,10 +29,25 @@ interface AuthContextType {
   isAuthenticated: boolean;
   /** Login as customer for a specific table (4-digit PIN) */
   loginAsCustomer: (tableId: string, pin: string) => Promise<boolean>;
-  /** Login as kitchen staff */
-  loginAsKitchen: (password: string) => Promise<boolean>;
-  /** Login as manager */
-  loginAsManager: (password: string) => Promise<boolean>;
+  /** Login as staff (username/email + password) — kitchen, manager, or admin */
+  loginAsStaffUser: (
+    identifier: string,
+    password: string,
+  ) => Promise<{
+    success: boolean;
+    role?: AuthRole;
+    passwordResetRequired?: boolean;
+    skipPasswordResetReminder?: boolean;
+    error?: string;
+  }>;
+  /** Change own password (staff only) */
+  changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
+  /** Skip password reset reminder (user opts out of reset prompt) */
+  skipResetReminder: () => void;
+  /** Password reset flag from login */
+  passwordResetRequired: boolean;
+  /** User explicitly skipped reminder */
+  skipPasswordResetReminder: boolean;
   /** Logout — clears customer session only (for SSE ejection) */
   logout: () => void;
   /** Logout staff session (kitchen/manager) */
@@ -34,10 +60,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
+    return error.message;
+  }
+  return fallback;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [customerSession, setCustomerSession] = useState<AuthSession | null>(null);
   const [staffSession, setStaffSession] = useState<AuthSession | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [passwordResetRequired, setPasswordResetRequired] = useState(false);
+  const [skipPasswordResetReminder, setSkipPasswordResetReminder] = useState(false);
   const queryClient = useQueryClient();
 
   const invalidateAllCaches = useCallback(() => {
@@ -47,11 +82,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Initialize auth system on mount — restore both sessions
   useEffect(() => {
     const init = async () => {
-      await initializePasswords();
       const existingCustomer = getAuthSession('customer');
       const existingStaff = getAuthSession('staff');
       if (existingCustomer) setCustomerSession(existingCustomer);
-      if (existingStaff) setStaffSession(existingStaff);
+      if (existingStaff) {
+        setStaffSession(existingStaff);
+        setPasswordResetRequired(existingStaff.passwordResetRequired ?? false);
+        setSkipPasswordResetReminder(existingStaff.skipPasswordResetReminder ?? false);
+      }
       if (existingCustomer || existingStaff) invalidateAllCaches();
       setIsInitialized(true);
     };
@@ -74,36 +112,80 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return false;
   }, [invalidateAllCaches]);
 
-  const loginAsKitchen = useCallback(async (password: string): Promise<boolean> => {
-    const isValid = await verifyKitchenPassword(password);
-    if (isValid) {
-      const newSession: AuthSession = {
-        role: 'kitchen',
-        authenticatedAt: Date.now(),
-      };
-      saveAuthSession(newSession);
-      setStaffSession(newSession);
-      invalidateAllCaches();
-      return true;
+  const loginAsStaffUser = useCallback(async (
+    identifier: string,
+    password: string
+  ): Promise<{
+    success: boolean;
+    role?: AuthRole;
+    passwordResetRequired?: boolean;
+    skipPasswordResetReminder?: boolean;
+    error?: string;
+  }> => {
+    try {
+      const result = await loginAsStaff(identifier, password);
+      if (result.success && result.role) {
+        const newSession: AuthSession = {
+          role: result.role as AuthRole,
+          userId: result.userId,
+          email: result.email,
+          username: result.username ?? null,
+          permission: result.permission,
+          authenticatedAt: Date.now(),
+          passwordResetRequired: result.passwordResetRequired ?? false,
+          skipPasswordResetReminder: result.skipPasswordResetReminder ?? false,
+        };
+        saveAuthSession(newSession);
+        setStaffSession(newSession);
+        setPasswordResetRequired(result.passwordResetRequired ?? false);
+        setSkipPasswordResetReminder(result.skipPasswordResetReminder ?? false);
+        invalidateAllCaches();
+        return {
+          success: true,
+          role: result.role,
+          passwordResetRequired: result.passwordResetRequired ?? false,
+          skipPasswordResetReminder: result.skipPasswordResetReminder ?? false,
+        };
+      }
+      return { success: false, error: result.error ?? 'Login failed' };
+    } catch (err) {
+      return { success: false, error: getErrorMessage(err, 'Login failed') };
     }
-    return false;
   }, [invalidateAllCaches]);
 
-  const loginAsManager = useCallback(async (password: string): Promise<boolean> => {
-    const isValid = await verifyManagerPassword(password);
-    if (isValid) {
-      const newSession: AuthSession = {
-        role: 'manager',
-        authenticatedAt: Date.now(),
-      };
-      saveAuthSession(newSession);
-      setStaffSession(newSession);
-      invalidateAllCaches();
-      return true;
+  const changePassword = useCallback(async (
+    currentPassword: string,
+    newPassword: string
+  ): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const result = await changePasswordApi(currentPassword, newPassword);
+      if (result.success) {
+        // Clear password reset flags once user changes password
+        setPasswordResetRequired(false);
+        setSkipPasswordResetReminder(false);
+        const updated = staffSession ? { ...staffSession, passwordResetRequired: false, skipPasswordResetReminder: false } : null;
+        if (updated) {
+          saveAuthSession(updated);
+          setStaffSession(updated);
+        }
+        invalidateAllCaches();
+        return { success: true };
+      }
+      return { success: false, error: result.error ?? 'Password change failed' };
+    } catch (err) {
+      return { success: false, error: getErrorMessage(err, 'Password change failed') };
     }
-    return false;
-  }, [invalidateAllCaches]);
+  }, [staffSession, invalidateAllCaches]);
 
+  const skipResetReminder = useCallback(() => {
+    setSkipPasswordResetReminder(true);
+    skipPasswordResetReminderApi().catch(() => {});
+    const updated = staffSession ? { ...staffSession, skipPasswordResetReminder: true } : null;
+    if (updated) {
+      saveAuthSession(updated);
+      setStaffSession(updated);
+    }
+  }, [staffSession]);
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(() => {
     clearAuthSession('customer');
@@ -121,6 +203,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutStaff = useCallback(() => {
     clearAuthSession('staff');
     setStaffSession(null);
+    setPasswordResetRequired(false);
+    setSkipPasswordResetReminder(false);
     fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
@@ -150,8 +234,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isInitialized,
     isAuthenticated: session !== null,
     loginAsCustomer,
-    loginAsKitchen,
-    loginAsManager,
+    loginAsStaffUser,
+    changePassword,
+    skipResetReminder,
+    passwordResetRequired,
+    skipPasswordResetReminder,
     logout,
     logoutStaff,
     checkAccess,

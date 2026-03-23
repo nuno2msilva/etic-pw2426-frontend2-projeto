@@ -99,10 +99,18 @@ router.put("/:id", requireRole("manager"), async (req, res) => {
 });
 
 // ── Delete category (manager only) ──────────────────────────
-// Cascades to all items in the category
+// Safety rule: only allow deletion when category has no items.
 router.delete("/:id", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
+
+    const itemsInCategory = await prisma.item.count({ where: { categoryId: id } });
+    if (itemsInCategory > 0) {
+      res.status(409).json({
+        error: "Cannot delete a category that still has items. Archive or move items first.",
+      });
+      return;
+    }
 
     const deleted = await prisma.category.delete({
       where: { id },

@@ -104,6 +104,12 @@
     @apply border-border;
   }
 
+  html,
+  body {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     @apply bg-background text-foreground;
     font-family: var(--font-body);
@@ -244,7 +250,7 @@
 
 /* Turn-on boot animation for screen content */
 .crt > .crt-screen {
-  animation: crt-turn-on 4s linear;
+  animation: crt-turn-on 1.2s linear;
   animation-fill-mode: forwards;
 }
 

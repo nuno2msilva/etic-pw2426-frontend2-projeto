@@ -12,17 +12,18 @@ import {
 interface StaffLoginModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onPasswordResetRequired?: () => void;
 }
 
-export const StaffLoginModal = ({ isOpen, onClose }: StaffLoginModalProps) => {
+export const StaffLoginModal = ({ isOpen, onClose, onPasswordResetRequired }: StaffLoginModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="sm:max-w-sm">
         <DialogHeader>
           <DialogTitle>🔐 Staff Login</DialogTitle>
-          <DialogDescription>Enter your staff password to access kitchen or manager features.</DialogDescription>
+          <DialogDescription>Enter your staff email and password to continue.</DialogDescription>
         </DialogHeader>
-        <StaffLoginForm onSuccess={onClose} />
+        <StaffLoginForm onSuccess={onClose} onPasswordResetRequired={onPasswordResetRequired} />
       </DialogContent>
     </Dialog>
   );

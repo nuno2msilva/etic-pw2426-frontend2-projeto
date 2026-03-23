@@ -1,5 +1,7 @@
 // TablePage — QR-authenticated customer ordering page for a specific table.
 
+"use client";
+
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -29,7 +31,7 @@ const TablePage = () => {
 
   // Auto-authenticate from QR code ?pin= param, then strip it from the URL
   useEffect(() => {
-    const pin = searchParams.get("pin");
+    const pin = searchParams?.get("pin");
     if (pin && tableId) {
       setIsAuthenticating(true);
       loginAsCustomer(tableId, pin)
@@ -50,7 +52,7 @@ const TablePage = () => {
   // Loading state
   if (isLoading || isAuthenticating) {
     return (
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-5xl mb-4">🍣</p>
           <p className="text-lg">Loading...</p>

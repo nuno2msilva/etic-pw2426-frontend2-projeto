@@ -13,6 +13,7 @@ import { authenticate } from "./middleware/auth.js";
 import { sseHandler } from "./events.js";
 import prisma from "./db/prisma.js";
 import authRoutes from "./routes/auth.js";
+import usersRoutes from "./routes/users.js";
 import categoriesRoutes from "./routes/categories.js";
 import menuRoutes from "./routes/menu.js";
 import tablesRoutes from "./routes/tables.js";
@@ -48,6 +49,7 @@ app.use(authenticate);        // decode JWT on every request (non-blocking)
 
 // ─── Routes ──────────────────────────────────────────────────
 app.use("/api/auth", authRoutes);
+app.use("/api/users", usersRoutes);
 app.use("/api/categories", categoriesRoutes);
 app.use("/api/menu", menuRoutes);
 app.use("/api/tables", tablesRoutes);

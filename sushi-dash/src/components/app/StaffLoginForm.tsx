@@ -10,49 +10,87 @@ import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 
 interface StaffLoginFormProps {
   onSuccess?: () => void;
+  onPasswordResetRequired?: () => void;
 }
 
-export const StaffLoginForm = ({ onSuccess }: StaffLoginFormProps) => {
+export const StaffLoginForm = ({ onSuccess, onPasswordResetRequired }: StaffLoginFormProps) => {
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { loginAsKitchen, loginAsManager } = useAuth();
+  const { loginAsStaffUser } = useAuth();
   const router = useRouter();
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
       setError("");
+
+      if (!identifier || !password) {
+        setError("Username/email and password are required");
+        return;
+      }
+
       setIsLoading(true);
 
       try {
-        const isManager = await loginAsManager(password);
-        if (isManager) {
+        const result = await loginAsStaffUser(identifier, password);
+
+        if (!result.success) {
+          setError(result.error || "Login failed. Please check your credentials.");
+          return;
+        }
+
+        if (result.passwordResetRequired && !result.skipPasswordResetReminder) {
+          localStorage.setItem("sushi-dash-show-password-reset-once", "1");
+          onPasswordResetRequired?.();
           onSuccess?.();
+          if (result.role === "admin") {
+            router.push("/admin");
+          } else if (result.role === "manager") {
+            router.push("/manager");
+          } else {
+            router.push("/kitchen");
+          }
+          return;
+        }
+
+        onSuccess?.();
+        if (result.role === "admin") {
+          router.push("/admin");
+        } else if (result.role === "manager") {
           router.push("/manager");
-          return;
-        }
-
-        const isKitchen = await loginAsKitchen(password);
-        if (isKitchen) {
-          onSuccess?.();
+        } else {
           router.push("/kitchen");
-          return;
         }
-
-        setError("Invalid password. Please try again.");
       } catch {
         setError("An error occurred. Please try again.");
       } finally {
         setIsLoading(false);
       }
     },
-    [password, loginAsKitchen, loginAsManager, router, onSuccess]
+    [identifier, password, loginAsStaffUser, onPasswordResetRequired, onSuccess, router],
   );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-2">
+        <label htmlFor="staff-identifier" className="text-sm font-medium text-foreground block">
+          Username or Email
+        </label>
+        <Input
+          id="staff-identifier"
+          type="text"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          placeholder="username or your@email.com"
+          className="w-full"
+          autoFocus
+          disabled={isLoading}
+        />
+      </div>
+
       <div className="space-y-2">
         <label
           htmlFor="staff-password"
@@ -66,9 +104,8 @@ export const StaffLoginForm = ({ onSuccess }: StaffLoginFormProps) => {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter staff password"
+            placeholder="Your password"
             className="w-full pr-10"
-            autoFocus
             disabled={isLoading}
           />
           <button
@@ -99,7 +136,7 @@ export const StaffLoginForm = ({ onSuccess }: StaffLoginFormProps) => {
       </Button>
 
       <p className="text-xs text-muted-foreground text-center">
-        Your password determines your access level automatically.
+        Enter your staff username or email and password to access your portal.
       </p>
     </form>
   );

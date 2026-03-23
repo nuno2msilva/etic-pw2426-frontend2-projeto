@@ -271,7 +271,7 @@ const MenuManager = ({
                     No items yet — click "Add Item" above.
                   </p>
                 ) : (
-                  items.map((item, idx) => {
+                  items.map((item) => {
                     const available = item.isAvailable !== false;
                     const displayName = stripNumberPrefix(item.name);
                     return (
@@ -284,7 +284,7 @@ const MenuManager = ({
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           <span className="text-xl flex-shrink-0">{item.emoji}</span>
-                          <span className="text-xs font-mono text-muted-foreground flex-shrink-0">#{idx + 1}</span>
+                          <span className="text-xs font-mono text-muted-foreground flex-shrink-0">#{item.id}</span>
                           <span className={cn(
                             "font-medium text-card-foreground truncate",
                             !available && "line-through"

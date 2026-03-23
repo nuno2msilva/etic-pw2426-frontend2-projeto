@@ -5,7 +5,7 @@
  * POST   /api/menu                    — Add item (manager) — auto-assigns ID
  * PUT    /api/menu/:id                — Update item (manager)
  * PATCH  /api/menu/:id/availability   — Toggle item availability (manager)
- * DELETE /api/menu/:id                — Delete item (manager)
+ * DELETE /api/menu/:id                — Archive item (manager)
  */
 
 import { Router } from "express";
@@ -166,23 +166,26 @@ router.patch("/:id/availability", requireRole("manager"), async (req, res) => {
   }
 });
 
-// ── Delete item (manager only) ──────────────────────────────
+// ── Archive item (manager only) ─────────────────────────────
 router.delete("/:id", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    const deleted = await prisma.item.delete({ where: { id } }).catch((e: { code?: string }) => {
+    const archived = await prisma.item.update({
+      where: { id },
+      data: { isAvailable: false },
+    }).catch((e: { code?: string }) => {
       if (e.code === "P2025") return null;
       throw e;
     });
 
-    if (!deleted) {
+    if (!archived) {
       res.status(404).json({ error: "Item not found" });
       return;
     }
 
     broadcast({ type: "menu-changed" });
-    res.json({ success: true });
+    res.json({ success: true, archived: true, id: archived.id });
   } catch (err) {
     console.error("Menu delete error:", err);
     res.status(500).json({ error: "Internal server error" });

@@ -1,5 +1,7 @@
 // CustomerPage — Landing page with table selection, PIN authentication, and menu ordering flow.
 
+"use client";
+
 import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
@@ -20,11 +22,12 @@ type Step = "table" | "menu";
 
 const CustomerPage = () => {
   const searchParams = useSearchParams();
+  const selectParam = searchParams?.get("select");
 
   // Skip auto-restore when user explicitly navigated here (e.g. logo click)
-  const skipAutoRestore = useRef(searchParams.get("select") === "true");
+  const skipAutoRestore = useRef(selectParam === "true");
 
-  const { tables, settings } = useApp();
+  const { tables, settings, tablesError, reloadTables } = useApp();
   const { isInitialized, customerSession, loginAsCustomer, logout } = useAuth();
 
   const isCustomerAuthenticated = customerSession !== null;
@@ -48,14 +51,14 @@ const CustomerPage = () => {
 
   // Logo click: reset to table selection when ?select=true appears in the URL
   useEffect(() => {
-    if (searchParams.get("select") === "true" && step !== "table") {
+    if (selectParam === "true" && step !== "table") {
       setStep("table");
       setSelectedTable(null);
       flow.setCart({});
       flow.setOpenCategories(new Set());
       skipAutoRestore.current = true;
     }
-  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // React to session being cleared (e.g. PIN changed by manager via SSE)
   useEffect(() => {
@@ -140,6 +143,10 @@ const CustomerPage = () => {
       {step === "table" && (
         <TableSelector
           tables={tables}
+          loadError={tablesError}
+          onRetryLoad={() => {
+            void reloadTables();
+          }}
           onSelectTable={handleSelectTable}
           onStaffLogin={() => setShowStaffLogin(true)}
         />

@@ -1,21 +1,27 @@
 /**
  * middleware/auth.ts — JWT authentication & authorisation
  *
- * Auth model (password-only, no usernames):
+ * Auth model (Email + Password):
  *   - Customer: authenticates with a per-table 4-digit PIN → JWT locked to that tableId
- *   - Kitchen:  authenticates with the kitchen password → JWT with role "kitchen"
- *   - Manager:  authenticates with the manager password → JWT with role "manager"
+ *   - Staff: authenticates with email + password:
+ *     • kitchen@sushidash.dev (password) → processes orders
+ *     • manager@sushidash.dev (password) → manages menu/tables
+ *     • admin@sushidash.dev (password) → manages users/permissions + all manager tasks
  *
- * The JWT is stored in an httpOnly cookie so the browser sends it
- * automatically. The token contains { role, tableId?, pinVersion?, jti, iat, exp }.
+ * Permissions (hierarchical):
+ *   kitchen < manager < admin
+ *   - kitchen: Can only process orders (view all, update status, cancel)
+ *   - manager: kitchen + menu/table/settings management
+ *   - admin: manager + user & permission management (ONLY, no kitchen/manager tasks)
  *
- * Table lock strategy:
- *   When a customer logs in for Table 3, the JWT's `tableId` claim is "3".
- *   All subsequent requests are verified against that claim — the customer
- *   cannot access or order for any other table without re-authenticating.
+ * The JWT is stored in an httpOnly cookie so the browser sends it automatically.
+ * The token contains { role, userId?, permission?, tableId?, pinVersion?, jti, iat, exp }.
+ *
+ * Passwords are hashed with bcrypt (cost=10) for security against brute force attacks.
  */
 
-import { createHash, randomUUID } from "crypto";
+import bcrypt from "bcryptjs";
+import { randomUUID } from "crypto";
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
 
@@ -37,13 +43,16 @@ const COOKIE_CUSTOMER = "sushi_customer";
 const COOKIE_STAFF    = "sushi_staff";
 
 // ─── Types ────────────────────────────────────────────────────
-export type AuthRole = "customer" | "kitchen" | "manager";
+export type AuthRole = "customer" | "kitchen" | "manager" | "admin";
+export type Permission = "kitchen" | "manager" | "admin";
 
 export interface TokenPayload {
   role: AuthRole;
-  tableId?: number;
-  pinVersion?: number;  // for customer sessions — invalidated when PIN changes
-  jti: string;  // unique token ID for revocation
+  userId?: number;           // for staff sessions
+  permission?: Permission;   // for staff sessions (kitchen/manager/admin)
+  tableId?: number;          // for customer sessions
+  pinVersion?: number;       // for customer sessions — invalidated when PIN changes
+  jti: string;               // unique token ID for revocation
 }
 
 // Extend Express Request with auth info
@@ -59,9 +68,14 @@ declare global {
 
 // ─── Helpers ──────────────────────────────────────────────────
 
-/** SHA-256 hash (matches frontend) */
-export function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
+/** Hash a password with bcrypt (cost=10) */
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
+}
+
+/** Verify password against bcrypt hash */
+export async function verifyPassword(password: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(password, hash);
 }
 
 /** Create a signed JWT and set it as an httpOnly cookie */
@@ -115,7 +129,14 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     try {
       const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload & jwt.JwtPayload;
       if (decoded.role !== "customer") {
-        staffAuth = { role: decoded.role, tableId: decoded.tableId, pinVersion: decoded.pinVersion, jti: decoded.jti };
+        staffAuth = { 
+          role: decoded.role, 
+          userId: decoded.userId,
+          permission: decoded.permission,
+          tableId: decoded.tableId, 
+          pinVersion: decoded.pinVersion, 
+          jti: decoded.jti 
+        };
       }
     } catch { /* expired / invalid */ }
   }
@@ -127,7 +148,12 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
     try {
       const decoded = jwt.verify(token, getJwtSecret()) as TokenPayload & jwt.JwtPayload;
       if (decoded.role === "customer") {
-        customerAuth = { role: decoded.role, tableId: decoded.tableId, pinVersion: decoded.pinVersion, jti: decoded.jti };
+        customerAuth = { 
+          role: decoded.role, 
+          tableId: decoded.tableId, 
+          pinVersion: decoded.pinVersion, 
+          jti: decoded.jti 
+        };
       }
     } catch { /* expired / invalid */ }
   }
@@ -144,7 +170,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
 
 /**
  * requireRole — Reject requests that don't have the required role.
- * Manager implicitly has access to everything.
+ * Supports permission hierarchy: kitchen < manager < admin
  */
 export function requireRole(...roles: AuthRole[]) {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -153,15 +179,48 @@ export function requireRole(...roles: AuthRole[]) {
       return;
     }
 
-    // Manager has universal access
-    if (req.auth.role === "manager") return next();
+    // Create a set of all roles that satisfy the requirement
+    const allowedRoles = new Set(roles);
+    
+    // Apply permission hierarchy:
+    // - If admin is required, admin can do it
+    // - If manager is required, manager or admin can do it
+    // - If kitchen is required, kitchen, manager, or admin can do it
+    
+    const userRole = req.auth.role;
+    const userPermission = req.auth.permission as Permission | undefined;
 
-    if (!roles.includes(req.auth.role)) {
+    // Customer is never allowed in these contexts
+    if (userRole === "customer") {
       res.status(403).json({ error: "Insufficient permissions" });
       return;
     }
 
-    next();
+    // Check direct role match
+    if (allowedRoles.has(userRole)) {
+      return next();
+    }
+
+    // Check permission-based access (for staff users)
+    if (userPermission) {
+      // Create permission hierarchy
+      const permissionHierarchy: Record<Permission, number> = {
+        kitchen: 1,
+        manager: 2,
+        admin: 3,
+      };
+
+      const userLevel = permissionHierarchy[userPermission] ?? 0;
+
+      // Check if user permission satisfies any required role
+      for (const role of roles) {
+        if (role === "kitchen" && userLevel >= 1) return next();
+        if (role === "manager" && userLevel >= 2) return next();
+        if (role === "admin" && userLevel >= 3) return next();
+      }
+    }
+
+    res.status(403).json({ error: "Insufficient permissions" });
   };
 }
 
@@ -176,8 +235,13 @@ export async function requireTable(req: Request, res: Response, next: NextFuncti
     return;
   }
 
-  // Manager and kitchen can access any table
-  if (req.auth.role === "manager" || req.auth.role === "kitchen") {
+  // Manager (or higher) can access any table
+  if (req.auth.role === "manager" || req.auth.role === "admin") {
+    return next();
+  }
+
+  // Kitchen staff can access any table
+  if (req.auth.role === "kitchen") {
     return next();
   }
 

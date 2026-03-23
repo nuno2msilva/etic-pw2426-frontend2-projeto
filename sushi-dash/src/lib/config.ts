@@ -2,3 +2,6 @@
 
 /** Base URL for backend API requests. Empty in dev (Next.js proxy), full URL if set. */
 export const API_BASE: string = process.env.NEXT_PUBLIC_API_URL || "";
+
+/** Toggle CRT/VCR visual effect globally. Set to false to disable it. */
+export const ENABLE_CRT_EFFECT: boolean = false;

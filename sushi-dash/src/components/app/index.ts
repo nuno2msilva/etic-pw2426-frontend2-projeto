@@ -19,6 +19,8 @@ export { PinPad } from "./PinPad";
 export { StaffLoginModal } from "./StaffLoginModal";
 export { StaffLoginForm } from "./StaffLoginForm";
 export { TableQRModal } from "./TableQRModal";
+export { PasswordChangeModal } from "./PasswordChangeModal";
+export { AdminPanel } from "./AdminPanel";
 
 // Settings components
 export { OrderSettingsManager } from "./OrderSettingsManager";

@@ -70,7 +70,7 @@ router.put("/passwords", requireRole("manager"), async (req, res) => {
 
     // Import hashPassword inline to avoid circular dep issues
     const { hashPassword } = await import("../middleware/auth.js");
-    const hash = hashPassword(password);
+    const hash = await hashPassword(password);
 
     await prisma.password.update({
       where: { role },

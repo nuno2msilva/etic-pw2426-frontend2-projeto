@@ -1,16 +1,16 @@
 /**
  * routes/auth.ts — Authentication endpoints
  *
- * POST /api/auth/login/table/:tableId  — Customer login (password per table)
- * POST /api/auth/login/kitchen         — Kitchen staff login
- * POST /api/auth/login/manager         — Manager login
- * POST /api/auth/logout                — Clear session
- * GET  /api/auth/session               — Check current session
+ * POST /api/auth/login/table/:tableId      — Customer login (PIN per table)
+ * POST /api/auth/login/staff               — Staff login (username/email + password)
+ * POST /api/auth/logout                    — Clear session
+ * POST /api/auth/change-password           — Change own password (staff only)
+ * GET  /api/auth/session                   — Check current session
  */
 
 import { Router } from "express";
 import prisma from "../db/prisma.js";
-import { hashPassword, issueToken, clearToken } from "../middleware/auth.js";
+import { issueToken, clearToken, verifyPassword, hashPassword, authenticate } from "../middleware/auth.js";
 
 const router = Router();
 
@@ -49,68 +49,68 @@ router.post("/login/table/:tableId", async (req, res) => {
   }
 });
 
-// ── Kitchen login ─────────────────────────────────────────────
-router.post("/login/kitchen", async (req, res) => {
+// ── Staff login (username/email + password) ───────────────────
+// Supports kitchen, manager, and admin users
+router.post("/login/staff", async (req, res) => {
   try {
-    const { password } = req.body as { password?: string };
+    const { identifier, password } = req.body as { identifier?: string; password?: string };
 
-    if (!password) {
-      res.status(400).json({ error: "Password required" });
+    if (!identifier || !password) {
+      res.status(400).json({ error: "Username/email and password required" });
       return;
     }
 
-    const row = await prisma.password.findUnique({
-      where: { role: "kitchen" },
+    // Find user by username or email
+    const user = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: identifier },
+          { username: identifier },
+        ],
+      },
+      select: { id: true, email: true, username: true, passwordHash: true, permission: true, isActive: true, passwordResetRequired: true, skipPasswordResetReminder: true },
     });
 
-    if (!row) {
-      res.status(500).json({ error: "Kitchen password not configured" });
+    if (!user) {
+      res.status(401).json({ error: "Invalid username/email or password" });
       return;
     }
 
-    const hash = hashPassword(password);
-    if (hash !== row.passwordHash) {
-      res.status(401).json({ error: "Invalid password" });
+    if (!user.isActive) {
+      res.status(403).json({ error: "User account is disabled" });
       return;
     }
 
-    issueToken(res, { role: "kitchen" });
-    res.json({ success: true, role: "kitchen" });
-  } catch (err) {
-    console.error("Kitchen login error:", err);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// ── Manager login ─────────────────────────────────────────────
-router.post("/login/manager", async (req, res) => {
-  try {
-    const { password } = req.body as { password?: string };
-
-    if (!password) {
-      res.status(400).json({ error: "Password required" });
+    // Verify password with bcrypt
+    const passwordValid = await verifyPassword(password, user.passwordHash);
+    if (!passwordValid) {
+      res.status(401).json({ error: "Invalid username/email or password" });
       return;
     }
 
-    const row = await prisma.password.findUnique({
-      where: { role: "manager" },
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordPreview: null },
     });
 
-    if (!row) {
-      res.status(500).json({ error: "Manager password not configured" });
-      return;
-    }
+    // Issue token with permission level
+    issueToken(res, { 
+      role: user.permission, 
+      userId: user.id,
+      permission: user.permission 
+    });
 
-    const hash = hashPassword(password);
-    if (hash !== row.passwordHash) {
-      res.status(401).json({ error: "Invalid password" });
-      return;
-    }
-
-    issueToken(res, { role: "manager" });
-    res.json({ success: true, role: "manager" });
+    res.json({ 
+      success: true, 
+      role: user.permission, 
+      userId: user.id,
+      email: user.email,
+      username: user.username,
+      passwordResetRequired: user.passwordResetRequired,
+      skipPasswordResetReminder: user.skipPasswordResetReminder
+    });
   } catch (err) {
-    console.error("Manager login error:", err);
+    console.error("Staff login error:", err);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -121,8 +121,8 @@ router.post("/logout", (req, res) => {
   const { role } = req.body as { role?: string };
   if (role === "customer") {
     clearToken(res, "customer");
-  } else if (role === "kitchen" || role === "manager") {
-    clearToken(res, role);
+  } else if (role && ["kitchen", "manager", "admin"].includes(role)) {
+    clearToken(res, role as any);
   } else {
     // No role specified — clear both
     clearToken(res);
@@ -132,14 +132,114 @@ router.post("/logout", (req, res) => {
   res.json({ success: true });
 });
 
+// ── Change own password (staff only) ──────────────────────────
+router.post("/change-password", authenticate, async (req, res) => {
+  try {
+    // Must be a staff user (not customer)
+    if (!req.auth || req.auth.role === "customer" || !req.auth.userId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body as { currentPassword?: string; newPassword?: string };
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({ error: "Current and new password required" });
+      return;
+    }
+
+    if (newPassword.length < 8 || !/\d/.test(newPassword) || !/[A-Z]/.test(newPassword)) {
+      res.status(400).json({ 
+        error: "Password must be at least 8 characters and contain a number and uppercase letter" 
+      });
+      return;
+    }
+
+    // Fetch user
+    const user = await prisma.user.findUnique({
+      where: { id: req.auth.userId },
+      select: { id: true, passwordHash: true, email: true },
+    });
+
+    if (!user) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
+    // Verify current password
+    const currentValid = await verifyPassword(currentPassword, user.passwordHash);
+    if (!currentValid) {
+      res.status(401).json({ error: "Current password is incorrect" });
+      return;
+    }
+
+    // Hash new password
+    const newHash = await hashPassword(newPassword);
+
+    // Update password and clear reset-reminder flags
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash: newHash,
+        passwordPreview: null,
+        passwordResetRequired: false,
+        skipPasswordResetReminder: false,
+      },
+    });
+
+    res.json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Change password error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Skip password reset reminder (staff only) ────────────────
+router.post("/skip-password-reset-reminder", authenticate, async (req, res) => {
+  try {
+    if (!req.auth || req.auth.role === "customer" || !req.auth.userId) {
+      res.status(401).json({ error: "Authentication required" });
+      return;
+    }
+
+    await prisma.user.update({
+      where: { id: req.auth.userId },
+      data: { skipPasswordResetReminder: true },
+    });
+
+    res.json({ success: true });
+  } catch (err) {
+    console.error("Skip reminder error:", err);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 // ── Session check ─────────────────────────────────────────────
 router.get("/session", async (req, res) => {
   // Return info about all active sessions
-  const sessions: { role: string; tableId?: number | null; authenticated: boolean }[] = [];
+  const sessions: { role: string; userId?: number; email?: string; username?: string | null; tableId?: number | null; authenticated: boolean }[] = [];
 
   // Check staff session
   if (req.staffAuth) {
-    sessions.push({ role: req.staffAuth.role, authenticated: true });
+    // Fetch user email if available
+    let email: string | undefined;
+    let username: string | null | undefined;
+    if (req.staffAuth.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: req.staffAuth.userId },
+        select: { email: true, username: true },
+      });
+      email = user?.email;
+      username = user?.username;
+    }
+
+    sessions.push({ 
+      role: req.staffAuth.role, 
+      userId: req.staffAuth.userId,
+      email,
+      username,
+      authenticated: true 
+    });
   }
 
   // Check customer session
@@ -176,6 +276,9 @@ router.get("/session", async (req, res) => {
   res.json({
     authenticated: true,
     role: primary.role,
+    userId: primary.userId ?? null,
+    email: primary.email,
+    username: primary.username ?? null,
     tableId: primary.tableId ?? null,
     sessions,
   });

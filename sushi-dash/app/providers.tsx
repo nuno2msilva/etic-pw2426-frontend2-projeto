@@ -10,6 +10,8 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useServerEvents } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
 import CRTScreen from "@/components/app/CRTScreen";
+import WebVitalsReporter from "@/components/app/WebVitalsReporter";
+import { ENABLE_CRT_EFFECT } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
@@ -30,11 +32,14 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <TooltipProvider>
         <Sonner />
         <AuthProvider>
+          <WebVitalsReporter />
           <LiveUpdates />
           <AppProvider>
-            <CRTScreen>
-              <AppHeader />
-              {children}
+            <CRTScreen enabled={ENABLE_CRT_EFFECT}>
+              <div className="h-dvh flex flex-col overflow-hidden">
+                <AppHeader />
+                <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+              </div>
             </CRTScreen>
           </AppProvider>
         </AuthProvider>

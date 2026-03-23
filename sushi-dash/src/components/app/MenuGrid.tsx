@@ -23,6 +23,7 @@ const MenuGrid = ({
   onDecrement, 
 }: MenuGridProps) => {
   const canAddMore = currentTotal < maxItems;
+  const stripNumberPrefix = (name: string) => name.replace(/^#\d+\s+/, "");
 
   return (
     <div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-5 gap-3">
@@ -41,7 +42,7 @@ const MenuGrid = ({
           >
             {/* Item number in top-left corner with # prefix */}
             <div className="absolute top-2 left-2 text-xs font-bold text-muted-foreground z-10">
-              #{item.name.match(/#(\d+)/)?.[1] || ''}
+              #{item.id}
             </div>
 
             {/* HOT badge for popular items - top right */}
@@ -102,7 +103,7 @@ const MenuGrid = ({
             {/* Item name at the bottom */}
             <div className="absolute bottom-2 left-2 right-2">
               <span className="text-sm font-medium text-card-foreground text-center leading-tight block">
-                {item.name.replace(/#\d+\s/, '')}
+                {stripNumberPrefix(item.name)}
               </span>
               {!available && (
                 <span className="text-[10px] font-bold text-destructive text-center block mt-0.5">

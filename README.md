@@ -6,9 +6,9 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 
 - **Customer View** — Browse 145+ menu items with search, categories, and a persistent cart banner. 4-digit shuffled PinPad for table authentication with session persistence.
 - **Kitchen Dashboard** — Real-time order queue with status workflow (Queued → Preparing → Ready → Delivered).
-- **Manager Panel** — Full administrative control: menu CRUD, table & PIN management, order cancel/delete, password management, order limit configuration.
+- **Manager Panel** — Full operational control: menu CRUD, table & PIN management, order cancel/delete, and order limit configuration.
 - **PIN System** — Each table has a 4-digit PIN. Changing a PIN invalidates active sessions. Managers can set or randomize PINs.
-- **Role-based Auth** — JWT via httpOnly cookies for customers; SHA-256 password hashing for staff roles.
+- **Role-based Auth** — JWT via httpOnly cookies for customers and staff; bcrypt-hashed passwords for staff users (kitchen, manager, admin).
 - **Responsive Design** — Mobile-first with Tailwind CSS and dark mode support.
 
 ## 🏗️ Architecture
@@ -80,8 +80,9 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Express with tsx watch |
+| `npm run db:check` | Verify API can connect to database |
 | `npm run db:push` | Sync Prisma schema to database |
-| `npm run db:seed` | Seed menu, tables, passwords |
+| `npm run db:seed` | Seed menu, tables, settings, and default admin user |
 | `npm run db:reset` | Drop & recreate tables + seed |
 | `npm run db:generate` | Regenerate Prisma client |
 
@@ -97,6 +98,7 @@ make build          # Production build
 make test           # Run all frontend tests (Jest)
 make test-watch     # Run tests in watch mode
 make test-coverage  # Run tests with coverage report
+make db-check       # Verify API can connect to database
 make db-push        # Sync Prisma schema to database
 make db-seed        # Seed with default data
 make db-reset       # Drop & recreate (Prisma push + seed)
@@ -114,21 +116,30 @@ Customers select a table and enter its 4-digit PIN via a shuffled PinPad. Sessio
 ### Staff Login
 
 Click "Staff Login" on the table selector page to open the login modal:
-- Enter the **kitchen password** → Kitchen Dashboard
-- Enter the **manager password** → Manager Panel
+- Enter your **username or email + password**
+- Kitchen users are redirected to Kitchen Dashboard
+- Manager users are redirected to Manager Panel
+- Admin users are redirected to Admin Panel
 
-> Default credentials are defined in `server/src/db/seed.ts` (for PINs) and `src/lib/auth.ts` (for staff passwords). Change them in production.
+Default seeded admin credentials:
+- Username: **admin**
+- Email: **admin@sushidash.dev**
+- Password: **Admin@12345**
+
+Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, change/reset this credential immediately after first login.
 
 ### Permission Matrix
 
-| Action | Customer | Kitchen | Manager |
-|--------|----------|---------|---------|
-| Place orders | ✅ (own table) | ❌ | ✅ |
-| Update order status | ❌ | ✅ | ✅ |
-| Cancel own queued orders | ✅ (own table) | ❌ | ✅ |
-| Delete orders | ❌ | ❌ | ✅ |
-| Manage menu/tables/PINs | ❌ | ❌ | ✅ |
-| Change passwords | ❌ | ❌ | ✅ |
+| Action | Customer | Kitchen | Manager | Admin |
+|--------|----------|---------|---------|-------|
+| Place orders | ✅ (own table) | ❌ | ✅ | ❌ |
+| Update order status | ❌ | ✅ | ✅ | ❌ |
+| Cancel own queued orders | ✅ (own table) | ❌ | ✅ | ❌ |
+| Delete orders | ❌ | ❌ | ✅ | ❌ |
+| Manage menu/tables/PINs | ❌ | ❌ | ✅ | ❌ |
+| Manage users/permissions | ❌ | ❌ | ❌ | ✅ |
+| Reset staff passwords | ❌ | ❌ | ❌ | ✅ |
+| Change own password | ❌ | ✅ | ✅ | ✅ |
 
 ## 🛠️ Tech Stack
 
@@ -186,7 +197,7 @@ sushi-dash/
 │   ├── views/
 │   │   ├── CustomerPage.tsx     # Table select → PinPad → menu → order
 │   │   ├── KitchenPage.tsx      # Kitchen order dashboard
-│   │   ├── ManagerPage.tsx      # Admin panel
+│   │   ├── ManagerPage.tsx      # Manager operations panel
 │   │   ├── TablePage.tsx        # Direct table ordering (/table/:id)
 │   │   └── NotFound.tsx         # 404 page
 │   ├── test/                    # Jest test suites (6 files)
@@ -210,7 +221,8 @@ sushi-dash/
 | `/` | Table selector + ordering | No (PIN required) |
 | `/table/:id` | Direct table ordering | PIN |
 | `/kitchen` | Kitchen order dashboard | Kitchen/Manager |
-| `/manager` | Admin panel | Manager |
+| `/manager` | Manager operations panel | Manager |
+| `/admin` | User management panel | Admin |
 
 ## 🧪 Testing
 
@@ -313,7 +325,7 @@ export DATABASE_URL="postgresql://user:pass@host:5432/dbname"
 # Push the Prisma schema to create all tables
 npx prisma db push
 
-# Seed default menu items, tables, and passwords
+# Seed default menu items, tables, settings, and admin user
 npm run db:seed
 ```
 
@@ -333,7 +345,7 @@ npx prisma db push
 npm run db:seed
 ```
 
-> After seeding, your database will contain 145 menu items, default tables with PINs, and staff passwords defined in `server/src/db/seed.ts`.
+> After seeding, your database will contain 145 menu items, default tables with PINs, app settings, and one admin user defined in sushi-dash/server/src/db/seed.ts.
 
 #### 4. Deploy the Frontend
 

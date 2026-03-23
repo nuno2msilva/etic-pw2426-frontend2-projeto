@@ -35,6 +35,8 @@ interface AppContextType {
   menu: MenuItem[];
   /** Configured restaurant tables */
   tables: Table[];
+  /** Optional tables load error message */
+  tablesError: string | null;
   /** All orders (active + delivered) */
   orders: Order[];
   /** Derived: unique category names from menu */
@@ -60,6 +62,8 @@ interface AppContextType {
   addTable: (label: string) => Promise<void>;
   updateTable: (id: string, label: string) => Promise<void>;
   removeTable: (id: string) => Promise<void>;
+  /** Retry table fetch */
+  reloadTables: () => Promise<unknown>;
 
   // Orders
   placeOrder: (
@@ -123,6 +127,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Derived data with defaults for loading states — wrapped in useMemo to maintain stable references and avoid re-renders
   const menu = useMemo(() => menuQuery.data ?? [], [menuQuery.data]);
   const tables = useMemo(() => tablesQuery.data ?? [], [tablesQuery.data]);
+  const tablesError = tablesQuery.error instanceof Error ? tablesQuery.error.message : null;
   const orders = useMemo(() => ordersQuery.data ?? [], [ordersQuery.data]);
   const categoryList = useMemo(() => categoriesQuery.data ?? [], [categoriesQuery.data]);
   const settings = settingsQuery.data ?? DEFAULT_SETTINGS;
@@ -239,6 +244,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     [removeTableMutation]
   );
 
+  /** Retry loading tables from API */
+  const reloadTables = useCallback(async () => {
+    return tablesQuery.refetch();
+  }, [tablesQuery]);
+
   // Place an order — validates limits, then calls the API. Returns synchronous result for immediate UI feedback.
   const placeOrder = useCallback(
     (
@@ -317,6 +327,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     () => ({
       menu,
       tables,
+      tablesError,
       orders,
       categories,
       categoryList,
@@ -331,6 +342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTable,
       updateTable,
       removeTable,
+      reloadTables,
       placeOrder,
       updateOrderStatus,
       cancelOrder,

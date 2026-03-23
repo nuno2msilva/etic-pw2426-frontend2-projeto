@@ -1,5 +1,7 @@
 // KitchenPage — Password-protected kitchen dashboard for processing orders through their lifecycle.
 
+"use client";
+
 import { useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
@@ -7,19 +9,20 @@ import { useAuth } from "@/context/AuthContext";
 import { OrderCard, SEOHead } from "@/components/app";
 const KitchenPage = () => {
   const { orders, updateOrderStatus, cancelOrder, deleteOrder } = useApp();
-  const { isInitialized, checkAccess } = useAuth();
+  const { isInitialized, staffSession } = useAuth();
   const router = useRouter();
 
-  // Check if user has kitchen access
-  const hasKitchenAccess = checkAccess('kitchen');
-  
-  // Check if user is manager (has extra permissions)
-  const isManager = checkAccess('manager');
+  // Route access is strict by role: only kitchen staff may access /kitchen.
+  const hasKitchenAccess = staffSession?.permission === "kitchen";
 
-  // Redirect to home if not authenticated
+  // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {
     if (isInitialized && !hasKitchenAccess) {
-      router.push('/');
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
     }
   }, [isInitialized, hasKitchenAccess, router]);
 
@@ -55,7 +58,7 @@ const KitchenPage = () => {
   if (!isInitialized || !hasKitchenAccess) return null;
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
+    <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
       <SEOHead
         title="Kitchen Dashboard"
         description="Process incoming sushi orders. View active and delivered orders in real time."
@@ -92,7 +95,7 @@ const KitchenPage = () => {
                 order={order}
                 showActions
                 onUpdateStatus={(status) => updateOrderStatus(order.id, status)}
-                onCancel={isManager ? () => handleCancelOrder(order.id) : undefined}
+                onCancel={undefined}
               />
             ))}
           </div>
@@ -111,8 +114,8 @@ const KitchenPage = () => {
               <OrderCard 
                 key={order.id} 
                 order={order}
-                showActions={isManager}
-                onDelete={isManager ? () => handleDeleteOrder(order.id) : undefined}
+                showActions={false}
+                onDelete={undefined}
               />
             ))}
           </div>

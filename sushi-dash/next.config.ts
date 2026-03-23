@@ -7,7 +7,7 @@ const nextConfig: NextConfig = {
     if (process.env.NODE_ENV === "production") return [];
     return [
       {
-        source: "/api/:path*",
+        source: "/api/:path((?!v1/).*)",
         destination: "http://localhost:3001/api/:path*",
       },
     ];

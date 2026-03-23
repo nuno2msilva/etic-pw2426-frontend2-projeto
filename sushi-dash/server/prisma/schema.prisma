@@ -1,5 +1,5 @@
 // Sushi Dash — Prisma Schema
-// Mirrors the existing PostgreSQL tables created by db/init.ts
+// PostgreSQL with users, permissions, and enhanced security
 
 generator client {
   provider = "prisma-client-js"
@@ -7,6 +7,15 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+// ── Permission levels (hierarchical) ───────────────────────────
+enum Permission {
+  kitchen  // Process orders only
+  manager  // Kitchen + menu/table management
+  admin    // Manager + user/permission management
+
+  @@map("permissions")
 }
 
 // ── Order status enum ──────────────────────────────────────────
@@ -60,6 +69,7 @@ model TableConfig {
 }
 
 // ── Role passwords (kitchen, manager) ──────────────────────────
+// DEPRECATED: Replaced by User model. Kept temporarily during migration.
 model Password {
   role         String @id @db.VarChar(20)
   passwordHash String @map("password_hash") @db.VarChar(64)
@@ -67,16 +77,40 @@ model Password {
   @@map("passwords")
 }
 
+// ── Users (staff authentication: kitchen, manager, admin) ─────
+model User {
+  id        Int        @id @default(autoincrement())
+  email     String     @unique @db.VarChar(255)
+  username  String     @unique @map("name") @db.VarChar(100)
+  passwordHash String   @map("password_hash") @db.VarChar(255)  // bcrypt hash (60+ chars)
+  passwordPreview String? @map("password_preview") @db.VarChar(255)
+  permission Permission
+  isActive  Boolean    @default(true) @map("is_active")
+  passwordResetRequired Boolean @default(false) @map("password_reset_required")
+  skipPasswordResetReminder Boolean @default(false) @map("skip_password_reset_reminder")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+
+  sessions Session[]
+
+  @@index([email], name: "idx_users_email")
+  @@map("users")
+}
+
 // ── Sessions (JWT tracking for revocation) ─────────────────────
 model Session {
   token     String   @id @db.VarChar(512)
-  role      String   @db.VarChar(20)
+  userId    Int?     @map("user_id")
+  role      String   @db.VarChar(20)  // "customer", "kitchen", "manager", "admin"
   tableId   Int?     @map("table_id")
   createdAt DateTime @default(now()) @map("created_at")
   expiresAt DateTime @map("expires_at")
 
-  table TableConfig? @relation(fields: [tableId], references: [id], onDelete: SetNull)
+  user      User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  table     TableConfig?   @relation(fields: [tableId], references: [id], onDelete: SetNull)
 
+  @@index([userId], name: "idx_sessions_user")
+  @@index([tableId], name: "idx_sessions_table")
   @@map("sessions")
 }
 

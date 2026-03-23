@@ -1,5 +1,7 @@
 // ManagerPage — Password-protected admin panel for managing tables, menu, passwords, and order settings.
 
+"use client";
+
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
@@ -7,7 +9,6 @@ import { useAuth } from "@/context/AuthContext";
 import {
   TableManager,
   MenuManager,
-  PasswordManager,
   OrderSettingsManager,
   SEOHead,
   CollapsibleSection,
@@ -31,19 +32,23 @@ const ManagerPage = () => {
     updateSettings,
   } = useApp();
 
-  const { isInitialized, checkAccess } = useAuth();
+  const { isInitialized, staffSession } = useAuth();
   const router = useRouter();
 
   // Collapsible state for each section
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
-  // Check if user has manager access
-  const hasManagerAccess = checkAccess('manager');
+  // Route access is strict by role: only manager staff may access /manager.
+  const hasManagerAccess = staffSession?.permission === "manager";
 
-  // Redirect to home if not authenticated
+  // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {
     if (isInitialized && !hasManagerAccess) {
-      router.push('/');
+      if (typeof window !== "undefined" && window.history.length > 1) {
+        router.back();
+      } else {
+        router.replace("/");
+      }
     }
   }, [isInitialized, hasManagerAccess, router]);
 
@@ -88,12 +93,6 @@ const ManagerPage = () => {
       ),
     },
     {
-      id: "passwords",
-      title: "🔑 Password Management",
-      description: "Update kitchen and manager passwords",
-      content: <PasswordManager />,
-    },
-    {
       id: "menu-management",
       title: "📋 Menu Management",
       description: `${menu.length} items in ${categories.length} categories`,
@@ -115,7 +114,7 @@ const ManagerPage = () => {
   // Show loading while auth initializes
   if (!isInitialized) {
     return (
-      <main className="max-w-5xl mx-auto px-4 py-8">
+      <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
         <SEOHead title="Manager Panel" description="Restaurant management dashboard" />
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-lg">Loading...</p>
@@ -130,10 +129,10 @@ const ManagerPage = () => {
   }
 
   return (
-    <main className="max-w-5xl mx-auto px-4 py-8">
+    <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
       <SEOHead
         title="Manager Panel"
-        description="Configure menu items, tables, order limits, and passwords for Sushi Dash."
+        description="Configure menu items, tables, and order limits for Sushi Dash."
       />
       {/* Page Header */}
       <div className="mb-2">
@@ -142,7 +141,7 @@ const ManagerPage = () => {
         </h1>
       </div>
       <p className="text-muted-foreground mb-8">
-        Configure menu items, tables, order limits, and passwords.
+        Configure menu items, tables, and order limits.
       </p>
 
       {/* Management Settings - Collapsible Sections */}

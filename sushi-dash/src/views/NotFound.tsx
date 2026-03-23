@@ -1,5 +1,7 @@
 // NotFound — 404 error page that logs the attempted path and links back to home.
 
+"use client";
+
 import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 

@@ -4,24 +4,24 @@
  * Run with: npm run db:seed
  *
  * Imports data directly from the frontend's seedData.ts and
- * seeds all tables. Passwords are hashed with SHA-256.
+ * seeds all tables. Passwords are hashed with bcrypt (async).
  */
 
 import "dotenv/config";
-import { createHash } from "crypto";
+import bcrypt from "bcryptjs";
 import prisma from "./prisma.js";
 
 // Import default data from the frontend source (dynamic import for cross-package-boundary compatibility)
 const { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } = await import("../../../src/data/seedData.js");
 
-/** SHA-256 hash matching the frontend's hashPassword() */
-function hashPassword(password: string): string {
-  return createHash("sha256").update(password).digest("hex");
-}
-
 /** Generate a random 4-digit PIN */
 function generatePin(): string {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
+}
+
+/** Hash a password with bcrypt (cost=10) */
+async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, 10);
 }
 
 // Category order for sorting
@@ -48,10 +48,9 @@ const TABLE_PINS: Record<string, string> = {
   "6": "2468",
 };
 
-// Role passwords
-const ROLE_PASSWORDS = [
-  { role: "kitchen", password: "kitchen-master" },
-  { role: "manager", password: "manager-admin" },
+// Default users with email & password (permissions = kitchen < manager < admin)
+const DEFAULT_USERS = [
+  { email: "admin@sushidash.dev", username: "admin", password: "Admin@12345", permission: "admin" as const, passwordResetRequired: false },
 ];
 
 async function seed() {
@@ -102,15 +101,16 @@ async function seed() {
     const maxTableId = Math.max(...DEFAULT_TABLES.map((t) => Number(t.id)));
     await prisma.$executeRawUnsafe(`SELECT setval('tables_config_id_seq', ${maxTableId})`);
 
-    // ── Role passwords ──────────────────────────────────────
-    console.log(`Seeding ${ROLE_PASSWORDS.length} role passwords...`);
-    for (const p of ROLE_PASSWORDS) {
-      const hash = hashPassword(p.password);
-      await prisma.password.upsert({
-        where: { role: p.role },
-        update: { passwordHash: hash },
-        create: { role: p.role, passwordHash: hash },
+    // ── NEW USERS (replaces old Password model) ─────────────
+    console.log(`Seeding ${DEFAULT_USERS.length} staff users...`);
+    for (const u of DEFAULT_USERS) {
+      const hash = await hashPassword(u.password);
+      await prisma.user.upsert({
+        where: { email: u.email },
+        update: { username: u.username, passwordHash: hash, passwordPreview: u.password, permission: u.permission, isActive: true, passwordResetRequired: false, skipPasswordResetReminder: false },
+        create: { email: u.email, username: u.username, passwordHash: hash, passwordPreview: u.password, permission: u.permission, isActive: true, passwordResetRequired: false, skipPasswordResetReminder: false },
       });
+      console.log(`  ✓ ${u.email} (${u.permission})`);
     }
 
     // ── Settings ────────────────────────────────────────────
@@ -126,9 +126,9 @@ async function seed() {
       create: { key: "maxActiveOrdersPerTable", value: DEFAULT_SETTINGS.maxActiveOrdersPerTable },
     });
 
-    console.log("Seed complete!");
+    console.log("✅ Seed complete!");
   } catch (err) {
-    console.error("Seed failed:", err);
+    console.error("❌ Seed failed:", err);
     throw err;
   } finally {
     await prisma.$disconnect();

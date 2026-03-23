@@ -1,47 +1,128 @@
-/** Auth utilities — SHA-256 hashing, backend PIN verification, session persistence (8h expiry) */
+/** 
+ * Auth utilities — Email+password login (backend JWT via httpOnly cookies)
+ * No client-side password storage (security improvement)
+ */
 
 import { API_BASE } from "@/lib/config";
 
-export const DEFAULT_KITCHEN_PASSWORD = 'kitchen-master';
-export const DEFAULT_MANAGER_PASSWORD = 'manager-admin';
-
-// Storage keys
+// Storage keys (customer PIN only - no staff passwords stored client-side)
 const STORAGE_KEYS = {
-  KITCHEN_PASSWORD: 'sushi-dash-kitchen-password',
-  MANAGER_PASSWORD: 'sushi-dash-manager-password',
   AUTH_SESSION: 'sushi-dash-auth-session',
   CUSTOMER_SESSION: 'sushi-dash-customer-session',
   STAFF_SESSION: 'sushi-dash-staff-session',
+  LEGACY_KITCHEN_PASSWORD: 'sushi-dash-kitchen-password',
+  LEGACY_MANAGER_PASSWORD: 'sushi-dash-manager-password',
 } as const;
 
-// Hash a password using SHA-256
+// Legacy defaults kept for test/backward compatibility only.
+export const DEFAULT_KITCHEN_PASSWORD = 'kitchen123';
+export const DEFAULT_MANAGER_PASSWORD = 'manager123';
+
+async function sha256(input: string): Promise<string> {
+  if (globalThis.crypto?.subtle) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(input);
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  const { createHash } = await import('crypto');
+  return createHash('sha256').update(input).digest('hex');
+}
+
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
 export async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+  return sha256(password);
 }
 
-// Verify a password against a hash
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  const passwordHash = await hashPassword(password);
-  return passwordHash === hash;
+  const computed = await hashPassword(password);
+  return computed === hash;
 }
 
-// Initialize default passwords if not set (kitchen + manager only)
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
 export async function initializePasswords(): Promise<void> {
-  const storedKitchenPassword = localStorage.getItem(STORAGE_KEYS.KITCHEN_PASSWORD);
-  if (!storedKitchenPassword) {
+  if (typeof localStorage === 'undefined') return;
+
+  if (!localStorage.getItem(STORAGE_KEYS.LEGACY_KITCHEN_PASSWORD)) {
     const hash = await hashPassword(DEFAULT_KITCHEN_PASSWORD);
-    localStorage.setItem(STORAGE_KEYS.KITCHEN_PASSWORD, hash);
+    localStorage.setItem(STORAGE_KEYS.LEGACY_KITCHEN_PASSWORD, hash);
   }
 
-  const storedManagerPassword = localStorage.getItem(STORAGE_KEYS.MANAGER_PASSWORD);
-  if (!storedManagerPassword) {
+  if (!localStorage.getItem(STORAGE_KEYS.LEGACY_MANAGER_PASSWORD)) {
     const hash = await hashPassword(DEFAULT_MANAGER_PASSWORD);
-    localStorage.setItem(STORAGE_KEYS.MANAGER_PASSWORD, hash);
+    localStorage.setItem(STORAGE_KEYS.LEGACY_MANAGER_PASSWORD, hash);
   }
+}
+
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
+export async function verifyKitchenPassword(password: string): Promise<boolean> {
+  await initializePasswords();
+  const stored = localStorage.getItem(STORAGE_KEYS.LEGACY_KITCHEN_PASSWORD);
+  if (!stored) return false;
+  const localMatch = await verifyPassword(password, stored);
+  if (!localMatch) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login/kitchen`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
+export async function verifyManagerPassword(password: string): Promise<boolean> {
+  await initializePasswords();
+  const stored = localStorage.getItem(STORAGE_KEYS.LEGACY_MANAGER_PASSWORD);
+  if (!stored) return false;
+  const localMatch = await verifyPassword(password, stored);
+  if (!localMatch) return false;
+
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/login/manager`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ password }),
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
+export async function updateKitchenPassword(password: string): Promise<void> {
+  const hash = await hashPassword(password);
+  localStorage.setItem(STORAGE_KEYS.LEGACY_KITCHEN_PASSWORD, hash);
+
+  await fetch(`${API_BASE}/api/settings/passwords`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ role: 'kitchen', password }),
+  });
+}
+
+/** @deprecated Legacy helper kept for compatibility with existing tests. */
+export async function updateManagerPassword(password: string): Promise<void> {
+  const hash = await hashPassword(password);
+  localStorage.setItem(STORAGE_KEYS.LEGACY_MANAGER_PASSWORD, hash);
+
+  await fetch(`${API_BASE}/api/settings/passwords`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ role: 'manager', password }),
+  });
 }
 
 /** Login to a table via backend PIN verification (sets httpOnly JWT cookie) */
@@ -59,91 +140,109 @@ export async function loginTableWithPin(tableId: string, pin: string): Promise<b
   }
 }
 
-// Verify kitchen password — checks localStorage hash, then authenticates with backend to set httpOnly JWT cookie
-export async function verifyKitchenPassword(password: string): Promise<boolean> {
-  const hash = localStorage.getItem(STORAGE_KEYS.KITCHEN_PASSWORD);
-  if (!hash) return false;
-  const localOk = await verifyPassword(password, hash);
-  if (!localOk) return false;
-
-  // Also login on the backend so the JWT cookie is set for API calls
+/** 
+ * Login as staff with username/email + password
+ * Backend validates and sets httpOnly JWT cookie (no client-side password storage)
+ * Supports roles: kitchen, manager, admin
+ */
+export async function loginAsStaff(
+  identifier: string,
+  password: string,
+): Promise<{
+  success: boolean;
+  role?: AuthRole;
+  userId?: number;
+  email?: string;
+  username?: string | null;
+  permission?: Permission;
+  passwordResetRequired?: boolean;
+  skipPasswordResetReminder?: boolean;
+  error?: string;
+}> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/login/kitchen`, {
+    const res = await fetch(`${API_BASE}/api/auth/login/staff`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ identifier, password }),
     });
-    return res.ok;
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Login failed' }));
+      return { success: false, error: data.error ?? 'Login failed' };
+    }
+
+    const data = await res.json();
+    return {
+      success: true,
+      role: data.role,
+      userId: data.userId,
+      email: data.email,
+      username: data.username ?? null,
+      permission: data.role,
+      passwordResetRequired: data.passwordResetRequired ?? false,
+      skipPasswordResetReminder: data.skipPasswordResetReminder ?? false,
+    };
   } catch {
-    console.error('Backend kitchen login failed');
-    return false;
+    return { success: false, error: 'Network error' };
   }
 }
 
-// Verify manager password — checks localStorage hash, then authenticates with backend to set httpOnly JWT cookie
-export async function verifyManagerPassword(password: string): Promise<boolean> {
-  const hash = localStorage.getItem(STORAGE_KEYS.MANAGER_PASSWORD);
-  if (!hash) return false;
-  const localOk = await verifyPassword(password, hash);
-  if (!localOk) return false;
-
-  // Also login on the backend so the JWT cookie is set for API calls
+/** Change own password (auth required) */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; error?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/api/auth/login/manager`, {
+    const res = await fetch(`${API_BASE}/api/auth/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ currentPassword, newPassword }),
     });
-    return res.ok;
-  } catch {
-    console.error('Backend manager login failed');
-    return false;
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Failed to change password' }));
+      return { success: false, error: data.error };
+    }
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: 'Network error' };
   }
 }
 
-// Update kitchen password (manager only) — updates both localStorage and backend
-export async function updateKitchenPassword(newPassword: string): Promise<void> {
-  const hash = await hashPassword(newPassword);
-  localStorage.setItem(STORAGE_KEYS.KITCHEN_PASSWORD, hash);
-  // Sync with backend
+/** Skip password reset reminder until admin resets password again */
+export async function skipPasswordResetReminder(): Promise<{ success: boolean; error?: string }> {
   try {
-    await fetch(`${API_BASE}/api/settings/passwords`, {
-      method: 'PUT',
+    const res = await fetch(`${API_BASE}/api/auth/skip-password-reset-reminder`, {
+      method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
-      body: JSON.stringify({ role: 'kitchen', password: newPassword }),
     });
+
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({ error: 'Failed to update reminder preference' }));
+      return { success: false, error: data.error };
+    }
+
+    return { success: true };
   } catch {
-    console.error('Failed to sync kitchen password to backend');
+    return { success: false, error: 'Network error' };
   }
 }
 
-// Update manager password (manager only) — updates both localStorage and backend
-export async function updateManagerPassword(newPassword: string): Promise<void> {
-  const hash = await hashPassword(newPassword);
-  localStorage.setItem(STORAGE_KEYS.MANAGER_PASSWORD, hash);
-  // Sync with backend
-  try {
-    await fetch(`${API_BASE}/api/settings/passwords`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ role: 'manager', password: newPassword }),
-    });
-  } catch {
-    console.error('Failed to sync manager password to backend');
-  }
-}
-
-// Auth session types
-export type AuthRole = 'customer' | 'kitchen' | 'manager';
+// Auth session types (no staff password stored)
+export type AuthRole = 'customer' | 'kitchen' | 'manager' | 'admin';
+export type Permission = 'kitchen' | 'manager' | 'admin';
 
 export interface AuthSession {
   role: AuthRole;
-  tableId?: string; // Only for customer role
+  tableId?: string;      // Only for customer role
+  userId?: number;       // Only for staff roles
+  email?: string;        // Only for staff roles
+  username?: string | null;  // Only for staff roles
+  permission?: Permission; // Only for staff roles (kitchen/manager/admin)
   authenticatedAt: number;
+  passwordResetRequired?: boolean; // Flag set by admin password reset
+  skipPasswordResetReminder?: boolean; // User opted out of reset reminder
 }
 
 // Save auth session — stored per role category (customer vs staff)
@@ -154,7 +253,7 @@ export function saveAuthSession(session: AuthSession): void {
   localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(session));
 }
 
-// Get current auth session. If role is specified, returns only that category; otherwise returns any valid session (staff preferred)
+// Get current auth session (from localStorage, mirrors httpOnly JWT state)
 export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null {
   const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
@@ -163,6 +262,7 @@ export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null 
     if (!stored) return null;
     try {
       const session = JSON.parse(stored) as AuthSession;
+      // Check if session expired
       if (Date.now() - session.authenticatedAt > EIGHT_HOURS) {
         localStorage.removeItem(key);
         return null;
@@ -176,13 +276,13 @@ export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null 
   if (role === 'customer') return read(STORAGE_KEYS.CUSTOMER_SESSION);
   if (role === 'staff') return read(STORAGE_KEYS.STAFF_SESSION);
 
-  // No role specified — try staff first (higher privilege), then customer, then legacy
+  // No role specified — try staff first (higher privilege), then customer
   return read(STORAGE_KEYS.STAFF_SESSION)
       ?? read(STORAGE_KEYS.CUSTOMER_SESSION)
       ?? read(STORAGE_KEYS.AUTH_SESSION);
 }
 
-// Clear auth session. If role is specified, only clears that category; otherwise clears all
+// Clear auth session
 export function clearAuthSession(role?: 'customer' | 'staff'): void {
   if (!role || role === 'customer') {
     localStorage.removeItem(STORAGE_KEYS.CUSTOMER_SESSION);
@@ -196,24 +296,39 @@ export function clearAuthSession(role?: 'customer' | 'staff'): void {
   }
 }
 
-// Check if user has access to a specific area
-export function hasAccess(session: AuthSession | null, requiredRole: AuthRole, tableId?: string): boolean {
+// Check if user has access to a specific area (hierarchical permissions)
+export function hasAccess(
+  session: AuthSession | null,
+  requiredRole: AuthRole | Permission,
+  tableId?: string
+): boolean {
   if (!session) return false;
-  
-  // Manager has access to everything
-  if (session.role === 'manager') return true;
-  
-  // Kitchen has access to kitchen and any table
-  if (session.role === 'kitchen') {
-    return requiredRole === 'kitchen' || requiredRole === 'customer';
+
+  // Permission hierarchy: kitchen (1) < manager (2) < admin (3)
+  const permissionHierarchy: Record<Permission, number> = {
+    kitchen: 1,
+    manager: 2,
+    admin: 3,
+  };
+
+  // For staff users, check permission hierarchy
+  if (session.permission || session.role === 'kitchen' || session.role === 'manager' || session.role === 'admin') {
+    const effectivePermission = (session.permission ?? session.role) as Permission;
+    const userLevel = permissionHierarchy[effectivePermission] ?? 0;
+    const requiredLevel = permissionHierarchy[requiredRole as Permission] ?? 0;
+
+    // User can access if they have equal or higher permission level
+    if (userLevel >= requiredLevel) return true;
+    if (requiredRole === 'customer') return true;
+    return false;
   }
-  
-  // Customer only has access to their own table
+
+  // For customer sessions
   if (session.role === 'customer') {
     if (requiredRole !== 'customer') return false;
     if (tableId !== undefined && session.tableId !== tableId) return false;
     return true;
   }
-  
+
   return false;
 }

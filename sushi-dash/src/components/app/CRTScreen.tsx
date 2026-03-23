@@ -2,7 +2,16 @@
 
 "use client";
 
-export default function CRTScreen({ children }: { children: React.ReactNode }) {
+type CRTScreenProps = {
+  children: React.ReactNode;
+  enabled?: boolean;
+};
+
+export default function CRTScreen({ children, enabled = true }: CRTScreenProps) {
+  if (!enabled) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="crt">
       <div className="crt-screen">{children}</div>

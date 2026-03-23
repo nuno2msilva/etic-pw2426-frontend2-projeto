@@ -29,8 +29,8 @@ jest.mock("next/link", () => {
 });
 
 // Polyfill TextEncoder/TextDecoder for jsdom
-global.TextEncoder = TextEncoder;
-global.TextDecoder = TextDecoder;
+(globalThis as any).TextEncoder = TextEncoder;
+(globalThis as any).TextDecoder = TextDecoder;
 
 // Polyfill Web Crypto API for jsdom (must be set on both global and window)
 Object.defineProperty(global, 'crypto', {

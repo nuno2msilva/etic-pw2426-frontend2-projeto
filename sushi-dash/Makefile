@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-push db-seed db-reset lint start
+.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-check db-push db-seed db-reset lint start
 
 help:
 	@echo "Sushi Dash — Makefile Commands"
@@ -22,6 +22,7 @@ help:
 	@echo ""
 	@echo "  Database"
 	@echo "  --------"
+	@echo "  make db-check      Verify backend can connect to database"
 	@echo "  make db-push       Sync Prisma schema to database"
 	@echo "  make db-seed       Populate database with default data"
 	@echo "  make db-reset      Drop & recreate everything (Prisma push + seed)"
@@ -40,12 +41,26 @@ dev:
 	npm run dev
 
 dev-server:
+	$(MAKE) db-check
 	cd server && npm run dev
 
 dev-all:
 	@echo "Starting backend + frontend..."
-	cd server && npm run dev & \
-	sleep 2 && npm run dev
+	@$(MAKE) db-check
+	@if lsof -i :3001 -n -P >/dev/null 2>&1; then \
+		echo "Backend already running on :3001"; \
+	else \
+		echo "Launching backend on :3001..."; \
+		cd server && npm run dev & \
+	fi
+	@echo "Waiting for backend health check..."
+	@node -e "const deadline=Date.now()+30000;(async()=>{while(Date.now()<deadline){try{const r=await fetch('http://localhost:3001/api/health');if(r.ok){const j=await r.json();if(j.database==='connected'){console.log('Backend ready (database connected).');return;}}}catch{}await new Promise(res=>setTimeout(res,500));}console.error('Backend failed health check within 30s.');process.exit(1);})();"
+	@if lsof -i :5173 -n -P >/dev/null 2>&1; then \
+		echo "Frontend already running on :5173 (skipping new instance)."; \
+		echo "Open http://localhost:5173"; \
+	else \
+		npm run dev; \
+	fi
 
 # ── Build & Test ─────────────────────────────────────────────
 build:
@@ -67,6 +82,9 @@ test-coverage:
 	npm run test:coverage
 
 # ── Database ─────────────────────────────────────────────────
+db-check:
+	cd server && npm run db:check
+
 db-push:
 	cd server && npm run db:push
 
