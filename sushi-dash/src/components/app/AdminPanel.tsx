@@ -58,7 +58,7 @@ export const AdminPanel = () => {
   // Add user form
   const [newUsername, setNewUsername] = useState('');
   const [newUserEmail, setNewUserEmail] = useState('');
-  const [newUserPermission, setNewUserPermission] = useState<Permission | ''>('');
+  const [newUserPermission, setNewUserPermission] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Edit user form
@@ -120,7 +120,7 @@ export const AdminPanel = () => {
         body: JSON.stringify({
           username: newUsername,
           email: newUserEmail,
-          permission: newUserPermission,
+          permission: newUserPermission as Permission,
         }),
       });
 
@@ -515,7 +515,7 @@ export const AdminPanel = () => {
               <Label htmlFor="permission" className="text-sm">
                 Permission Level
               </Label>
-              <Select value={newUserPermission} onValueChange={(v) => setNewUserPermission(v as Permission)}>
+              <Select value={newUserPermission} onValueChange={setNewUserPermission}>
                 <SelectTrigger id="permission" className="mt-1.5">
                   <SelectValue placeholder="Select a permission level" />
                 </SelectTrigger>
