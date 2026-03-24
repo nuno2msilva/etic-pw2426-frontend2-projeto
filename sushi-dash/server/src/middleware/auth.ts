@@ -189,14 +189,15 @@ export function requireRole(...roles: AuthRole[]) {
         const prisma = (await import("../db/prisma.js")).default;
         const user = await prisma.user.findUnique({
           where: { id: req.auth.userId },
-          select: { isActive: true, passwordResetRequired: true, permission: true, updatedAt: true },
+          select: { isActive: true, passwordResetRequired: true, passwordPreview: true, permission: true },
         });
 
-        const tokenIssuedAtMs = (req.auth.issuedAt ?? 0) * 1000;
-        const resetHappenedAfterToken =
-          user?.passwordResetRequired === true && tokenIssuedAtMs > 0 && tokenIssuedAtMs < user.updatedAt.getTime();
+        // Invalidate when a reset is pending and a temporary password is still active.
+        // This avoids timestamp precision races between JWT iat (seconds) and DB updatedAt (ms).
+        const hasPendingResetWithTempPassword =
+          user?.passwordResetRequired === true && !!user.passwordPreview;
 
-        if (!user || !user.isActive || resetHappenedAfterToken) {
+        if (!user || !user.isActive || hasPendingResetWithTempPassword) {
           clearToken(res, req.auth.role);
           res.clearCookie("sushi_token", { path: "/" });
           res.status(401).json({ error: "Session expired. Please login again." });
