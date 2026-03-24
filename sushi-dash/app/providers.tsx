@@ -15,11 +15,20 @@ import { ENABLE_CRT_EFFECT } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
+export function resolvePresenceTableId(
+  authenticatedTableId: string | null,
+  hasStaffSession: boolean,
+): string | null {
+  return hasStaffSession ? null : authenticatedTableId;
+}
+
 /** Invisible component that keeps a single SSE connection alive. */
 function LiveUpdates() {
-  const { authenticatedTableId, logout } = useAuth();
+  const { authenticatedTableId, staffSession, logout } = useAuth();
+  const presenceTableId = resolvePresenceTableId(authenticatedTableId, Boolean(staffSession));
+
   useServerEvents({
-    tableId: authenticatedTableId,
+    tableId: presenceTableId,
     onEjected: logout,
     enabled: true,
   });
