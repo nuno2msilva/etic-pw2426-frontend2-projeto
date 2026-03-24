@@ -227,10 +227,14 @@ router.get("/session", async (req, res) => {
     if (req.staffAuth.userId) {
       const user = await prisma.user.findUnique({
         where: { id: req.staffAuth.userId },
-        select: { email: true, username: true, isActive: true, passwordResetRequired: true, permission: true },
+        select: { email: true, username: true, isActive: true, passwordResetRequired: true, permission: true, updatedAt: true },
       });
-      // Invalidate staff session if account is disabled, deleted, or password was reset.
-      if (!user || !user.isActive || user.passwordResetRequired) {
+      const tokenIssuedAtMs = (req.staffAuth.issuedAt ?? 0) * 1000;
+      const resetHappenedAfterToken =
+        user?.passwordResetRequired === true && tokenIssuedAtMs > 0 && tokenIssuedAtMs < user.updatedAt.getTime();
+
+      // Invalidate staff session if account is disabled/deleted, or reset happened after this token was issued.
+      if (!user || !user.isActive || resetHappenedAfterToken) {
         clearToken(res, req.staffAuth.role);
         res.clearCookie("sushi_token", { path: "/" });
       } else {

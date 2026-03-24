@@ -53,6 +53,7 @@ export interface TokenPayload {
   tableId?: number;          // for customer sessions
   pinVersion?: number;       // for customer sessions — invalidated when PIN changes
   jti: string;               // unique token ID for revocation
+  issuedAt?: number;         // token iat (seconds since epoch)
 }
 
 // Extend Express Request with auth info
@@ -135,7 +136,8 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
           permission: decoded.permission,
           tableId: decoded.tableId, 
           pinVersion: decoded.pinVersion, 
-          jti: decoded.jti 
+          jti: decoded.jti,
+          issuedAt: typeof decoded.iat === "number" ? decoded.iat : undefined,
         };
       }
     } catch { /* expired / invalid */ }
@@ -152,7 +154,8 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
           role: decoded.role, 
           tableId: decoded.tableId, 
           pinVersion: decoded.pinVersion, 
-          jti: decoded.jti 
+          jti: decoded.jti,
+          issuedAt: typeof decoded.iat === "number" ? decoded.iat : undefined,
         };
       }
     } catch { /* expired / invalid */ }
@@ -186,10 +189,14 @@ export function requireRole(...roles: AuthRole[]) {
         const prisma = (await import("../db/prisma.js")).default;
         const user = await prisma.user.findUnique({
           where: { id: req.auth.userId },
-          select: { isActive: true, passwordResetRequired: true, permission: true },
+          select: { isActive: true, passwordResetRequired: true, permission: true, updatedAt: true },
         });
 
-        if (!user || !user.isActive || user.passwordResetRequired) {
+        const tokenIssuedAtMs = (req.auth.issuedAt ?? 0) * 1000;
+        const resetHappenedAfterToken =
+          user?.passwordResetRequired === true && tokenIssuedAtMs > 0 && tokenIssuedAtMs < user.updatedAt.getTime();
+
+        if (!user || !user.isActive || resetHappenedAfterToken) {
           clearToken(res, req.auth.role);
           res.clearCookie("sushi_token", { path: "/" });
           res.status(401).json({ error: "Session expired. Please login again." });
