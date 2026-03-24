@@ -36,28 +36,31 @@ const CollapsibleSection = ({
     <Collapsible open={open} onOpenChange={onToggle}>
       <CollapsibleTrigger asChild>
         <button
-          className={cn(cardVariants({ variant: "item" }), "w-full flex items-center justify-between hover:border-primary/50")}
+          className={cn(
+            cardVariants({ variant: "item" }),
+            "w-full flex items-center justify-between overflow-hidden hover:border-primary/50"
+          )}
         >
-          <div className="text-left">
-            <div className="flex items-center gap-3">
+          <div className="text-left min-w-0 flex-1 pr-3">
+            <div className="flex items-center gap-3 min-w-0">
               {icon && <span className="text-lg">{icon}</span>}
-              <span className="text-lg font-semibold">{title}</span>
+              <span className="text-base sm:text-lg font-semibold truncate">{title}</span>
               {badge}
             </div>
             {subtitle && (
-              <span className="text-sm text-muted-foreground block mt-0.5">
+              <span className="text-sm text-muted-foreground block mt-0.5 truncate">
                 {subtitle}
               </span>
             )}
           </div>
           <ChevronDown
-            className={`w-5 h-5 text-muted-foreground transition-transform ${
+            className={`w-5 h-5 shrink-0 text-muted-foreground transition-transform ${
               open ? "rotate-180" : ""
             }`}
           />
         </button>
       </CollapsibleTrigger>
-      <CollapsibleContent className={contentClassName}>
+      <CollapsibleContent className={cn("overflow-hidden", contentClassName)}>
         {children}
       </CollapsibleContent>
     </Collapsible>

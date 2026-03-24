@@ -162,11 +162,9 @@ const ManagerPage = () => {
                 subtitle={section.description}
                 open={isOpen}
                 onToggle={() => toggleSection(section.id)}
-                contentClassName="pt-3 pb-2"
+                contentClassName="pt-2 pb-2"
               >
-                <div className="pl-2 pr-2">
-                  {section.content}
-                </div>
+                {section.content}
               </CollapsibleSection>
             );
           })}
