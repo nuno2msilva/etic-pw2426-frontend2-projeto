@@ -32,7 +32,7 @@ const AppHeader = () => {
 
   const isStaffPage = pathname === "/manager" || pathname === "/kitchen" || pathname === "/admin";
   const staffPermission = staffSession?.permission;
-  const canAccessKitchen = staffPermission === "kitchen";
+  const canAccessKitchen = staffPermission === "kitchen" || staffPermission === "manager";
   const canAccessManager = staffPermission === "manager";
   const canAccessAdmin = staffPermission === "admin";
 

@@ -13,6 +13,7 @@ import {
   SEOHead,
   CollapsibleSection,
 } from "@/components/app";
+import { Button } from "@/components/ui/button";
 const ManagerPage = () => {
   const {
     menu,
@@ -36,7 +37,7 @@ const ManagerPage = () => {
   const router = useRouter();
 
   // Collapsible state for each section
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set());
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["menu-management"]));
 
   // Route access is strict by role: only manager staff may access /manager.
   const hasManagerAccess = staffSession?.permission === "manager";
@@ -63,6 +64,10 @@ const ManagerPage = () => {
       }
       return next;
     });
+  }, []);
+
+  const openOnlySection = useCallback((section: string) => {
+    setOpenSections(new Set([section]));
   }, []);
 
   // useMemo — section configuration, only recalculates when data changes
@@ -111,6 +116,14 @@ const ManagerPage = () => {
     },
   ], [settings, updateSettings, tables, addTable, removeTable, updateTable, addMenuItem, menu, categories, categoryList, removeMenuItem, updateMenuItem, toggleItemAvailability, addCategory, deleteCategory]);
 
+  const expandAllSections = useCallback(() => {
+    setOpenSections(new Set(["settings", "tables", "menu-management"]));
+  }, []);
+
+  const collapseAllSections = useCallback(() => {
+    setOpenSections(new Set());
+  }, []);
+
   // Show loading while auth initializes
   if (!isInitialized) {
     return (
@@ -143,6 +156,28 @@ const ManagerPage = () => {
       <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">
         Configure menu items, tables, and order limits.
       </p>
+
+      <section className="mb-4 sm:mb-6">
+        <div className="rounded-xl border bg-card p-3 sm:p-4">
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => openOnlySection("menu-management")}>
+              Menu
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openOnlySection("tables")}>
+              Tables
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => openOnlySection("settings")}>
+              Order Settings
+            </Button>
+            <Button size="sm" onClick={expandAllSections}>
+              Expand All
+            </Button>
+            <Button size="sm" variant="secondary" onClick={collapseAllSections}>
+              Collapse All
+            </Button>
+          </div>
+        </div>
+      </section>
 
       {/* Management Settings - Collapsible Sections */}
       <section>

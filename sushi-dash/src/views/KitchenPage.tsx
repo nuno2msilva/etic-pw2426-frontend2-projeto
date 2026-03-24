@@ -12,8 +12,9 @@ const KitchenPage = () => {
   const { isInitialized, staffSession } = useAuth();
   const router = useRouter();
 
-  // Route access is strict by role: only kitchen staff may access /kitchen.
-  const hasKitchenAccess = staffSession?.permission === "kitchen";
+  // Route access: kitchen staff and managers can access /kitchen.
+  const isManager = staffSession?.permission === "manager";
+  const hasKitchenAccess = staffSession?.permission === "kitchen" || isManager;
 
   // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {
@@ -95,7 +96,7 @@ const KitchenPage = () => {
                 order={order}
                 showActions
                 onUpdateStatus={(status) => updateOrderStatus(order.id, status)}
-                onCancel={undefined}
+                onCancel={isManager ? () => handleCancelOrder(order.id) : undefined}
               />
             ))}
           </div>
@@ -114,8 +115,8 @@ const KitchenPage = () => {
               <OrderCard 
                 key={order.id} 
                 order={order}
-                showActions={false}
-                onDelete={undefined}
+                showActions={isManager}
+                onDelete={isManager ? () => handleDeleteOrder(order.id) : undefined}
               />
             ))}
           </div>
