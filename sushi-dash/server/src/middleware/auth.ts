@@ -194,10 +194,10 @@ export function requireRole(...roles: AuthRole[]) {
 
         // Invalidate when a reset is pending and a temporary password is still active.
         // This avoids timestamp precision races between JWT iat (seconds) and DB updatedAt (ms).
-        const hasPendingResetWithTempPassword =
+        const passwordIsResetAndTemporaryPasswordIsStillActive =
           user?.passwordResetRequired === true && !!user.passwordPreview;
 
-        if (!user || !user.isActive || hasPendingResetWithTempPassword) {
+        if (!user || !user.isActive || passwordIsResetAndTemporaryPasswordIsStillActive) {
           clearToken(res, req.auth.role);
           res.clearCookie("sushi_token", { path: "/" });
           res.status(401).json({ error: "Session expired. Please login again." });
@@ -213,18 +213,19 @@ export function requireRole(...roles: AuthRole[]) {
 
     // Create a set of all roles that satisfy the requirement
     const allowedRoles = new Set(roles);
-    
-    // Apply permission hierarchy:
-    // - If admin is required, admin can do it
-    // - If manager is required, manager or admin can do it
-    // - If kitchen is required, kitchen, manager, or admin can do it
-    
+
     const userRole = req.auth.role;
     const userPermission = req.auth.permission as Permission | undefined;
-    const roleHierarchy: Record<Exclude<AuthRole, "customer">, number> = {
-      kitchen: 1,
-      manager: 2,
-      admin: 3,
+
+    const currentPermission = (userPermission ?? (userRole === "customer" ? undefined : userRole)) as Permission | undefined;
+    const permissionCanAccess = (requiredPermission: Permission, permission: Permission): boolean => {
+      if (permission === "admin") {
+        return requiredPermission === "admin";
+      }
+      if (permission === "manager") {
+        return requiredPermission === "manager" || requiredPermission === "kitchen";
+      }
+      return requiredPermission === "kitchen";
     };
 
     // Customer is never allowed in these contexts
@@ -238,32 +239,10 @@ export function requireRole(...roles: AuthRole[]) {
       return next();
     }
 
-    // Legacy/session fallback: infer hierarchy from role even when permission is missing.
-    const userRoleLevel = roleHierarchy[userRole];
-    if (userRoleLevel > 0) {
+    if (currentPermission) {
       for (const role of roles) {
         if (role === "customer") continue;
-        const requiredRoleLevel = roleHierarchy[role];
-        if (userRoleLevel >= requiredRoleLevel) return next();
-      }
-    }
-
-    // Check permission-based access (for staff users)
-    if (userPermission) {
-      // Create permission hierarchy
-      const permissionHierarchy: Record<Permission, number> = {
-        kitchen: 1,
-        manager: 2,
-        admin: 3,
-      };
-
-      const userLevel = permissionHierarchy[userPermission] ?? 0;
-
-      // Check if user permission satisfies any required role
-      for (const role of roles) {
-        if (role === "kitchen" && userLevel >= 1) return next();
-        if (role === "manager" && userLevel >= 2) return next();
-        if (role === "admin" && userLevel >= 3) return next();
+        if (permissionCanAccess(role, currentPermission)) return next();
       }
     }
 

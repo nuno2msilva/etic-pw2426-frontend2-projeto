@@ -127,13 +127,13 @@ const ManagerPage = () => {
   }
 
   return (
-    <main className="h-[100dvh] sm:h-full overflow-y-auto overflow-x-hidden max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+    <main className="h-[100dvh] sm:h-full overflow-y-auto overflow-x-hidden max-w-5xl mx-auto w-full min-w-0 px-2.5 sm:px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:py-6">
       <SEOHead
         title="Manager Panel"
         description="Configure menu items, tables, and order limits for Sushi Dash."
       />
-      <section>
-        <div className="space-y-3">
+      <section className="w-full min-w-0">
+        <div className="space-y-2.5 sm:space-y-3 w-full min-w-0">
           {sections.map((section) => {
             const isOpen = openSections.has(section.id);
 
@@ -143,7 +143,7 @@ const ManagerPage = () => {
                 title={section.title}
                 open={isOpen}
                 onToggle={() => toggleSection(section.id)}
-                contentClassName="pt-2 pb-2"
+                contentClassName="pt-1.5 pb-2"
               >
                 {section.content}
               </CollapsibleSection>

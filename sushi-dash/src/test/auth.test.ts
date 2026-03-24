@@ -13,6 +13,8 @@ import {
   getAuthSession,
   clearAuthSession,
   hasAccess,
+  hasStaffPermission,
+  resolveStaffPermission,
   DEFAULT_KITCHEN_PASSWORD,
   DEFAULT_MANAGER_PASSWORD,
 } from "@/lib/auth";
@@ -217,6 +219,31 @@ describe("Who gets to cancel, delete, and boss orders around?", () => {
 
     it("can see every order across all tables", () => {
       expect(hasAccess(managerSession, "manager")).toBe(true);
+    });
+  });
+
+  describe("Admin role hard boundaries", () => {
+    const adminSession: AuthSession = {
+      role: "admin",
+      permission: "admin",
+      authenticatedAt: Date.now(),
+    };
+
+    it("admin can access admin-only features", () => {
+      expect(hasAccess(adminSession, "admin")).toBe(true);
+      expect(hasStaffPermission(adminSession, "admin")).toBe(true);
+    });
+
+    it("admin cannot access kitchen or manager areas", () => {
+      expect(hasAccess(adminSession, "kitchen")).toBe(false);
+      expect(hasAccess(adminSession, "manager")).toBe(false);
+      expect(hasStaffPermission(adminSession, "kitchen")).toBe(false);
+      expect(hasStaffPermission(adminSession, "manager")).toBe(false);
+    });
+
+    it("admin manual URL exploit is denied by permission helper", () => {
+      expect(hasStaffPermission(adminSession, "kitchen")).toBe(false);
+      expect(hasStaffPermission(adminSession, "manager")).toBe(false);
     });
   });
 
@@ -460,5 +487,30 @@ describe("Do customer and staff sessions mind their own business?", () => {
     expect(getAuthSession()).toBeNull();
     expect(getAuthSession("customer")).toBeNull();
     expect(getAuthSession("staff")).toBeNull();
+  });
+});
+
+describe("Permission resolution hardening", () => {
+  it("manager keeps manager permission even with missing explicit permission field", () => {
+    const managerWithoutPermission: AuthSession = {
+      role: "manager",
+      authenticatedAt: Date.now(),
+    };
+
+    expect(resolveStaffPermission(managerWithoutPermission)).toBe("manager");
+    expect(hasStaffPermission(managerWithoutPermission, "kitchen")).toBe(true);
+    expect(hasStaffPermission(managerWithoutPermission, "manager")).toBe(true);
+  });
+
+  it("kitchen role cannot escalate to manager", () => {
+    const kitchenSession: AuthSession = {
+      role: "kitchen",
+      permission: "kitchen",
+      authenticatedAt: Date.now(),
+    };
+
+    expect(hasStaffPermission(kitchenSession, "kitchen")).toBe(true);
+    expect(hasStaffPermission(kitchenSession, "manager")).toBe(false);
+    expect(hasStaffPermission(kitchenSession, "admin")).toBe(false);
   });
 });

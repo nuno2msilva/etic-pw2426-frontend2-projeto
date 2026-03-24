@@ -86,6 +86,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryClient.invalidateQueries();
   }, [queryClient]);
 
+  const userIsLoggedOffFromStaffSession = useCallback(() => {
+    clearAuthSession('staff');
+    setStaffSession(null);
+    setPasswordResetRequired(false);
+    setSkipPasswordResetReminder(false);
+    setPasswordChangeReminderDismissedThisSession(false);
+  }, []);
+
   // Initialize auth system on mount — restore both sessions
   useEffect(() => {
     const init = async () => {
@@ -131,16 +139,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           authenticated?: boolean;
           sessions?: Array<{ role?: string; authenticated?: boolean }>;
         };
-        const hasStaffSession = Array.isArray(data.sessions)
+        const ifUserIsLoggedInAsStaff = Array.isArray(data.sessions)
           ? data.sessions.some((s) => s.role !== 'customer' && s.authenticated)
           : false;
 
-        if (!cancelled && !hasStaffSession) {
-          clearAuthSession('staff');
-          setStaffSession(null);
-          setPasswordResetRequired(false);
-          setSkipPasswordResetReminder(false);
-          setPasswordChangeReminderDismissedThisSession(false);
+        if (!cancelled && !ifUserIsLoggedInAsStaff) {
+          userIsLoggedOffFromStaffSession();
           queryClient.invalidateQueries();
         }
       } catch {
@@ -155,7 +159,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [isInitialized, staffSession, queryClient]);
+  }, [isInitialized, staffSession, queryClient, userIsLoggedOffFromStaffSession]);
 
   const loginAsCustomer = useCallback(async (tableId: string, pin: string): Promise<boolean> => {
     const success = await loginTableWithPin(tableId, pin);
@@ -276,11 +280,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Logout staff session */
   const logoutStaff = useCallback(() => {
-    clearAuthSession('staff');
-    setStaffSession(null);
-    setPasswordResetRequired(false);
-    setSkipPasswordResetReminder(false);
-    setPasswordChangeReminderDismissedThisSession(false);
+    userIsLoggedOffFromStaffSession();
     fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
@@ -288,7 +288,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ role: staffSession?.role ?? 'manager' }),
     }).catch(() => {});
     queryClient.invalidateQueries();
-  }, [queryClient, staffSession?.role]);
+  }, [queryClient, staffSession?.role, userIsLoggedOffFromStaffSession]);
 
   // Combined session for backwards compat (staff takes priority)
   const session = staffSession ?? customerSession;

@@ -245,11 +245,17 @@ export interface AuthSession {
   skipPasswordResetReminder?: boolean; // User opted out of reset reminder
 }
 
-const PERMISSION_HIERARCHY: Record<Permission, number> = {
-  kitchen: 1,
-  manager: 2,
-  admin: 3,
-};
+function permissionCanAccess(requiredPermission: Permission, currentPermission: Permission): boolean {
+  if (currentPermission === 'admin') {
+    return requiredPermission === 'admin';
+  }
+
+  if (currentPermission === 'manager') {
+    return requiredPermission === 'manager' || requiredPermission === 'kitchen';
+  }
+
+  return requiredPermission === 'kitchen';
+}
 
 export function normalizeAuthRole(value?: string): AuthRole | undefined {
   if (!value) return undefined;
@@ -282,9 +288,9 @@ export function hasStaffPermission(
   session: Pick<AuthSession, 'role' | 'permission'> | null | undefined,
   requiredPermission: Permission,
 ): boolean {
-  const permission = resolveStaffPermission(session);
-  if (!permission) return false;
-  return PERMISSION_HIERARCHY[permission] >= PERMISSION_HIERARCHY[requiredPermission];
+  const currentPermission = resolveStaffPermission(session);
+  if (!currentPermission) return false;
+  return permissionCanAccess(requiredPermission, currentPermission);
 }
 
 // Save auth session — stored per role category (customer vs staff)
@@ -356,7 +362,7 @@ export function hasAccess(
   if (staffPermission) {
     const requiredPermission = normalizePermission(requiredRole);
     if (!requiredPermission) return false;
-    return PERMISSION_HIERARCHY[staffPermission] >= PERMISSION_HIERARCHY[requiredPermission];
+    return permissionCanAccess(requiredPermission, staffPermission);
   }
 
   // For customer sessions

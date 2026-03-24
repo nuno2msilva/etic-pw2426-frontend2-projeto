@@ -221,6 +221,7 @@ router.get("/session", async (req, res) => {
 
   // Check staff session
   if (req.staffAuth) {
+    let staffUserIsLoggedIn = true;
     // Fetch user email if available
     let email: string | undefined;
     let username: string | null | undefined;
@@ -229,11 +230,12 @@ router.get("/session", async (req, res) => {
         where: { id: req.staffAuth.userId },
         select: { email: true, username: true, isActive: true, passwordResetRequired: true, passwordPreview: true, permission: true },
       });
-      const hasPendingResetWithTempPassword =
+      const passwordIsResetAndTemporaryPasswordIsStillActive =
         user?.passwordResetRequired === true && !!user.passwordPreview;
 
       // Invalidate staff session if account is disabled/deleted, or reset happened after this token was issued.
-      if (!user || !user.isActive || hasPendingResetWithTempPassword) {
+      if (!user || !user.isActive || passwordIsResetAndTemporaryPasswordIsStillActive) {
+        staffUserIsLoggedIn = false;
         clearToken(res, req.staffAuth.role);
         res.clearCookie("sushi_token", { path: "/" });
       } else {
@@ -242,7 +244,7 @@ router.get("/session", async (req, res) => {
       }
     }
 
-    if (email || username) {
+    if (staffUserIsLoggedIn) {
       sessions.push({
         role: req.staffAuth.role,
         userId: req.staffAuth.userId,

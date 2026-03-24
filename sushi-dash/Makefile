@@ -1,4 +1,4 @@
-.PHONY: help install dev dev-server dev-all build test test-watch test-coverage clean db-check db-push db-seed db-reset lint start
+.PHONY: help install dev dev-server dev-all build test test-verbose test-watch test-coverage clean db-check db-push db-seed db-reset lint start
 
 help:
 	@echo "Sushi Dash — Makefile Commands"
@@ -17,6 +17,7 @@ help:
 	@echo "  ------------"
 	@echo "  make build         Production build (frontend)"
 	@echo "  make test          Run all frontend tests"
+	@echo "  make test-verbose  Run all tests with every test case printed"
 	@echo "  make test-watch    Run tests in watch mode"
 	@echo "  make test-coverage Run tests with coverage report"
 	@echo ""
@@ -74,6 +75,9 @@ start:
 
 test:
 	npm test
+
+test-verbose:
+	npm test -- --verbose --runInBand --no-coverage
 
 test-watch:
 	npm run test:watch

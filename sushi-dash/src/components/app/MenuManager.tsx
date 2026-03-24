@@ -236,7 +236,7 @@ const MenuManager = ({
                 </CollapsibleTrigger>
 
                 {/* Right-side actions */}
-                <div className="flex items-center justify-end gap-1 px-2 pb-2 sm:pb-0 self-stretch sm:self-auto">
+                <div className="flex items-center justify-end flex-wrap gap-1 px-2 pb-2 sm:pb-0 self-stretch sm:self-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -347,22 +347,23 @@ const MenuManager = ({
 
         {/* ── Add Category ── */}
         {showAddCategory ? (
-          <div className="flex items-center gap-2 px-4 py-3 rounded-lg border bg-muted/30">
+          <div className="flex flex-wrap items-center gap-2 px-3 sm:px-4 py-3 rounded-lg border bg-muted/30">
             <Input
               placeholder="Category name"
               value={newCategoryName}
               onChange={(e) => setNewCategoryName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddCategory()}
-              className="flex-1"
+              className="w-full sm:flex-1"
               autoFocus
             />
-            <Button size="sm" onClick={handleAddCategory}>
+            <Button size="sm" onClick={handleAddCategory} className="flex-1 sm:flex-none">
               <Check className="h-4 w-4 mr-1" />
               Add
             </Button>
             <Button
               variant="ghost"
               size="sm"
+              className="flex-1 sm:flex-none"
               onClick={() => {
                 setShowAddCategory(false);
                 setNewCategoryName("");

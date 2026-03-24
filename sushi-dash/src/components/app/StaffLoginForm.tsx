@@ -22,6 +22,18 @@ export const StaffLoginForm = ({ onSuccess, onPasswordResetRequired }: StaffLogi
   const { loginAsStaffUser } = useAuth();
   const router = useRouter();
 
+  const redirectUserToTheirArea = useCallback((role?: string) => {
+    if (role === "admin") {
+      router.push("/admin");
+      return;
+    }
+    if (role === "manager") {
+      router.push("/manager");
+      return;
+    }
+    router.push("/kitchen");
+  }, [router]);
+
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
@@ -42,34 +54,24 @@ export const StaffLoginForm = ({ onSuccess, onPasswordResetRequired }: StaffLogi
           return;
         }
 
-        if (result.passwordResetRequired && !result.skipPasswordResetReminder) {
+        const passwordIsReseted = result.passwordResetRequired && !result.skipPasswordResetReminder;
+
+        if (passwordIsReseted) {
           onPasswordResetRequired?.();
           onSuccess?.();
-          if (result.role === "admin") {
-            router.push("/admin");
-          } else if (result.role === "manager") {
-            router.push("/manager");
-          } else {
-            router.push("/kitchen");
-          }
+          redirectUserToTheirArea(result.role);
           return;
         }
 
         onSuccess?.();
-        if (result.role === "admin") {
-          router.push("/admin");
-        } else if (result.role === "manager") {
-          router.push("/manager");
-        } else {
-          router.push("/kitchen");
-        }
+        redirectUserToTheirArea(result.role);
       } catch {
         setError("An error occurred. Please try again.");
       } finally {
         setIsLoading(false);
       }
     },
-    [identifier, password, loginAsStaffUser, onPasswordResetRequired, onSuccess, router],
+    [identifier, password, loginAsStaffUser, onPasswordResetRequired, onSuccess, redirectUserToTheirArea],
   );
 
   return (
