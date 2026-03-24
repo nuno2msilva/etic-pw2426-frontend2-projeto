@@ -39,6 +39,44 @@ const clients = new Set<Response>();
 /** Map of tableId → Set of connected customer SSE responses */
 const tableClients = new Map<number, Set<Response>>();
 
+/** Map of browser clientId -> current SSE response + tracked table */
+const clientConnections = new Map<string, ClientConnectionEntry<Response>>();
+
+export interface ClientConnectionEntry<TConnection> {
+  connection: TConnection;
+  tableId: number | null;
+}
+
+/**
+ * Upserts a client connection in a table-agnostic way.
+ * Returns previous entry when replacing an older connection for the same client.
+ */
+export function upsertClientConnection<TConnection>(
+  connections: Map<string, ClientConnectionEntry<TConnection>>,
+  clientId: string,
+  connection: TConnection,
+  tableId: number | null,
+): ClientConnectionEntry<TConnection> | null {
+  const existing = connections.get(clientId);
+  if (existing && existing.connection !== connection) {
+    connections.set(clientId, { connection, tableId });
+    return existing;
+  }
+
+  connections.set(clientId, { connection, tableId });
+  return null;
+}
+
+function removeFromTablePresence(tableId: number | null, res: Response): void {
+  if (!tableId || Number.isNaN(tableId)) return;
+
+  const set = tableClients.get(tableId);
+  if (!set) return;
+
+  set.delete(res);
+  if (set.size === 0) tableClients.delete(tableId);
+}
+
 /** Send an event to every connected client. */
 export function broadcast(event: ServerEvent): void {
   const data = `data: ${JSON.stringify(event)}\n\n`;
@@ -77,6 +115,21 @@ export function sseHandler(req: Request, res: Response): void {
   // Track table presence if customer connected with ?tableId=<id>
   const rawTableId = req.query.tableId;
   const tableId = rawTableId ? Number(rawTableId) : null;
+
+  const rawClientId = req.query.clientId;
+  const clientId = typeof rawClientId === "string" ? rawClientId : null;
+
+  // Replace any existing SSE connection for this browser client id.
+  // This prevents stale table presence when a user switches tables.
+  if (clientId) {
+    const replaced = upsertClientConnection(clientConnections, clientId, res, tableId);
+    if (replaced && replaced.connection !== res) {
+      clients.delete(replaced.connection);
+      removeFromTablePresence(replaced.tableId, replaced.connection);
+      replaced.connection.end();
+    }
+  }
+
   if (tableId && !Number.isNaN(tableId)) {
     if (!tableClients.has(tableId)) {
       tableClients.set(tableId, new Set());
@@ -98,14 +151,15 @@ export function sseHandler(req: Request, res: Response): void {
     clearInterval(keepAlive);
     clients.delete(res);
 
-    // Remove from table presence tracking
-    if (tableId && !Number.isNaN(tableId)) {
-      const set = tableClients.get(tableId);
-      if (set) {
-        set.delete(res);
-        if (set.size === 0) tableClients.delete(tableId);
+    if (clientId) {
+      const tracked = clientConnections.get(clientId);
+      if (tracked?.connection === res) {
+        clientConnections.delete(clientId);
       }
-      broadcastPresence();
     }
+
+    // Remove from table presence tracking
+    removeFromTablePresence(tableId, res);
+    broadcastPresence();
   });
 }

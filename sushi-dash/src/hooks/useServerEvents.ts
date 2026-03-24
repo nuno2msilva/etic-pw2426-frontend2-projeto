@@ -32,6 +32,19 @@ export interface UseServerEventsOptions {
 /** React Query key for table presence data */
 export const presenceKey = ["table-presence"] as const;
 
+const SSE_CLIENT_ID_KEY = "sushi-dash-sse-client-id";
+
+function getSseClientId(): string | null {
+  if (typeof window === "undefined") return null;
+
+  const existing = window.localStorage.getItem(SSE_CLIENT_ID_KEY);
+  if (existing) return existing;
+
+  const id = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  window.localStorage.setItem(SSE_CLIENT_ID_KEY, id);
+  return id;
+}
+
 export function useServerEvents({ tableId, onEjected, enabled = true }: UseServerEventsOptions = {}) {
   const queryClient = useQueryClient();
 
@@ -53,10 +66,21 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
 
     function connect() {
       const base = API_BASE;
+      const params = new URLSearchParams();
       // Pass tableId as query param so server tracks table presence
-      const url = tableIdRef.current
-        ? `${base}/api/events?tableId=${tableIdRef.current}`
-        : `${base}/api/events`;
+      if (tableIdRef.current) {
+        params.set("tableId", tableIdRef.current);
+      }
+
+      // Stable per-browser client id lets the server replace stale SSE connections
+      // when the same user switches tables without leaving zombie presence behind.
+      const clientId = getSseClientId();
+      if (clientId) {
+        params.set("clientId", clientId);
+      }
+
+      const query = params.toString();
+      const url = query ? `${base}/api/events?${query}` : `${base}/api/events`;
       es = new EventSource(url);
 
       es.onmessage = (msg) => {
