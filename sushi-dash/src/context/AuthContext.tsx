@@ -6,6 +6,8 @@ import { API_BASE } from '@/lib/config';
 import {
   AuthSession,
   AuthRole,
+  normalizeAuthRole,
+  normalizePermission,
   getAuthSession,
   saveAuthSession,
   clearAuthSession,
@@ -71,24 +73,6 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function normalizeStaffRole(value?: string): AuthRole | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === 'customer' || normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
-    return normalized;
-  }
-  return undefined;
-}
-
-function normalizePermission(value?: string): 'kitchen' | 'manager' | 'admin' | undefined {
-  if (!value) return undefined;
-  const normalized = value.toLowerCase();
-  if (normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
-    return normalized;
-  }
-  return undefined;
-}
-
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [customerSession, setCustomerSession] = useState<AuthSession | null>(null);
   const [staffSession, setStaffSession] = useState<AuthSession | null>(null);
@@ -109,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const existingStaff = getAuthSession('staff');
       if (existingCustomer) setCustomerSession(existingCustomer);
       if (existingStaff) {
-        const normalizedRole = normalizeStaffRole(existingStaff.role);
+        const normalizedRole = normalizeAuthRole(existingStaff.role);
         const normalizedPermission = normalizePermission(existingStaff.permission ?? existingStaff.role);
         if (normalizedRole && normalizedRole !== 'customer') {
           const normalizedStaffSession: AuthSession = {
@@ -202,7 +186,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await loginAsStaff(identifier, password);
       if (result.success && result.role) {
-        const normalizedRole = normalizeStaffRole(result.role);
+        const normalizedRole = normalizeAuthRole(result.role);
         const normalizedPermission = normalizePermission(result.permission ?? result.role);
         if (!normalizedRole || normalizedRole === 'customer') {
           return { success: false, error: 'Invalid staff role received from server' };

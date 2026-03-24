@@ -6,6 +6,7 @@ import { useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { hasStaffPermission } from "@/lib/auth";
 import {
   TableManager,
   MenuManager,
@@ -39,11 +40,7 @@ const ManagerPage = () => {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["menu-management"]));
 
   // Route access is strict by role: only manager staff may access /manager.
-  const staffRole = typeof staffSession?.role === "string" ? staffSession.role.toLowerCase() : undefined;
-  const staffPermission =
-    (typeof staffSession?.permission === "string" ? staffSession.permission.toLowerCase() : undefined) ??
-    (staffRole === "customer" ? undefined : staffRole);
-  const hasManagerAccess = staffPermission === "manager";
+  const hasManagerAccess = hasStaffPermission(staffSession, "manager");
 
   // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {

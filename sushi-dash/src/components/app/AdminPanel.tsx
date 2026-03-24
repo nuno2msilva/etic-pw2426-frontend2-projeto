@@ -48,6 +48,7 @@ interface User {
 }
 
 export const AdminPanel = () => {
+  const hiddenPasswordText = 'No longer available';
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -296,6 +297,64 @@ export const AdminPanel = () => {
     return <div className="p-6 text-center text-muted-foreground">Loading users...</div>;
   }
 
+  const renderUserActions = (user: User, compact: boolean) => {
+    const size = compact ? 'sm' : 'sm';
+    const baseClass = compact ? 'h-8 w-8 p-0' : 'h-9';
+
+    return (
+      <>
+        <Button
+          size={size}
+          variant="ghost"
+          onClick={() => openEditDialog(user)}
+          title="Edit user"
+          className={baseClass}
+        >
+          <Pencil className="w-4 h-4" />
+        </Button>
+        <Button
+          size={size}
+          variant="ghost"
+          onClick={() => {
+            setSelectedUser(user);
+            setShowResetDialog(true);
+          }}
+          title="Reset password"
+          className={baseClass}
+        >
+          <RotateCcw className="w-4 h-4" />
+        </Button>
+        <Button
+          size={size}
+          variant="ghost"
+          onClick={() => handleToggleActive(user)}
+          title={user.permission === 'admin' ? 'Admin users cannot be disabled' : user.isActive ? 'Disable' : 'Enable'}
+          className={baseClass}
+          disabled={user.permission === 'admin'}
+        >
+          {user.isActive ? (
+            <Lock className="w-4 h-4" />
+          ) : (
+            <Unlock className="w-4 h-4" />
+          )}
+        </Button>
+        <Button
+          size={size}
+          variant="ghost"
+          onClick={() => {
+            setSelectedUser(user);
+            setShowDeleteDialog(true);
+          }}
+          title={user.permission === 'admin' ? 'Admin users cannot be deleted' : 'Delete'}
+          className={`${baseClass} text-destructive hover:text-destructive`}
+          disabled={user.permission === 'admin'}
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button>
+      </>
+    );
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -343,7 +402,7 @@ export const AdminPanel = () => {
                   {user.passwordPreview}
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">No longer available</span>
+                <span className="text-xs text-muted-foreground">{hiddenPasswordText}</span>
               )}
             </div>
 
@@ -352,54 +411,7 @@ export const AdminPanel = () => {
             </p>
 
             <div className="mt-3 grid grid-cols-4 gap-2">
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => openEditDialog(user)}
-                title="Edit user"
-                className="h-9"
-              >
-                <Pencil className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setSelectedUser(user);
-                  setShowResetDialog(true);
-                }}
-                title="Reset password"
-                className="h-9"
-              >
-                <RotateCcw className="w-4 h-4" />
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleToggleActive(user)}
-                title={user.permission === 'admin' ? 'Admin users cannot be disabled' : user.isActive ? 'Disable' : 'Enable'}
-                className="h-9"
-                disabled={user.permission === 'admin'}
-              >
-                {user.isActive ? (
-                  <Lock className="w-4 h-4" />
-                ) : (
-                  <Unlock className="w-4 h-4" />
-                )}
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => {
-                  setSelectedUser(user);
-                  setShowDeleteDialog(true);
-                }}
-                title={user.permission === 'admin' ? 'Admin users cannot be deleted' : 'Delete'}
-                className="h-9 text-destructive hover:text-destructive"
-                disabled={user.permission === 'admin'}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
+              {renderUserActions(user, false)}
             </div>
           </div>
         ))}
@@ -431,7 +443,7 @@ export const AdminPanel = () => {
                         {user.passwordPreview}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">No longer available</span>
+                      <span className="text-muted-foreground">{hiddenPasswordText}</span>
                     )}
                   </td>
                   <td className="px-4 py-3">
@@ -455,54 +467,7 @@ export const AdminPanel = () => {
                   <td className="px-4 py-3 text-muted-foreground">{formatLastLogin(user.lastLoginAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => openEditDialog(user)}
-                        title="Edit user"
-                        className="h-8 w-8 p-0"
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowResetDialog(true);
-                        }}
-                        title="Reset password"
-                        className="h-8 w-8 p-0"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleToggleActive(user)}
-                        title={user.permission === 'admin' ? 'Admin users cannot be disabled' : user.isActive ? 'Disable' : 'Enable'}
-                        className="h-8 w-8 p-0"
-                        disabled={user.permission === 'admin'}
-                      >
-                        {user.isActive ? (
-                          <Lock className="w-4 h-4" />
-                        ) : (
-                          <Unlock className="w-4 h-4" />
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => {
-                          setSelectedUser(user);
-                          setShowDeleteDialog(true);
-                        }}
-                        title={user.permission === 'admin' ? 'Admin users cannot be deleted' : 'Delete'}
-                        className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                        disabled={user.permission === 'admin'}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      {renderUserActions(user, true)}
                     </div>
                   </td>
                 </tr>

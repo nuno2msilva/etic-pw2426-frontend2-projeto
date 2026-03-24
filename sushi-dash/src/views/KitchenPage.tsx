@@ -6,6 +6,7 @@ import { useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
+import { hasStaffPermission } from "@/lib/auth";
 import { OrderCard, SEOHead } from "@/components/app";
 const KitchenPage = () => {
   const { orders, updateOrderStatus, cancelOrder, deleteOrder } = useApp();
@@ -13,12 +14,8 @@ const KitchenPage = () => {
   const router = useRouter();
 
   // Route access: kitchen staff and managers can access /kitchen.
-  const staffRole = typeof staffSession?.role === "string" ? staffSession.role.toLowerCase() : undefined;
-  const staffPermission =
-    (typeof staffSession?.permission === "string" ? staffSession.permission.toLowerCase() : undefined) ??
-    (staffRole === "customer" ? undefined : staffRole);
-  const isManager = staffPermission === "manager";
-  const hasKitchenAccess = staffPermission === "kitchen" || isManager;
+  const isManager = hasStaffPermission(staffSession, "manager");
+  const hasKitchenAccess = hasStaffPermission(staffSession, "kitchen");
 
   // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {

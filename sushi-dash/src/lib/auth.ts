@@ -245,6 +245,48 @@ export interface AuthSession {
   skipPasswordResetReminder?: boolean; // User opted out of reset reminder
 }
 
+const PERMISSION_HIERARCHY: Record<Permission, number> = {
+  kitchen: 1,
+  manager: 2,
+  admin: 3,
+};
+
+export function normalizeAuthRole(value?: string): AuthRole | undefined {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (normalized === 'customer' || normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
+    return normalized;
+  }
+  return undefined;
+}
+
+export function normalizePermission(value?: string): Permission | undefined {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
+    return normalized;
+  }
+  return undefined;
+}
+
+export function resolveStaffPermission(
+  session?: Pick<AuthSession, 'role' | 'permission'> | null,
+): Permission | undefined {
+  if (!session) return undefined;
+  const normalizedRole = normalizeAuthRole(session.role);
+  if (!normalizedRole || normalizedRole === 'customer') return undefined;
+  return normalizePermission(session.permission ?? normalizedRole);
+}
+
+export function hasStaffPermission(
+  session: Pick<AuthSession, 'role' | 'permission'> | null | undefined,
+  requiredPermission: Permission,
+): boolean {
+  const permission = resolveStaffPermission(session);
+  if (!permission) return false;
+  return PERMISSION_HIERARCHY[permission] >= PERMISSION_HIERARCHY[requiredPermission];
+}
+
 // Save auth session — stored per role category (customer vs staff)
 export function saveAuthSession(session: AuthSession): void {
   const key = session.role === 'customer' ? STORAGE_KEYS.CUSTOMER_SESSION : STORAGE_KEYS.STAFF_SESSION;
@@ -304,30 +346,22 @@ export function hasAccess(
 ): boolean {
   if (!session) return false;
 
-  // Permission hierarchy: kitchen (1) < manager (2) < admin (3)
-  const permissionHierarchy: Record<Permission, number> = {
-    kitchen: 1,
-    manager: 2,
-    admin: 3,
-  };
+  if (requiredRole === 'customer') {
+    if (session.role !== 'customer') return true;
+    if (tableId !== undefined && session.tableId !== tableId) return false;
+    return true;
+  }
 
-  // For staff users, check permission hierarchy
-  if (session.permission || session.role === 'kitchen' || session.role === 'manager' || session.role === 'admin') {
-    const effectivePermission = (session.permission ?? session.role) as Permission;
-    const userLevel = permissionHierarchy[effectivePermission] ?? 0;
-    const requiredLevel = permissionHierarchy[requiredRole as Permission] ?? 0;
-
-    // User can access if they have equal or higher permission level
-    if (userLevel >= requiredLevel) return true;
-    if (requiredRole === 'customer') return true;
-    return false;
+  const staffPermission = resolveStaffPermission(session);
+  if (staffPermission) {
+    const requiredPermission = normalizePermission(requiredRole);
+    if (!requiredPermission) return false;
+    return PERMISSION_HIERARCHY[staffPermission] >= PERMISSION_HIERARCHY[requiredPermission];
   }
 
   // For customer sessions
   if (session.role === 'customer') {
-    if (requiredRole !== 'customer') return false;
-    if (tableId !== undefined && session.tableId !== tableId) return false;
-    return true;
+    return false;
   }
 
   return false;

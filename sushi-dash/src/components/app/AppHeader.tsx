@@ -7,6 +7,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { Moon, Sun, LogOut, User, Lock, Flame, Settings, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
+import { hasStaffPermission, resolveStaffPermission } from "@/lib/auth";
 import { PasswordChangeModal } from "@/components/app/PasswordChangeModal";
 import {
   DropdownMenu,
@@ -30,12 +31,9 @@ const AppHeader = () => {
   } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const staffRole = typeof staffSession?.role === "string" ? staffSession.role.toLowerCase() : undefined;
-  const staffPermission =
-    (typeof staffSession?.permission === "string" ? staffSession.permission.toLowerCase() : undefined) ??
-    (staffRole === "customer" ? undefined : staffRole);
-  const canAccessKitchen = staffPermission === "kitchen" || staffPermission === "manager";
-  const canAccessManager = staffPermission === "manager";
+  const staffPermission = resolveStaffPermission(staffSession);
+  const canAccessKitchen = hasStaffPermission(staffSession, "kitchen");
+  const canAccessManager = hasStaffPermission(staffSession, "manager");
   const canAccessAdmin = staffPermission === "admin";
 
   const [isDark, setIsDark] = useState(false);

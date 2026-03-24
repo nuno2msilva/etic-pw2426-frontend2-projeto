@@ -239,7 +239,7 @@ export function requireRole(...roles: AuthRole[]) {
     }
 
     // Legacy/session fallback: infer hierarchy from role even when permission is missing.
-    const userRoleLevel = userRole === "customer" ? 0 : roleHierarchy[userRole];
+    const userRoleLevel = roleHierarchy[userRole];
     if (userRoleLevel > 0) {
       for (const role of roles) {
         if (role === "customer") continue;
