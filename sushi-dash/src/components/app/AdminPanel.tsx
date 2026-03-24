@@ -102,6 +102,10 @@ export const AdminPanel = () => {
     return date.toLocaleString();
   };
 
+  const formatPermissionLabel = (permission: Permission): string => {
+    return permission.charAt(0).toUpperCase() + permission.slice(1);
+  };
+
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
@@ -332,7 +336,7 @@ export const AdminPanel = () => {
                     : 'outline'
                 }
               >
-                {user.permission}
+                {formatPermissionLabel(user.permission)}
               </Badge>
               {user.passwordPreview ? (
                 <span className="inline-flex rounded border bg-muted px-2 py-1 font-mono text-xs font-semibold tracking-wider">
@@ -440,7 +444,7 @@ export const AdminPanel = () => {
                           : 'outline'
                       }
                     >
-                      {user.permission}
+                      {formatPermissionLabel(user.permission)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
@@ -549,14 +553,18 @@ export const AdminPanel = () => {
               <Label htmlFor="edit-permission" className="text-sm">
                 Permission Level
               </Label>
-              <Select value={editUserPermission} onValueChange={(v) => setEditUserPermission(v as Permission)}>
+              <Select
+                value={editUserPermission}
+                onValueChange={(v) => setEditUserPermission(v as Permission)}
+                disabled={selectedUser?.permission === 'admin'}
+              >
                 <SelectTrigger id="edit-permission" className="mt-1.5">
                   <SelectValue placeholder="Select a permission level" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="kitchen">Kitchen</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  {selectedUser?.permission === 'admin' && <SelectItem value="admin">Admin</SelectItem>}
                 </SelectContent>
               </Select>
             </div>
@@ -631,7 +639,6 @@ export const AdminPanel = () => {
                 <SelectContent>
                   <SelectItem value="kitchen">Kitchen</SelectItem>
                   <SelectItem value="manager">Manager</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>

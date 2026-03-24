@@ -128,9 +128,9 @@ router.post("/", requireRole("admin"), async (req, res) => {
       return;
     }
 
-    // Validate permission
-    if (!["kitchen", "manager", "admin"].includes(permission)) {
-      res.status(400).json({ error: "Permission must be one of: kitchen, manager, admin" });
+    // Single-admin policy: new users can only be kitchen or manager.
+    if (!["kitchen", "manager"].includes(permission)) {
+      res.status(400).json({ error: "Permission must be one of: kitchen, manager" });
       return;
     }
 
@@ -193,10 +193,31 @@ router.put("/:id", requireRole("admin"), async (req, res) => {
       permission?: Permission;
     };
 
+    const currentUser = await prisma.user.findUnique({
+      where: { id },
+      select: { id: true, permission: true },
+    });
+
+    if (!currentUser) {
+      res.status(404).json({ error: "User not found" });
+      return;
+    }
+
     // Validate permission if provided
     if (permission && !["kitchen", "manager", "admin"].includes(permission)) {
       res.status(400).json({ error: "Permission must be one of: kitchen, manager, admin" });
       return;
+    }
+
+    if (permission) {
+      if (currentUser.permission === "admin" && permission !== "admin") {
+        res.status(403).json({ error: "Admin permission cannot be changed" });
+        return;
+      }
+      if (currentUser.permission !== "admin" && permission === "admin") {
+        res.status(403).json({ error: "Only the existing admin account can be admin" });
+        return;
+      }
     }
 
     // Check if email is being changed and if it's already in use
