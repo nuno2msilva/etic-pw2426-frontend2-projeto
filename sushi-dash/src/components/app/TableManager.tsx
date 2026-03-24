@@ -17,6 +17,7 @@ import {
 import { Shuffle, Pencil, X, Check, QrCode } from "lucide-react";
 import { fetchTablesWithPins, setTablePin, randomizeTablePin } from "@/lib/api";
 import { TableQRModal } from "@/components/app";
+import { useTablePresence } from "@/hooks/useTablePresence";
 
 interface TableManagerProps {
   tables: Table[];
@@ -27,6 +28,7 @@ interface TableManagerProps {
 
 const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: TableManagerProps) => {
   const [tableName, setTableName] = useState("");
+  const { data: presence = {} } = useTablePresence();
 
   // PIN data from backend (includes plaintext PINs)
   const [pinData, setPinData] = useState<Record<string, { pin: string; pin_version: number }>>({});
@@ -219,6 +221,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
       <div className="space-y-1">
         {tables.map((table) => {
           const pd = pinData[table.id];
+          const isInUse = (presence[Number(table.id)] ?? 0) > 0;
           const isEditingName = table.id in editingName;
           const isEditingPinVal = table.id in editingPin;
           const isEditing = isEditingName || isEditingPinVal;
@@ -245,6 +248,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                   />
                 ) : (
                   <span className="font-medium text-foreground text-sm">
+                    {isInUse && <span className="text-red-600 font-semibold mr-1">ON</span>}
                     {table.label}
                   </span>
                 )}

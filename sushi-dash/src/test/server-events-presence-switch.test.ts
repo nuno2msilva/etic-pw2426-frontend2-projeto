@@ -1,6 +1,17 @@
-import { upsertClientConnection } from "../../server/src/events";
+import { resolveTrackedTableId, upsertClientConnection } from "../../server/src/events";
 
 describe("SSE client presence switching", () => {
+  it("tracks authenticated customer table id instead of requested query table id", () => {
+    expect(resolveTrackedTableId(1, 2)).toBe(2);
+    expect(resolveTrackedTableId(4, 9)).toBe(9);
+    expect(resolveTrackedTableId(9, 1)).toBe(1);
+  });
+
+  it("does not track presence when there is no authenticated customer table", () => {
+    expect(resolveTrackedTableId(2, null)).toBeNull();
+    expect(resolveTrackedTableId(null, null)).toBeNull();
+  });
+
   it("replaces prior connection regardless of table id sequence", () => {
     const connections = new Map<string, { connection: string; tableId: number | null }>();
 

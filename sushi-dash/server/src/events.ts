@@ -67,6 +67,20 @@ export function upsertClientConnection<TConnection>(
   return null;
 }
 
+export function resolveTrackedTableId(
+  requestedTableId: number | null,
+  authenticatedCustomerTableId: number | null,
+): number | null {
+  // Presence must be authoritative to authenticated customer session.
+  // Never trust client-provided tableId over server-decoded auth cookie.
+  if (authenticatedCustomerTableId && !Number.isNaN(authenticatedCustomerTableId)) {
+    return authenticatedCustomerTableId;
+  }
+
+  // No authenticated customer session -> do not track table presence.
+  return null;
+}
+
 function removeFromTablePresence(tableId: number | null, res: Response): void {
   if (!tableId || Number.isNaN(tableId)) return;
 
@@ -114,7 +128,9 @@ export function sseHandler(req: Request, res: Response): void {
 
   // Track table presence if customer connected with ?tableId=<id>
   const rawTableId = req.query.tableId;
-  const tableId = rawTableId ? Number(rawTableId) : null;
+  const requestedTableId = rawTableId ? Number(rawTableId) : null;
+  const authenticatedCustomerTableId = req.customerAuth?.tableId ?? null;
+  const tableId = resolveTrackedTableId(requestedTableId, authenticatedCustomerTableId);
 
   const rawClientId = req.query.clientId;
   const clientId = typeof rawClientId === "string" ? rawClientId : null;
