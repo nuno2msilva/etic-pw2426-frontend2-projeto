@@ -67,10 +67,22 @@ function generateRandomPassword(length = 12): string {
 // ── List all users (admin only) ──────────────────────────────
 router.get("/", requireRole("admin"), async (_req, res) => {
   try {
-    const users = await prisma.user.findMany({
-      select: { id: true, email: true, username: true, passwordPreview: true, permission: true, isActive: true, createdAt: true, updatedAt: true },
+    const usersRaw = await prisma.user.findMany({
+      select: {
+        id: true,
+        email: true,
+        username: true,
+        passwordPreview: true,
+        permission: true,
+        isActive: true,
+        lastLoginAt: true,
+        createdAt: true,
+        updatedAt: true,
+      } as any,
       orderBy: { createdAt: "asc" },
     });
+
+    const users = usersRaw as any[];
 
     res.json({
       users: users.map((u) => ({
@@ -80,6 +92,7 @@ router.get("/", requireRole("admin"), async (_req, res) => {
         passwordPreview: u.passwordPreview,
         permission: u.permission,
         isActive: u.isActive,
+        lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
         createdAt: u.createdAt.toISOString(),
         updatedAt: u.updatedAt.toISOString(),
       })),

@@ -173,10 +173,34 @@ export function authenticate(req: Request, _res: Response, next: NextFunction): 
  * Supports permission hierarchy: kitchen < manager < admin
  */
 export function requireRole(...roles: AuthRole[]) {
-  return (req: Request, res: Response, next: NextFunction): void => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     if (!req.auth) {
       res.status(401).json({ error: "Authentication required" });
       return;
+    }
+
+    // For staff sessions, verify user is still active and not in forced-reset state.
+    // This ensures live boot-out when admin disables account or resets password.
+    if (req.auth.role !== "customer" && req.auth.userId) {
+      try {
+        const prisma = (await import("../db/prisma.js")).default;
+        const user = await prisma.user.findUnique({
+          where: { id: req.auth.userId },
+          select: { isActive: true, passwordResetRequired: true, permission: true },
+        });
+
+        if (!user || !user.isActive || user.passwordResetRequired) {
+          clearToken(res, req.auth.role);
+          res.clearCookie("sushi_token", { path: "/" });
+          res.status(401).json({ error: "Session expired. Please login again." });
+          return;
+        }
+
+        req.auth.permission = user.permission;
+      } catch {
+        res.status(503).json({ error: "Authentication service unavailable" });
+        return;
+      }
     }
 
     // Create a set of all roles that satisfy the requirement

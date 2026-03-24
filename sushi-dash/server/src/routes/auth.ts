@@ -90,7 +90,7 @@ router.post("/login/staff", async (req, res) => {
 
     await prisma.user.update({
       where: { id: user.id },
-      data: { passwordPreview: null },
+      data: { passwordPreview: null, lastLoginAt: new Date() },
     });
 
     // Issue token with permission level
@@ -227,19 +227,27 @@ router.get("/session", async (req, res) => {
     if (req.staffAuth.userId) {
       const user = await prisma.user.findUnique({
         where: { id: req.staffAuth.userId },
-        select: { email: true, username: true },
+        select: { email: true, username: true, isActive: true, passwordResetRequired: true, permission: true },
       });
-      email = user?.email;
-      username = user?.username;
+      // Invalidate staff session if account is disabled, deleted, or password was reset.
+      if (!user || !user.isActive || user.passwordResetRequired) {
+        clearToken(res, req.staffAuth.role);
+        res.clearCookie("sushi_token", { path: "/" });
+      } else {
+        email = user.email;
+        username = user.username;
+      }
     }
 
-    sessions.push({ 
-      role: req.staffAuth.role, 
-      userId: req.staffAuth.userId,
-      email,
-      username,
-      authenticated: true 
-    });
+    if (email || username) {
+      sessions.push({
+        role: req.staffAuth.role,
+        userId: req.staffAuth.userId,
+        email,
+        username,
+        authenticated: true
+      });
+    }
   }
 
   // Check customer session

@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,6 +42,7 @@ interface User {
   passwordPreview: string | null;
   permission: Permission;
   isActive: boolean;
+  lastLoginAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -66,7 +67,7 @@ export const AdminPanel = () => {
   const [editUserEmail, setEditUserEmail] = useState('');
   const [editUserPermission, setEditUserPermission] = useState<Permission>('kitchen');
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await fetch(`${API_BASE}/api/users`, {
         credentials: 'include',
@@ -82,11 +83,24 @@ export const AdminPanel = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
+
+  // Keep users table live so password preview disappears and last-login updates in near real-time.
+  useEffect(() => {
+    const timer = setInterval(fetchUsers, 5000);
+    return () => clearInterval(timer);
+  }, [fetchUsers]);
+
+  const formatLastLogin = (value: string | null): string => {
+    if (!value) return 'Never';
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return 'Never';
+    return date.toLocaleString();
+  };
 
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -329,6 +343,10 @@ export const AdminPanel = () => {
               )}
             </div>
 
+            <p className="mt-2 text-xs text-muted-foreground">
+              Last login: {formatLastLogin(user.lastLoginAt)}
+            </p>
+
             <div className="mt-3 grid grid-cols-4 gap-2">
               <Button
                 size="sm"
@@ -394,6 +412,7 @@ export const AdminPanel = () => {
                 <th className="text-left px-4 py-3 font-medium">Password</th>
                 <th className="text-left px-4 py-3 font-medium">Permission</th>
                 <th className="text-left px-4 py-3 font-medium">Status</th>
+                <th className="text-left px-4 py-3 font-medium">Last Login</th>
                 <th className="text-right px-4 py-3 font-medium">Actions</th>
               </tr>
             </thead>
@@ -429,6 +448,7 @@ export const AdminPanel = () => {
                       {user.isActive ? 'Active' : 'Inactive'}
                     </Badge>
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground">{formatLastLogin(user.lastLoginAt)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-2">
                       <Button

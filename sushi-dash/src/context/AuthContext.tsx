@@ -101,6 +101,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     init();
   }, [invalidateAllCaches]);
 
+  // Periodically validate staff session server-side so admin actions (e.g. password reset)
+  // can force immediate logout on connected clients.
+  useEffect(() => {
+    if (!isInitialized || !staffSession) return;
+
+    let cancelled = false;
+
+    const validateSession = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/auth/session`, {
+          credentials: 'include',
+        });
+        if (!res.ok) return;
+
+        const data = await res.json() as {
+          authenticated?: boolean;
+          sessions?: Array<{ role?: string; authenticated?: boolean }>;
+        };
+        const hasStaffSession = Array.isArray(data.sessions)
+          ? data.sessions.some((s) => s.role !== 'customer' && s.authenticated)
+          : false;
+
+        if (!cancelled && !hasStaffSession) {
+          clearAuthSession('staff');
+          setStaffSession(null);
+          setPasswordResetRequired(false);
+          setSkipPasswordResetReminder(false);
+          setPasswordChangeReminderDismissedThisSession(false);
+          queryClient.invalidateQueries();
+        }
+      } catch {
+        // Best-effort polling: ignore transient network errors.
+      }
+    };
+
+    validateSession();
+    const timer = setInterval(validateSession, 5000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isInitialized, staffSession, queryClient]);
+
   const loginAsCustomer = useCallback(async (tableId: string, pin: string): Promise<boolean> => {
     const success = await loginTableWithPin(tableId, pin);
     if (success) {

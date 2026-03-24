@@ -4,7 +4,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Moon, Sun, LogOut, User, Lock } from "lucide-react";
+import { Moon, Sun, LogOut, User, Lock, Flame, Settings, Shield } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { PasswordChangeModal } from "@/components/app/PasswordChangeModal";
@@ -31,7 +31,7 @@ const AppHeader = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
 
   const isStaffPage = pathname === "/manager" || pathname === "/kitchen" || pathname === "/admin";
-  const staffPermission = staffSession?.permission;
+  const staffPermission = staffSession?.permission ?? (staffSession?.role === "customer" ? undefined : staffSession?.role);
   const canAccessKitchen = staffPermission === "kitchen" || staffPermission === "manager";
   const canAccessManager = staffPermission === "manager";
   const canAccessAdmin = staffPermission === "admin";
@@ -102,25 +102,34 @@ const AppHeader = () => {
                 {canAccessKitchen && pathname !== "/kitchen" && (
                   <Link
                     href="/kitchen"
-                    className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                    className="h-9 w-9 sm:w-auto px-2 sm:px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"
+                    aria-label="Kitchen"
+                    title="Kitchen"
                   >
-                    🔥 Kitchen
+                    <Flame className="w-4 h-4" />
+                    <span className="hidden sm:inline">Kitchen</span>
                   </Link>
                 )}
                 {canAccessManager && pathname !== "/manager" && (
                   <Link
                     href="/manager"
-                    className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                    className="h-9 w-9 sm:w-auto px-2 sm:px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"
+                    aria-label="Manager"
+                    title="Manager"
                   >
-                    ⚙️ Manager
+                    <Settings className="w-4 h-4" />
+                    <span className="hidden sm:inline">Manager</span>
                   </Link>
                 )}
                 {canAccessAdmin && pathname !== "/admin" && (
                   <Link
                     href="/admin"
-                    className="px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                    className="h-9 w-9 sm:w-auto px-2 sm:px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors inline-flex items-center justify-center gap-1.5"
+                    aria-label="Admin"
+                    title="Admin"
                   >
-                    👥 Admin
+                    <Shield className="w-4 h-4" />
+                    <span className="hidden sm:inline">Admin</span>
                   </Link>
                 )}
               </nav>
