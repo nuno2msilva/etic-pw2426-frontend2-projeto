@@ -201,16 +201,16 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
       </h2>
 
       {/* Add Table Form */}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4">
         <input
           type="text"
           placeholder="e.g. Table 7"
           value={tableName}
           onChange={(e) => setTableName(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') handleAddTable(); }}
-          className="flex-1 px-4 py-2 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+          className="w-full sm:flex-1 px-4 py-2 rounded-lg border bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
         />
-        <Button onClick={handleAddTable}>
+        <Button onClick={handleAddTable} className="w-full sm:w-auto">
           Add
         </Button>
       </div>
@@ -226,34 +226,36 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
           return (
             <div
               key={table.id}
-              className="flex items-center gap-2 rounded-lg border bg-background px-3 py-2"
+              className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border bg-background px-3 py-2.5"
             >
-              {/* Name (or edit input) */}
-              <span className="text-base shrink-0">🪑</span>
-              {isEditingName ? (
-                <Input
-                  value={editingName[table.id] ?? table.label}
-                  onChange={(e) => setEditingName(prev => ({ ...prev, [table.id]: e.target.value }))}
-                  className="w-40 h-7 text-sm"
-                  placeholder="Table name"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleSaveEdits(table);
-                    if (e.key === 'Escape') handleCancelEdits(table.id);
-                  }}
-                  autoFocus
-                />
-              ) : (
-                <span className="font-medium text-foreground text-sm">
-                  {table.label}
-                </span>
-              )}
+              <div className="flex items-center gap-2 w-full sm:w-auto sm:min-w-[180px]">
+                {/* Name (or edit input) */}
+                <span className="text-base shrink-0">🪑</span>
+                {isEditingName ? (
+                  <Input
+                    value={editingName[table.id] ?? table.label}
+                    onChange={(e) => setEditingName(prev => ({ ...prev, [table.id]: e.target.value }))}
+                    className="w-full sm:w-40 h-8 text-sm"
+                    placeholder="Table name"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleSaveEdits(table);
+                      if (e.key === 'Escape') handleCancelEdits(table.id);
+                    }}
+                    autoFocus
+                  />
+                ) : (
+                  <span className="font-medium text-foreground text-sm">
+                    {table.label}
+                  </span>
+                )}
+              </div>
 
               {/* Spacer pushes PIN + buttons to the right */}
-              <div className="flex-1" />
+              <div className="hidden sm:block flex-1" />
 
               {/* PIN display + inline edit — right-aligned */}
               {pd && (
-                <div className="flex items-center gap-1 shrink-0">
+                <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto">
                   <span className="text-muted-foreground text-xs">PIN:</span>
                   {isEditingPinVal ? (
                     <Input
@@ -270,7 +272,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                         if (e.key === 'Enter') handleSaveEdits(table);
                         if (e.key === 'Escape') handleCancelEdits(table.id);
                       }}
-                      className="w-16 h-7 font-mono tracking-widest text-center text-sm"
+                      className="w-16 h-8 font-mono tracking-widest text-center text-sm"
                       autoFocus={!isEditingName}
                     />
                   ) : (
@@ -282,19 +284,19 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
               )}
 
               {/* Action buttons */}
-              <div className="flex items-center gap-1 shrink-0">
+              <div className="flex items-center gap-1 shrink-0 w-full sm:w-auto justify-end">
                 {isEditing ? (
                   <>
                     <button
                       onClick={() => handleSaveEdits(table)}
-                      className="text-green-600 hover:text-green-700 p-1 rounded transition-colors"
+                      className="text-green-600 hover:text-green-700 p-1.5 rounded transition-colors"
                       title="Save changes"
                     >
                       <Check className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => handleCancelEdits(table.id)}
-                      className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+                      className="text-muted-foreground hover:text-foreground p-1.5 rounded transition-colors"
                       title="Cancel"
                     >
                       <X className="h-4 w-4" />
@@ -307,7 +309,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                         setEditingName(prev => ({ ...prev, [table.id]: table.label }));
                         if (pd) setEditingPin(prev => ({ ...prev, [table.id]: pd.pin }));
                       }}
-                      className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+                      className="text-muted-foreground hover:text-foreground p-1.5 rounded transition-colors"
                       title="Edit table"
                     >
                       <Pencil className="h-3.5 w-3.5" />
@@ -319,14 +321,14 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                             setQrTable(table);
                             setShowQR(true);
                           }}
-                          className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-foreground p-1.5 rounded transition-colors"
                           title="Show QR code"
                         >
                           <QrCode className="h-3.5 w-3.5" />
                         </button>
                         <button
                           onClick={() => handleRandomize(table)}
-                          className="text-muted-foreground hover:text-foreground p-1 rounded transition-colors"
+                          className="text-muted-foreground hover:text-foreground p-1.5 rounded transition-colors"
                           title="Randomize PIN (invalidates sessions)"
                         >
                           <Shuffle className="h-3.5 w-3.5" />
@@ -335,7 +337,7 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                     )}
                     <button
                       onClick={() => setDeletingTable(table)}
-                      className="text-destructive/70 hover:text-destructive p-1 rounded transition-colors"
+                      className="text-destructive/70 hover:text-destructive p-1.5 rounded transition-colors"
                       title="Delete table"
                     >
                       <X className="h-4 w-4" />

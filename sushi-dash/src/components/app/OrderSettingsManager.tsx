@@ -51,7 +51,7 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
           Order Limits
@@ -60,7 +60,7 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
           Configure maximum items per order and active orders per table
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-4 sm:space-y-5">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="maxItems">Max Items Per Order</Label>
@@ -95,12 +95,12 @@ export function OrderSettingsManager({ settings, onUpdateSettings }: OrderSettin
           </div>
         </div>
 
-        <div className="flex gap-2 pt-2">
-          <Button onClick={handleSave} className="flex-1">
+        <div className="flex flex-col sm:flex-row gap-2 pt-2">
+          <Button onClick={handleSave} className="w-full sm:flex-1">
             <Save className="w-4 h-4 mr-2" />
             Save Settings
           </Button>
-          <Button onClick={handleReset} variant="outline">
+          <Button onClick={handleReset} variant="outline" className="w-full sm:w-auto">
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
           </Button>

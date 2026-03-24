@@ -13,8 +13,10 @@ const KitchenPage = () => {
   const router = useRouter();
 
   // Route access: kitchen staff and managers can access /kitchen.
-  const isManager = staffSession?.permission === "manager";
-  const hasKitchenAccess = staffSession?.permission === "kitchen" || isManager;
+  const staffPermission =
+    staffSession?.permission ?? (staffSession?.role === "customer" ? undefined : staffSession?.role);
+  const isManager = staffPermission === "manager";
+  const hasKitchenAccess = staffPermission === "kitchen" || isManager;
 
   // If unauthorized, go back to previous page (or home when no history is available).
   useEffect(() => {

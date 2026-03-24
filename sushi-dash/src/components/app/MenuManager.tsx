@@ -217,7 +217,7 @@ const MenuManager = ({
               onOpenChange={() => toggleCategory(cat.name)}
             >
               {/* Category header row */}
-              <div className="flex items-center rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+              <div className="flex flex-col sm:flex-row sm:items-center rounded-lg bg-muted/50 hover:bg-muted transition-colors">
                 <CollapsibleTrigger className="flex-1 group">
                   <div className="flex items-center gap-3 px-4 py-3">
                     <ChevronDown
@@ -236,11 +236,11 @@ const MenuManager = ({
                 </CollapsibleTrigger>
 
                 {/* Right-side actions */}
-                <div className="flex items-center gap-1 pr-2">
+                <div className="flex items-center gap-1 pr-2 pb-2 sm:pb-0 self-end sm:self-auto">
                   <Button
                     variant="outline"
                     size="sm"
-                    className="h-7 text-xs gap-1"
+                    className="h-8 text-xs gap-1"
                     onClick={(e) => {
                       e.stopPropagation();
                       openAddItemModal(cat);
@@ -278,7 +278,7 @@ const MenuManager = ({
                       <div
                         key={item.id}
                         className={cn(
-                          "flex items-center justify-between rounded-lg border bg-card px-4 py-2.5",
+                          "flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg border bg-card px-4 py-2.5",
                           !available && "opacity-50"
                         )}
                       >
@@ -298,12 +298,12 @@ const MenuManager = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1 flex-shrink-0 self-end sm:self-auto">
                           {/* Edit */}
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 p-0"
                             onClick={() => openEditModal(item)}
                             title="Edit item"
                           >
@@ -314,7 +314,7 @@ const MenuManager = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0"
+                            className="h-8 w-8 p-0"
                             onClick={() => handleToggle(item)}
                             title={available ? "Mark unavailable" : "Mark available"}
                           >
@@ -329,7 +329,7 @@ const MenuManager = ({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive"
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
                             onClick={() => setDeletingItem(item)}
                             title="Delete item"
                           >
