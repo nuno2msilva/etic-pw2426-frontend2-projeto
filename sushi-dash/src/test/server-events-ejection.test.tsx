@@ -49,14 +49,15 @@ function renderProbe(tableId: string, onEjected: () => void) {
 
 describe("Server events customer ejection", () => {
   const originalEventSource = global.EventSource;
+  const globalWithEventSource = global as typeof globalThis & { EventSource: typeof EventSource };
 
   beforeEach(() => {
     MockEventSource.instances = [];
-    (global as any).EventSource = MockEventSource;
+    globalWithEventSource.EventSource = MockEventSource as unknown as typeof EventSource;
   });
 
   afterAll(() => {
-    (global as any).EventSource = originalEventSource;
+    globalWithEventSource.EventSource = originalEventSource;
   });
 
   it("ejects customer when pin changes for the same table", async () => {

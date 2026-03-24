@@ -2,11 +2,10 @@
 
 "use client";
 
-import { useState, useMemo, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useMemo, useCallback } from "react";
 import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
-import { hasStaffPermission } from "@/lib/auth";
+import { useProtectedStaffRoute } from "@/hooks/useProtectedStaffRoute";
+import { UI_TEXT } from "@/lib/ui-text";
 import {
   TableManager,
   MenuManager,
@@ -33,25 +32,10 @@ const ManagerPage = () => {
     updateSettings,
   } = useApp();
 
-  const { isInitialized, staffSession } = useAuth();
-  const router = useRouter();
+  const { isInitialized, hasAccess: hasManagerAccess } = useProtectedStaffRoute("manager");
 
   // Collapsible state for each section
   const [openSections, setOpenSections] = useState<Set<string>>(new Set(["menu-management"]));
-
-  // Route access is strict by role: only manager staff may access /manager.
-  const hasManagerAccess = hasStaffPermission(staffSession, "manager");
-
-  // If unauthorized, go back to previous page (or home when no history is available).
-  useEffect(() => {
-    if (isInitialized && !hasManagerAccess) {
-      if (typeof window !== "undefined" && window.history.length > 1) {
-        router.back();
-      } else {
-        router.replace("/");
-      }
-    }
-  }, [isInitialized, hasManagerAccess, router]);
 
   // useCallback — toggle a section open/closed
   const toggleSection = useCallback((section: string) => {
@@ -115,7 +99,7 @@ const ManagerPage = () => {
       <main className="h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area overflow-x-hidden max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <SEOHead title="Manager Panel" description="Restaurant management dashboard" />
         <div className="text-center py-20 text-muted-foreground">
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg">{UI_TEXT.loading}</p>
         </div>
       </main>
     );

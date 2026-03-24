@@ -278,18 +278,27 @@ export async function requireTable(req: Request, res: Response, next: NextFuncti
     return;
   }
 
-  // Check pinVersion — if the manager randomized the PIN, the session is invalid
-  if (req.auth.pinVersion !== undefined) {
-    const prisma = (await import("../db/prisma.js")).default;
-    const table = await prisma.tableConfig.findUnique({
-      where: { id: requestedTableId },
-      select: { pinVersion: true },
-    });
+  // Customers must carry pinVersion in their token so PIN randomization can invalidate sessions.
+  // Reject legacy tokens that don't include this claim.
+  if (req.auth.pinVersion === undefined) {
+    clearToken(res, "customer");
+    res.clearCookie("sushi_token", { path: "/" });
+    res.status(401).json({ error: "Session expired — please log in again" });
+    return;
+  }
 
-    if (table && table.pinVersion !== req.auth.pinVersion) {
-      res.status(401).json({ error: "Session expired — PIN has been changed" });
-      return;
-    }
+  // Check pinVersion — if the manager randomized the PIN, the session is invalid
+  const prisma = (await import("../db/prisma.js")).default;
+  const table = await prisma.tableConfig.findUnique({
+    where: { id: requestedTableId },
+    select: { pinVersion: true },
+  });
+
+  if (!table || table.pinVersion !== req.auth.pinVersion) {
+    clearToken(res, "customer");
+    res.clearCookie("sushi_token", { path: "/" });
+    res.status(401).json({ error: "Session expired — PIN has been changed" });
+    return;
   }
 
   next();

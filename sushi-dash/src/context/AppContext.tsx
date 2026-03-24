@@ -369,6 +369,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addTable,
       updateTable,
       removeTable,
+      reloadTables,
       placeOrder,
       updateOrderStatus,
       cancelOrder,
@@ -377,6 +378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updateSettingsAction,
       getActiveOrdersForTable,
       canTablePlaceOrder,
+      tablesError,
     ]
   );
 

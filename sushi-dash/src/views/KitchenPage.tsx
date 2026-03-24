@@ -2,31 +2,17 @@
 
 "use client";
 
-import { useMemo, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useMemo, useCallback } from "react";
 import { useApp } from "@/context/AppContext";
-import { useAuth } from "@/context/AuthContext";
 import { hasStaffPermission } from "@/lib/auth";
+import { useProtectedStaffRoute } from "@/hooks/useProtectedStaffRoute";
 import { OrderCard, SEOHead } from "@/components/app";
 const KitchenPage = () => {
   const { orders, updateOrderStatus, cancelOrder, deleteOrder } = useApp();
-  const { isInitialized, staffSession } = useAuth();
-  const router = useRouter();
+  const { isInitialized, staffSession, hasAccess: hasKitchenAccess } = useProtectedStaffRoute("kitchen");
 
   // Route access: kitchen staff and managers can access /kitchen.
   const isManager = hasStaffPermission(staffSession, "manager");
-  const hasKitchenAccess = hasStaffPermission(staffSession, "kitchen");
-
-  // If unauthorized, go back to previous page (or home when no history is available).
-  useEffect(() => {
-    if (isInitialized && !hasKitchenAccess) {
-      if (typeof window !== "undefined" && window.history.length > 1) {
-        router.back();
-      } else {
-        router.replace("/");
-      }
-    }
-  }, [isInitialized, hasKitchenAccess, router]);
 
   // useCallback — stable delete handler to prevent closure issues
   const handleDeleteOrder = useCallback(

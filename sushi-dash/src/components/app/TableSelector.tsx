@@ -1,13 +1,11 @@
 // TableSelector — Landing grid of table buttons with SSE presence badges and staff-login shortcut.
 
-import { useQuery } from "@tanstack/react-query";
-import Image from "next/image";
 import { motion } from "framer-motion";
 import type { Table } from "@/types/models";
 import { cardVariants } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { presenceKey } from "@/hooks/useServerEvents";
+import { useTablePresence } from "@/hooks/useTablePresence";
 
 interface TableSelectorProps {
   tables: Table[];
@@ -19,11 +17,7 @@ interface TableSelectorProps {
 
 const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, onRetryLoad }: TableSelectorProps) => {
   // Subscribe reactively — re-renders when SSE pushes new presence data
-  const { data: presence = {} } = useQuery<Record<number, number>>({
-    queryKey: [...presenceKey],
-    queryFn: () => ({}),
-    staleTime: Infinity,  // never refetch — data arrives via SSE setQueryData
-  });
+  const { data: presence = {} } = useTablePresence();
 
   const showEmptyState = Boolean(loadError) || tables.length === 0;
 
@@ -35,22 +29,12 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
-            className="flex items-center justify-center gap-2"
+            className="flex items-center justify-center"
           >
-            <Image
-              src="/images/sushi-logo.svg"
-              alt="Sushi Dash logo"
-              width={38}
-              height={38}
-              priority
-            />
-            <h1 className="text-4xl font-display font-bold text-foreground">
-              <span className="text-primary">Sushi Dash</span>
-            </h1>
+            <p className="text-muted-foreground">
+              All-you-can-eat! Select your table to start ordering.
+            </p>
           </motion.div>
-          <p className="text-muted-foreground mt-2">
-            All-you-can-eat! Select your table to start ordering.
-          </p>
         </div>
 
         {showEmptyState ? (
@@ -78,6 +62,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
             {tables.map((table, index) => {
               const users = presence[Number(table.id)] ?? 0;
+              const isInUse = users > 0;
               return (
                 <motion.button
                   key={table.id}
@@ -86,15 +71,31 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.2) }}
                   onClick={() => onSelectTable(table)}
-                  className={cn(cardVariants({ variant: "item" }), "p-6 text-center hover:border-primary hover:shadow-lg relative")}
+                  className={cn(
+                    cardVariants({ variant: "item" }),
+                    "p-6 text-center relative transition-all",
+                    isInUse
+                      ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.7),0_0_26px_rgba(239,68,68,0.45)]"
+                      : "hover:border-primary hover:shadow-lg",
+                  )}
                 >
-                  {users > 0 && (
-                    <Badge
-                      variant="secondary"
-                      className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-green-100 text-green-700 border-green-200"
-                    >
-                      IN USE
-                    </Badge>
+                  {isInUse && (
+                    <>
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -inset-0.5 rounded-2xl border-2 border-red-500/70 table-on-wave"
+                      />
+                      <span
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -inset-1 rounded-2xl border border-red-400/45 table-on-wave table-on-wave-delay"
+                      />
+                      <Badge
+                        variant="secondary"
+                        className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 border-red-300"
+                      >
+                        ON
+                      </Badge>
+                    </>
                   )}
                   <span className="text-3xl block mb-2">🪑</span>
                   <span className="font-bold text-card-foreground">{table.label}</span>

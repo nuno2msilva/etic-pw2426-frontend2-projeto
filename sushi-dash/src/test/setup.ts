@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import React from "react";
 import { TextEncoder, TextDecoder } from "util";
 import { webcrypto } from "crypto";
 
@@ -18,19 +19,32 @@ jest.mock("next/navigation", () => ({
 
 // ── Mock next/link as a plain <a> ──────────────────────────────────────────
 jest.mock("next/link", () => {
-  const React = require("react");
+  type LinkProps = {
+    href: string;
+    children?: React.ReactNode;
+  } & React.AnchorHTMLAttributes<HTMLAnchorElement>;
+
   return {
     __esModule: true,
     default: React.forwardRef(
-      ({ href, children, ...rest }: any, ref: any) =>
+      ({ href, children, ...rest }: LinkProps, ref: React.Ref<HTMLAnchorElement>) =>
         React.createElement("a", { href, ref, ...rest }, children)
     ),
   };
 });
 
 // Polyfill TextEncoder/TextDecoder for jsdom
-(globalThis as any).TextEncoder = TextEncoder;
-(globalThis as any).TextDecoder = TextDecoder;
+Object.defineProperty(globalThis, "TextEncoder", {
+  value: TextEncoder,
+  writable: true,
+  configurable: true,
+});
+
+Object.defineProperty(globalThis, "TextDecoder", {
+  value: TextDecoder,
+  writable: true,
+  configurable: true,
+});
 
 // Polyfill Web Crypto API for jsdom (must be set on both global and window)
 Object.defineProperty(global, 'crypto', {

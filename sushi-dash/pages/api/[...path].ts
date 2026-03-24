@@ -22,5 +22,5 @@ export const config = {
 
 export default function handler(req: NextApiRequest, res: NextApiResponse) {
   // Express handles the full request lifecycle
-  return app(req as any, res as any);
+  return (app as unknown as (request: NextApiRequest, response: NextApiResponse) => unknown)(req, res);
 }

@@ -9,6 +9,7 @@ import { StaffLoginModal } from "@/components/app";
 import CollapsibleSection from "@/components/app/CollapsibleSection";
 import MenuGrid from "@/components/app/MenuGrid";
 import OrderCard from "@/components/app/OrderCard";
+import AppHeader from "@/components/app/AppHeader";
 import KitchenPage from "@/views/KitchenPage";
 import ManagerPage from "@/views/ManagerPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -178,12 +179,12 @@ describe("Can staff log out and back in without a meltdown?", () => {
     const managerPageSource = ManagerPage.toString();
     
     // Pages should be client components (have 'use client' directive in source or be client-side)
-    // and contain useRouter hook for auth-based redirects
+    // and contain shared protected-route hook usage for auth-based redirects
     expect(kitchenPageSource).toBeTruthy();
     expect(managerPageSource).toBeTruthy();
-    // Both should have useRouter import and auth context usage
-    expect(kitchenPageSource).toContain("useRouter");
-    expect(managerPageSource).toContain("useRouter");
+    // Both should use centralized protected-route logic
+    expect(kitchenPageSource).toContain("useProtectedStaffRoute");
+    expect(managerPageSource).toContain("useProtectedStaffRoute");
   });
 
   it("staff login modal still works fine for a re-login", () => {
@@ -479,7 +480,7 @@ describe("Can you cancel and delete orders without accidentally nuking dinner?",
 describe("Does the app header let staff bounce between kitchen and manager?", () => {
   it("has links to both /kitchen and /manager in the source", () => {
     // Verify AppHeader source contains the expected route paths
-    const src = require("@/components/app/AppHeader").default.toString();
+    const src = AppHeader.toString();
     expect(src).toContain("/kitchen");
     expect(src).toContain("/manager");
   });

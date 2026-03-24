@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-
-type StaffPermission = "kitchen" | "manager" | "admin";
+import { isPathAllowedForPermission, type StaffPermission } from "./src/lib/route-permissions";
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {
@@ -46,15 +45,7 @@ export function proxy(req: NextRequest) {
   const path = req.nextUrl.pathname;
   const permission = getStaffPermission(req);
 
-  if (path.startsWith("/kitchen") && permission !== "kitchen") {
-    return denyToLastPage(req);
-  }
-
-  if (path.startsWith("/manager") && permission !== "manager") {
-    return denyToLastPage(req);
-  }
-
-  if (path.startsWith("/admin") && permission !== "admin") {
+  if (!isPathAllowedForPermission(path, permission)) {
     return denyToLastPage(req);
   }
 

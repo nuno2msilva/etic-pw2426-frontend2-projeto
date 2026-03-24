@@ -47,6 +47,13 @@ interface User {
   updatedAt: string;
 }
 
+interface AdminRequestResult<T> {
+  ok: boolean;
+  data: T | null;
+  error: string | null;
+  networkError: boolean;
+}
+
 export const AdminPanel = () => {
   const hiddenPasswordText = 'No longer available';
   const [users, setUsers] = useState<User[]>([]);
@@ -68,23 +75,60 @@ export const AdminPanel = () => {
   const [editUserEmail, setEditUserEmail] = useState('');
   const [editUserPermission, setEditUserPermission] = useState<Permission>('kitchen');
 
-  const fetchUsers = useCallback(async () => {
+  const adminRequest = useCallback(async <T,>(
+    path: string,
+    init?: RequestInit,
+  ): Promise<AdminRequestResult<T>> => {
     try {
-      const res = await fetch(`${API_BASE}/api/users`, {
+      const res = await fetch(`${API_BASE}${path}`, {
         credentials: 'include',
+        ...init,
       });
-      if (res.ok) {
-        const data = await res.json();
-        setUsers(data.users);
-      } else {
-        toast.error('Failed to load users');
+
+      let data: T | { error?: string } | null = null;
+      if (typeof res.json === 'function') {
+        try {
+          data = (await res.json()) as T | { error?: string };
+        } catch {
+          data = null;
+        }
       }
-    } catch (err) {
-      toast.error('Network error while loading users');
-    } finally {
-      setIsLoading(false);
+
+      if (res.ok) {
+        return {
+          ok: true,
+          data: data as T | null,
+          error: null,
+          networkError: false,
+        };
+      }
+
+      return {
+        ok: false,
+        data: null,
+        error: data && typeof data === 'object' && 'error' in data ? data.error ?? null : null,
+        networkError: false,
+      };
+    } catch {
+      return {
+        ok: false,
+        data: null,
+        error: null,
+        networkError: true,
+      };
     }
   }, []);
+
+  const fetchUsers = useCallback(async () => {
+    const result = await adminRequest<{ users: User[] }>('/api/users');
+
+    if (result.ok && result.data) {
+      setUsers(result.data.users);
+    } else {
+      toast.error(result.networkError ? 'Network error while loading users' : 'Failed to load users');
+    }
+    setIsLoading(false);
+  }, [adminRequest]);
 
   useEffect(() => {
     fetchUsers();
@@ -100,7 +144,15 @@ export const AdminPanel = () => {
     if (!value) return 'Never';
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return 'Never';
-    return date.toLocaleString();
+    return date.toLocaleString(undefined, {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    });
   };
 
   const formatPermissionLabel = (permission: Permission): string => {
@@ -109,6 +161,40 @@ export const AdminPanel = () => {
 
   const validateEmail = (email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const getPermissionVariant = (permission: Permission): 'default' | 'secondary' | 'outline' => {
+    if (permission === 'admin') return 'default';
+    if (permission === 'manager') return 'secondary';
+    return 'outline';
+  };
+
+  const renderPermissionBadge = (permission: Permission) => (
+    <Badge variant={getPermissionVariant(permission)}>
+      {formatPermissionLabel(permission)}
+    </Badge>
+  );
+
+  const renderStatusBadge = (isActive: boolean) => (
+    <Badge variant={isActive ? 'outline' : 'destructive'}>
+      {isActive ? 'Active' : 'Inactive'}
+    </Badge>
+  );
+
+  const renderPasswordValue = (passwordPreview: string | null, compact = false) => {
+    if (passwordPreview) {
+      return (
+        <span
+          className={`inline-flex rounded border bg-muted px-2 py-1 font-mono font-semibold tracking-wider ${
+            compact ? 'text-xs' : 'text-sm'
+          }`}
+        >
+          {passwordPreview}
+        </span>
+      );
+    }
+
+    return <span className="text-muted-foreground text-xs sm:text-sm">{hiddenPasswordText}</span>;
   };
 
   const handleAddUser = async (e: React.FormEvent) => {
@@ -131,10 +217,8 @@ export const AdminPanel = () => {
 
     setIsSubmitting(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/api/users`, {
+    const result = await adminRequest<{ error?: string }>('/api/users', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: newUsername,
@@ -143,22 +227,18 @@ export const AdminPanel = () => {
         }),
       });
 
-      if (res.ok) {
-        toast.success(`User ${newUsername} created. Random password generated.`);
-        setNewUsername('');
-        setNewUserEmail('');
-        setNewUserPermission('');
-        setShowAddDialog(false);
-        fetchUsers();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || 'Failed to create user');
-      }
-    } catch (err) {
-      toast.error('Network error while creating user');
-    } finally {
-      setIsSubmitting(false);
+    if (result.ok) {
+      toast.success(`User ${newUsername} created. Random password generated.`);
+      setNewUsername('');
+      setNewUserEmail('');
+      setNewUserPermission('');
+      setShowAddDialog(false);
+      fetchUsers();
+    } else {
+      toast.error(result.error || (result.networkError ? 'Network error while creating user' : 'Failed to create user'));
     }
+
+    setIsSubmitting(false);
   };
 
   const openEditDialog = (user: User) => {
@@ -191,10 +271,8 @@ export const AdminPanel = () => {
 
     setIsSubmitting(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/api/users/${selectedUser.id}`, {
+    const result = await adminRequest<{ error?: string }>(`/api/users/${selectedUser.id}`, {
         method: 'PUT',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: editUsername,
@@ -203,20 +281,16 @@ export const AdminPanel = () => {
         }),
       });
 
-      if (res.ok) {
-        toast.success(`User ${editUserEmail} updated successfully`);
-        setShowEditDialog(false);
-        setSelectedUser(null);
-        fetchUsers();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || 'Failed to update user');
-      }
-    } catch (_err) {
-      toast.error('Network error while updating user');
-    } finally {
-      setIsSubmitting(false);
+    if (result.ok) {
+      toast.success(`User ${editUserEmail} updated successfully`);
+      setShowEditDialog(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } else {
+      toast.error(result.error || (result.networkError ? 'Network error while updating user' : 'Failed to update user'));
     }
+
+    setIsSubmitting(false);
   };
 
   const handleResetPassword = async () => {
@@ -226,43 +300,32 @@ export const AdminPanel = () => {
 
     setIsSubmitting(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/api/users/${selectedUser.id}/reset-password`, {
+    const result = await adminRequest<{ error?: string }>(`/api/users/${selectedUser.id}/reset-password`, {
         method: 'PATCH',
-        credentials: 'include',
       });
 
-      if (res.ok) {
-        toast.success(`Password reset for ${selectedUser.email}. Random password generated.`);
-        setShowResetDialog(false);
-        fetchUsers();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || 'Failed to reset password');
-      }
-    } catch (err) {
-      toast.error('Network error while resetting password');
-    } finally {
-      setIsSubmitting(false);
+    if (result.ok) {
+      toast.success(`Password reset for ${selectedUser.email}. Random password generated.`);
+      setShowResetDialog(false);
+      fetchUsers();
+    } else {
+      toast.error(result.error || (result.networkError ? 'Network error while resetting password' : 'Failed to reset password'));
     }
+
+    setIsSubmitting(false);
   };
 
   const handleToggleActive = async (user: User) => {
-    try {
-      const endpoint = user.isActive ? 'disable' : 'enable';
-      const res = await fetch(`${API_BASE}/api/users/${user.id}/${endpoint}`, {
-        method: 'PATCH',
-        credentials: 'include',
-      });
+    const endpoint = user.isActive ? 'disable' : 'enable';
+    const result = await adminRequest<{ error?: string }>(`/api/users/${user.id}/${endpoint}`, {
+      method: 'PATCH',
+    });
 
-      if (res.ok) {
-        toast.success(`User ${user.isActive ? 'disabled' : 'enabled'}`);
-        fetchUsers();
-      } else {
-        toast.error('Failed to update user status');
-      }
-    } catch (err) {
-      toast.error('Network error');
+    if (result.ok) {
+      toast.success(`User ${user.isActive ? 'disabled' : 'enabled'}`);
+      fetchUsers();
+    } else {
+      toast.error(result.error || (result.networkError ? 'Network error' : 'Failed to update user status'));
     }
   };
 
@@ -271,26 +334,20 @@ export const AdminPanel = () => {
 
     setIsSubmitting(true);
 
-    try {
-      const res = await fetch(`${API_BASE}/api/users/${selectedUser.id}`, {
+    const result = await adminRequest<{ error?: string }>(`/api/users/${selectedUser.id}`, {
         method: 'DELETE',
-        credentials: 'include',
       });
 
-      if (res.ok) {
-        toast.success(`User ${selectedUser.email} deleted`);
-        setShowDeleteDialog(false);
-        setSelectedUser(null);
-        fetchUsers();
-      } else {
-        const data = await res.json();
-        toast.error(data.error || 'Failed to delete user');
-      }
-    } catch (err) {
-      toast.error('Network error while deleting user');
-    } finally {
-      setIsSubmitting(false);
+    if (result.ok) {
+      toast.success(`User ${selectedUser.email} deleted`);
+      setShowDeleteDialog(false);
+      setSelectedUser(null);
+      fetchUsers();
+    } else {
+      toast.error(result.error || (result.networkError ? 'Network error while deleting user' : 'Failed to delete user'));
     }
+
+    setIsSubmitting(false);
   };
 
   if (isLoading) {
@@ -380,30 +437,12 @@ export const AdminPanel = () => {
                 <p className="font-semibold truncate">{user.username}</p>
                 <p className="text-sm text-muted-foreground truncate">{user.email}</p>
               </div>
-              <Badge variant={user.isActive ? 'outline' : 'destructive'}>
-                {user.isActive ? 'Active' : 'Inactive'}
-              </Badge>
+              {renderStatusBadge(user.isActive)}
             </div>
 
             <div className="mt-3 flex items-center gap-2 flex-wrap">
-              <Badge
-                variant={
-                  user.permission === 'admin'
-                    ? 'default'
-                    : user.permission === 'manager'
-                    ? 'secondary'
-                    : 'outline'
-                }
-              >
-                {formatPermissionLabel(user.permission)}
-              </Badge>
-              {user.passwordPreview ? (
-                <span className="inline-flex rounded border bg-muted px-2 py-1 font-mono text-xs font-semibold tracking-wider">
-                  {user.passwordPreview}
-                </span>
-              ) : (
-                <span className="text-xs text-muted-foreground">{hiddenPasswordText}</span>
-              )}
+              {renderPermissionBadge(user.permission)}
+              {renderPasswordValue(user.passwordPreview, true)}
             </div>
 
             <p className="mt-2 text-xs text-muted-foreground">
@@ -438,31 +477,13 @@ export const AdminPanel = () => {
                   <td className="px-4 py-3">{user.username}</td>
                   <td className="px-4 py-3">{user.email}</td>
                   <td className="px-4 py-3 font-mono text-sm">
-                    {user.passwordPreview ? (
-                      <span className="inline-flex rounded border bg-muted px-2 py-1 font-semibold tracking-wider">
-                        {user.passwordPreview}
-                      </span>
-                    ) : (
-                      <span className="text-muted-foreground">{hiddenPasswordText}</span>
-                    )}
+                    {renderPasswordValue(user.passwordPreview)}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge
-                      variant={
-                        user.permission === 'admin'
-                          ? 'default'
-                          : user.permission === 'manager'
-                          ? 'secondary'
-                          : 'outline'
-                      }
-                    >
-                      {formatPermissionLabel(user.permission)}
-                    </Badge>
+                    {renderPermissionBadge(user.permission)}
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant={user.isActive ? 'outline' : 'destructive'}>
-                      {user.isActive ? 'Active' : 'Inactive'}
-                    </Badge>
+                    {renderStatusBadge(user.isActive)}
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{formatLastLogin(user.lastLoginAt)}</td>
                   <td className="px-4 py-3 text-right">

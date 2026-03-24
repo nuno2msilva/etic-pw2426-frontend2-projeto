@@ -66,6 +66,19 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+const CUSTOMER_LAST_SEEN_AT_KEY = 'sushi-dash-customer-last-seen-at';
+const CUSTOMER_RESTORE_GRACE_MS = 5 * 60 * 1000;
+
+type SessionSnapshot = {
+  authenticated?: boolean;
+  role?: string;
+  userId?: number | null;
+  email?: string;
+  username?: string | null;
+  tableId?: number | null;
+  sessions?: Array<{ role?: string; tableId?: number | null; authenticated?: boolean }>;
+};
+
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error && typeof error === 'object' && 'message' in error && typeof error.message === 'string') {
     return error.message;
@@ -86,6 +99,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     queryClient.invalidateQueries();
   }, [queryClient]);
 
+  const sendLogoutRequest = useCallback((role: 'customer' | AuthRole, keepalive = false) => {
+    return fetch(`${API_BASE}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+      keepalive,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role }),
+    }).catch(() => {});
+  }, []);
+
+  const fetchSessionSnapshot = useCallback(async (): Promise<SessionSnapshot | null> => {
+    try {
+      const res = await fetch(`${API_BASE}/api/auth/session`, {
+        credentials: 'include',
+      });
+      if (!res.ok) return null;
+      return await res.json() as SessionSnapshot;
+    } catch {
+      return null;
+    }
+  }, []);
+
   const userIsLoggedOffFromStaffSession = useCallback(() => {
     clearAuthSession('staff');
     setStaffSession(null);
@@ -94,12 +129,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setPasswordChangeReminderDismissedThisSession(false);
   }, []);
 
+  const userIsLoggedOffFromCustomerSession = useCallback(() => {
+    clearAuthSession('customer');
+    localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
+    setCustomerSession(null);
+  }, []);
+
   // Initialize auth system on mount — restore both sessions
   useEffect(() => {
     const init = async () => {
       const existingCustomer = getAuthSession('customer');
       const existingStaff = getAuthSession('staff');
-      if (existingCustomer) setCustomerSession(existingCustomer);
+      if (existingCustomer) {
+        const lastSeenRaw = localStorage.getItem(CUSTOMER_LAST_SEEN_AT_KEY);
+        const lastSeenAt = lastSeenRaw ? Number(lastSeenRaw) : NaN;
+        const hasRecentPresence = Number.isNaN(lastSeenAt)
+          ? true
+          : Date.now() - lastSeenAt <= CUSTOMER_RESTORE_GRACE_MS;
+
+        if (hasRecentPresence) {
+          setCustomerSession(existingCustomer);
+          localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
+        } else {
+          clearAuthSession('customer');
+          sendLogoutRequest('customer');
+        }
+      }
       if (existingStaff) {
         const normalizedRole = normalizeAuthRole(existingStaff.role);
         const normalizedPermission = normalizePermission(existingStaff.permission ?? existingStaff.role);
@@ -119,7 +174,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setIsInitialized(true);
     };
     init();
-  }, [invalidateAllCaches]);
+  }, [invalidateAllCaches, sendLogoutRequest]);
+
+  // Keep a customer heartbeat so quick refreshes restore, while long disconnects (>5 min) expire naturally.
+  useEffect(() => {
+    if (!customerSession) return;
+
+    const markCustomerPresence = () => {
+      localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
+    };
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        markCustomerPresence();
+      }
+    };
+
+    markCustomerPresence();
+    const timer = setInterval(markCustomerPresence, 30_000);
+    window.addEventListener('focus', markCustomerPresence);
+    window.addEventListener('pagehide', markCustomerPresence);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', markCustomerPresence);
+      window.removeEventListener('pagehide', markCustomerPresence);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [customerSession]);
 
   // Periodically validate staff session server-side so admin actions (e.g. password reset)
   // can force immediate logout on connected clients.
@@ -130,22 +213,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const validateSession = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/auth/session`, {
-          credentials: 'include',
-        });
-        if (!res.ok) return;
-
-        const data = await res.json() as {
-          authenticated?: boolean;
-          sessions?: Array<{ role?: string; authenticated?: boolean }>;
-        };
+        const data = await fetchSessionSnapshot();
+        if (!data) return;
         const ifUserIsLoggedInAsStaff = Array.isArray(data.sessions)
           ? data.sessions.some((s) => s.role !== 'customer' && s.authenticated)
           : false;
 
         if (!cancelled && !ifUserIsLoggedInAsStaff) {
           userIsLoggedOffFromStaffSession();
-          queryClient.invalidateQueries();
+          invalidateAllCaches();
+          return;
+        }
+
+        if (!cancelled && ifUserIsLoggedInAsStaff) {
+          const serverRole = normalizeAuthRole(data.role);
+          if (serverRole && serverRole !== 'customer') {
+            const serverPermission = normalizePermission(serverRole);
+            const shouldSyncSession =
+              !staffSession ||
+              staffSession.role !== serverRole ||
+              (staffSession.userId ?? null) !== (data.userId ?? null) ||
+              (staffSession.email ?? undefined) !== (data.email ?? undefined) ||
+              (staffSession.username ?? null) !== (data.username ?? null);
+
+            if (shouldSyncSession) {
+              const syncedStaffSession: AuthSession = {
+                ...(staffSession ?? {
+                  authenticatedAt: Date.now(),
+                  passwordResetRequired: false,
+                  skipPasswordResetReminder: false,
+                }),
+                role: serverRole,
+                permission: serverPermission,
+                userId: data.userId ?? staffSession?.userId,
+                email: data.email ?? staffSession?.email,
+                username: data.username ?? staffSession?.username ?? null,
+              };
+
+              saveAuthSession(syncedStaffSession);
+              setStaffSession(syncedStaffSession);
+            }
+          }
         }
       } catch {
         // Best-effort polling: ignore transient network errors.
@@ -159,7 +267,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true;
       clearInterval(timer);
     };
-  }, [isInitialized, staffSession, queryClient, userIsLoggedOffFromStaffSession]);
+  }, [isInitialized, staffSession, fetchSessionSnapshot, invalidateAllCaches, userIsLoggedOffFromStaffSession]);
+
+  // Periodically validate customer session server-side so PIN randomization
+  // immediately ejects customers even if SSE transport is temporarily unavailable.
+  useEffect(() => {
+    if (!isInitialized || !customerSession?.tableId) return;
+
+    let cancelled = false;
+
+    const validateCustomerSession = async () => {
+      try {
+        const data = await fetchSessionSnapshot();
+        if (!data) return;
+
+        const customerSessionStillValid = Array.isArray(data.sessions)
+          ? data.sessions.some(
+              (s) =>
+                s.role === 'customer' &&
+                s.authenticated &&
+                String(s.tableId ?? '') === customerSession.tableId,
+            )
+          : false;
+
+        if (!cancelled && !customerSessionStillValid) {
+          userIsLoggedOffFromCustomerSession();
+          invalidateAllCaches();
+        }
+      } catch {
+        // Best-effort polling: ignore transient network errors.
+      }
+    };
+
+    validateCustomerSession();
+    const timer = setInterval(validateCustomerSession, 2000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [isInitialized, customerSession?.tableId, fetchSessionSnapshot, invalidateAllCaches, userIsLoggedOffFromCustomerSession]);
 
   const loginAsCustomer = useCallback(async (tableId: string, pin: string): Promise<boolean> => {
     const success = await loginTableWithPin(tableId, pin);
@@ -171,6 +318,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       saveAuthSession(newSession);
       setCustomerSession(newSession);
+      localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
       invalidateAllCaches();
       return true;
     }
@@ -268,27 +416,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(() => {
     clearAuthSession('customer');
+    localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
     setCustomerSession(null);
-    fetch(`${API_BASE}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: 'customer' }),
-    }).catch(() => {});
-    queryClient.invalidateQueries();
-  }, [queryClient]);
+    sendLogoutRequest('customer', true);
+    invalidateAllCaches();
+  }, [invalidateAllCaches, sendLogoutRequest]);
 
   /** Logout staff session */
   const logoutStaff = useCallback(() => {
     userIsLoggedOffFromStaffSession();
-    fetch(`${API_BASE}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ role: staffSession?.role ?? 'manager' }),
-    }).catch(() => {});
-    queryClient.invalidateQueries();
-  }, [queryClient, staffSession?.role, userIsLoggedOffFromStaffSession]);
+    sendLogoutRequest(staffSession?.role ?? 'manager');
+    invalidateAllCaches();
+  }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
 
   // Combined session for backwards compat (staff takes priority)
   const session = staffSession ?? customerSession;

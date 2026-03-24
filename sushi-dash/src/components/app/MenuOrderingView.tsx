@@ -40,26 +40,25 @@ export default function MenuOrderingView({
 
   return (
     <>
-      <main className="h-[100dvh] sm:h-full max-w-5xl mx-auto px-3 sm:px-4 pt-6 sm:pt-8 pb-2 sm:pb-3 flex flex-col">
+      <main className="h-[100dvh] sm:h-full max-w-5xl mx-auto px-3 sm:px-4 pt-6 sm:pt-8 pb-20 sm:pb-3 flex flex-col">
         {children}
 
-        {/* Header — table name + active-order counter */}
-        <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
-            {table.label} — Order
+        {/* Header — title on left, orders button on right, same line, matching height */}
+        <div className="flex flex-row items-center justify-between gap-3 mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground shrink-0">
+            {table.label}
           </h1>
-
           <button
             onClick={() => flow.setShowProgress(true)}
-            className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-xl border border-border bg-card px-3 py-2.5 sm:py-2 shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-all active:scale-[0.98]"
+            className="inline-flex items-center justify-center gap-1 rounded-lg border border-border bg-card px-2 py-2 sm:py-2.5 text-[10px] sm:text-xs shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-all active:scale-[0.98] whitespace-nowrap shrink-0 h-[2.5rem] sm:h-auto"
             aria-label="View order progress"
           >
-            <span className="text-base" aria-hidden="true">{atLimit ? "⚠️" : "📋"}</span>
-            <span className="text-xs uppercase tracking-wide font-semibold text-muted-foreground">
-              Pending Orders
+            <span className="text-xs sm:text-sm leading-none" aria-hidden="true">{atLimit ? "⚠️" : "📋"}</span>
+            <span className="uppercase tracking-wide font-semibold text-muted-foreground">
+              Orders
             </span>
             <span
-              className={`text-sm font-extrabold ${
+              className={`font-bold text-[10px] sm:text-xs ${
                 atLimit ? "text-destructive" : "text-muted-foreground"
               }`}
             >
@@ -106,7 +105,7 @@ export default function MenuOrderingView({
             onClear={showClearCart && flow.totalItems > 0 ? flow.handleClearCart : undefined}
             totalItems={flow.totalItems}
             maxItems={settings.maxItemsPerOrder}
-            useFloatingDock={false}
+            useFloatingDock={true}
           />
         </div>
       </main>

@@ -193,6 +193,24 @@ router.patch("/:id/cancel", async (req, res) => {
       return;
     }
 
+    if (req.auth.role === "customer") {
+      // Customer tokens must include pinVersion and match current table pinVersion.
+      if (req.auth.pinVersion === undefined) {
+        res.status(401).json({ error: "Session expired — please log in again" });
+        return;
+      }
+
+      const table = await prisma.tableConfig.findUnique({
+        where: { id: order.tableId },
+        select: { pinVersion: true },
+      });
+
+      if (!table || table.pinVersion !== req.auth.pinVersion) {
+        res.status(401).json({ error: "Session expired — PIN has been changed" });
+        return;
+      }
+    }
+
     // Customers can only cancel their own table's orders
     if (req.auth.role === "customer" && req.auth.tableId !== order.tableId) {
       res.status(403).json({ error: "Cannot cancel another table's order" });

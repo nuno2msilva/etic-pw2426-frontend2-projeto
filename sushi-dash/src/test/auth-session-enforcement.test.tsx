@@ -5,8 +5,13 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { saveAuthSession, getAuthSession, type AuthSession } from "@/lib/auth";
 
 function AuthStateProbe() {
-  const { staffSession } = useAuth();
-  return <div>{staffSession ? `staff:${staffSession.role}` : "staff:none"}</div>;
+  const { staffSession, customerSession } = useAuth();
+  return (
+    <div>
+      <div>{staffSession ? `staff:${staffSession.role}` : "staff:none"}</div>
+      <div>{customerSession ? `customer:${customerSession.tableId}` : "customer:none"}</div>
+    </div>
+  );
 }
 
 function renderWithProviders() {
@@ -85,5 +90,88 @@ describe("Auth session enforcement", () => {
     });
 
     expect(getAuthSession("staff")).toBeNull();
+  });
+
+  it("syncs stale local staff role to the server session role", async () => {
+    const staleStaff: AuthSession = {
+      role: "admin",
+      permission: "admin",
+      userId: 2,
+      email: "nmsilva164@gmail.com",
+      username: "nuno",
+      authenticatedAt: Date.now(),
+    };
+    saveAuthSession(staleStaff);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authenticated: true,
+        role: "manager",
+        userId: 2,
+        email: "nmsilva164@gmail.com",
+        username: "nuno",
+        sessions: [{ role: "manager", authenticated: true }],
+      }),
+    } as Response);
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText("staff:manager")).toBeInTheDocument();
+    });
+
+    expect(getAuthSession("staff")?.role).toBe("manager");
+    expect(getAuthSession("staff")?.permission).toBe("manager");
+  });
+
+  it("keeps customer logged in when session endpoint confirms active customer session", async () => {
+    const customer: AuthSession = {
+      role: "customer",
+      tableId: "1",
+      authenticatedAt: Date.now(),
+    };
+    saveAuthSession(customer);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authenticated: true,
+        sessions: [{ role: "customer", tableId: 1, authenticated: true }],
+      }),
+    } as Response);
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText("customer:1")).toBeInTheDocument();
+    });
+
+    expect(getAuthSession("customer")?.tableId).toBe("1");
+  });
+
+  it("logs customer out when session endpoint no longer reports active customer session", async () => {
+    const customer: AuthSession = {
+      role: "customer",
+      tableId: "1",
+      authenticatedAt: Date.now(),
+    };
+    saveAuthSession(customer);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authenticated: false,
+        sessions: [],
+      }),
+    } as Response);
+
+    renderWithProviders();
+
+    await waitFor(() => {
+      expect(screen.getByText("customer:none")).toBeInTheDocument();
+    });
+
+    expect(getAuthSession("customer")).toBeNull();
   });
 });

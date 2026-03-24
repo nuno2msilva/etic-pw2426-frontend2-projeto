@@ -12,7 +12,7 @@
 import { Router } from "express";
 import prisma from "../db/prisma.js";
 import { requireRole } from "../middleware/auth.js";
-import { broadcast } from "../events.js";
+import { broadcast, getPresence } from "../events.js";
 
 const router = Router();
 
@@ -20,6 +20,11 @@ const router = Router();
 function generatePin(): string {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
+
+// ── Current table presence snapshot (public) ────────────────
+router.get("/presence", (_req, res) => {
+  res.json({ presence: getPresence() });
+});
 
 // ── List all tables ──────────────────────────────────────────
 // Manager sees PINs in plaintext; everyone else just gets id + label

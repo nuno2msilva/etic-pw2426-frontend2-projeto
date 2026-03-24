@@ -69,11 +69,11 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     });
   });
 
-  it("access: exposes an explicit pending-orders button label", () => {
+  it("access: exposes an explicit orders button label", () => {
     render(<MenuOrderingView table={table} flow={createFlow()} />);
 
     expect(screen.getByLabelText("View order progress")).toBeInTheDocument();
-    expect(screen.getByText("Pending Orders")).toBeInTheDocument();
+    expect(screen.getByText("Orders")).toBeInTheDocument();
   });
 
   it("success: opens order progress modal state when pending-orders button is clicked", () => {

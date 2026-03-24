@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { API_BASE } from "@/lib/config";
+import { UI_TEXT } from "@/lib/ui-text";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -57,6 +58,12 @@ const CustomerPage = () => {
       flow.setCart({});
       flow.setOpenCategories(new Set());
       skipAutoRestore.current = true;
+    }
+
+    if (selectParam === "true" && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("select");
+      window.history.replaceState({}, "", url.pathname + url.search);
     }
   }, [selectParam]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -130,7 +137,7 @@ const CustomerPage = () => {
       setPendingTable(null);
       setShowPinPad(false);
       setStep("menu");
-      toast.success(`Welcome to ${pendingTable.label}! 🍣`);
+      toast.success(UI_TEXT.tableWelcomeFor(pendingTable.label));
     }
     return success;
   };

@@ -275,7 +275,9 @@ router.get("/session", async (req, res) => {
         // DB error — treat as invalid
       }
     } else {
-      sessions.push({ role: "customer", tableId: ca.tableId ?? null, authenticated: true });
+      // Legacy customer token without pinVersion cannot be safely validated after PIN rotation.
+      clearToken(res, "customer");
+      res.clearCookie("sushi_token", { path: "/" });
     }
   }
 

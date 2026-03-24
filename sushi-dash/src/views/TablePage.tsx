@@ -5,6 +5,7 @@
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { UI_TEXT } from "@/lib/ui-text";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
@@ -37,7 +38,7 @@ const TablePage = () => {
       loginAsCustomer(tableId, pin)
         .then((ok) => {
           if (ok) {
-            toast.success("Welcome! 🍣");
+            toast.success(UI_TEXT.tableWelcome);
             const url = new URL(window.location.href);
             url.searchParams.delete("pin");
             window.history.replaceState({}, "", url.pathname + url.search);
@@ -55,7 +56,7 @@ const TablePage = () => {
       <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-5xl mb-4">🍣</p>
-          <p className="text-lg">Loading...</p>
+          <p className="text-lg">{UI_TEXT.loading}</p>
         </div>
       </main>
     );

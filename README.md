@@ -4,10 +4,10 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 
 ## ✨ Features
 
-- **Customer View** — Browse 145+ menu items with search, categories, and a persistent cart banner. 4-digit shuffled PinPad for table authentication with session persistence.
+- **Customer View** — Browse 145+ menu items with search, categories, and a persistent cart banner. 4-digit shuffled PinPad for table authentication with session persistence and reduced shoulder-surfing risk.
 - **Kitchen Dashboard** — Real-time order queue with status workflow (Queued → Preparing → Ready → Delivered).
 - **Manager Panel** — Full operational control: menu CRUD, table & PIN management, order cancel/delete, and order limit configuration.
-- **PIN System** — Each table has a 4-digit PIN. Changing a PIN invalidates active sessions. Managers can set or randomize PINs.
+- **PIN System** — Each table has a 4-digit PIN. Changing a PIN invalidates active sessions. Managers can set or randomize PINs; randomized keypad layout and PIN scrambling reduce repeated-observation/snooping attacks in shared dining areas.
 - **Role-based Auth** — JWT via httpOnly cookies for customers and staff; bcrypt-hashed passwords for staff users (kitchen, manager, admin).
 - **Responsive Design** — Mobile-first with Tailwind CSS and dark mode support.
 
@@ -111,7 +111,7 @@ make clean          # Remove node_modules and build output
 
 ### Customer Access
 
-Customers select a table and enter its 4-digit PIN via a shuffled PinPad. Sessions persist until the table's PIN is changed by a manager.
+Customers select a table and enter its 4-digit PIN via a shuffled PinPad. The randomized keypad order is an anti-snooping measure: it makes repeated screen observation and finger-path memorization less useful to bystanders. Sessions persist until the table's PIN is changed by a manager.
 
 ### Staff Login
 
@@ -160,7 +160,7 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 - **dotenv** — Environment configuration
 
 ### Testing
-- **Jest** + **Testing Library** — 162 tests across 6 suites
+- **Jest** + **Testing Library** — 198 tests across 13 suites
 - API, auth, components, data integrity, order-status, and utility tests
 
 ## 📂 Project Structure
@@ -237,7 +237,7 @@ make test
 make test-coverage
 ```
 
-162 tests across 6 suites:
+198 tests across 13 suites:
 - **API** (47): Menu, category, table, order, and settings CRUD — success + error cases, fetch mocking
 - **Auth** (52): Password hashing, initialization, backend verify, table PIN login, session management (isolation, expiry, categories), role-based access control, order permissions
 - **Components** (36): CartSummaryBanner, OrderConfirmation, SEOHead, StaffLoginModal, CollapsibleSection, MenuGrid — rendering, interaction, props
@@ -261,6 +261,7 @@ Uses Prisma ORM for type-safe schema management and database access.
 - Default dev credentials exist only for local development
 - Customer sessions use httpOnly cookies (not accessible via JS)
 - PIN changes automatically invalidate all active sessions for that table
+- Shuffled PinPad + manager PIN randomization are anti-snooping controls: they reduce PIN disclosure risk from nearby observers and force re-authentication after potential exposure
 
 ## 🚢 Deployment
 

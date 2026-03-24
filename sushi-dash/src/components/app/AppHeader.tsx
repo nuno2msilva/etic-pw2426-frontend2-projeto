@@ -84,12 +84,13 @@ const AppHeader = () => {
 
   const showLogout = !!staffSession || !!customerSession;
   const staffDisplayUsername = staffSession?.username || staffSession?.email || "Staff";
+  const logoHref = customerSession && !staffSession ? "/?select=true" : "/";
 
   return (
     <>
       <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/?select=true" className="flex items-center gap-2">
+          <Link href={logoHref} className="flex items-center gap-2">
             <span className="text-2xl">🍣</span>
             <span className="font-display text-xl font-bold text-foreground">
               Sushi <span className="text-primary">Dash</span>
@@ -143,19 +144,36 @@ const AppHeader = () => {
                     <span className="hidden md:inline truncate max-w-xs">{staffDisplayUsername}</span>
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <div className="px-2 py-1.5 text-sm font-medium text-foreground">{staffDisplayUsername}</div>
+                <DropdownMenuContent
+                  side="bottom"
+                  align="end"
+                  sideOffset={10}
+                  collisionPadding={10}
+                  className="w-[min(92vw,20rem)] sm:w-56 rounded-2xl border border-border/80 bg-popover p-2 shadow-2xl"
+                >
+                  <div className="px-3 py-2 text-base sm:text-sm font-semibold text-foreground truncate">
+                    {staffDisplayUsername}
+                  </div>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => setShowChangePassword(true)} className="cursor-pointer gap-2">
+                  <DropdownMenuItem
+                    onClick={() => setShowChangePassword(true)}
+                    className="cursor-pointer gap-2 min-h-11 sm:min-h-9 px-3 text-base sm:text-sm"
+                  >
                     <Lock className="w-4 h-4" />
                     Change Password
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer gap-2">
+                  <DropdownMenuItem
+                    onClick={toggleTheme}
+                    className="cursor-pointer gap-2 min-h-11 sm:min-h-9 px-3 text-base sm:text-sm"
+                  >
                     {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                     {isDark ? "Light Mode" : "Dark Mode"}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout} className="cursor-pointer gap-2">
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer gap-2 min-h-11 sm:min-h-9 px-3 text-base sm:text-sm"
+                  >
                     <LogOut className="w-4 h-4" />
                     Logout
                   </DropdownMenuItem>
