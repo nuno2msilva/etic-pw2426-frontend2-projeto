@@ -40,18 +40,18 @@ export default function MenuOrderingView({
 
   return (
     <>
-      <main className="h-full max-w-5xl mx-auto px-4 pt-8 pb-3 flex flex-col">
+      <main className="h-[100dvh] sm:h-full max-w-5xl mx-auto px-3 sm:px-4 pt-6 sm:pt-8 pb-2 sm:pb-3 flex flex-col">
         {children}
 
         {/* Header — table name + active-order counter */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-display font-bold text-foreground">
+        <div className="flex flex-col gap-2 sm:gap-0 sm:flex-row sm:items-center sm:justify-between mb-3 sm:mb-4">
+          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">
             {table.label} — Order
           </h1>
 
           <button
             onClick={() => flow.setShowProgress(true)}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-all active:scale-[0.98]"
+            className="inline-flex w-full sm:w-auto items-center justify-center sm:justify-start gap-2 rounded-xl border border-border bg-card px-3 py-2.5 sm:py-2 shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-all active:scale-[0.98]"
             aria-label="View order progress"
           >
             <span className="text-base" aria-hidden="true">{atLimit ? "⚠️" : "📋"}</span>
@@ -69,7 +69,7 @@ export default function MenuOrderingView({
         </div>
 
         {/* Only menu categories/items scroll; cart area stays reserved at bottom */}
-        <div className="flex-1 min-h-0 overflow-y-auto pr-1">
+        <div className="flex-1 min-h-0 overflow-y-auto pr-1 mobile-scroll-area">
           <div className="space-y-3 pb-4">
           {categories.map((category) => {
             const items = flow.menuByCategory[category] || [];
@@ -99,7 +99,7 @@ export default function MenuOrderingView({
           </div>
         </div>
 
-        <div className="mt-2 border-t border-border/70 bg-background/95 backdrop-blur-sm px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+        <div className="shrink-0 mt-2 border-t border-border/70 bg-background/95 backdrop-blur-sm px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
           <CartSummaryBanner
             summary={flow.cartSummary}
             onReview={flow.totalItems > 0 ? () => flow.setShowConfirm(true) : undefined}

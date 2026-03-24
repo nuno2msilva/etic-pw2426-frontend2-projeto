@@ -120,6 +120,14 @@
   }
 }
 
+@layer utilities {
+  /* Smooth and contained scrolling for nested mobile panels (menu list on table page). */
+  .mobile-scroll-area {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+}
+
 /* ── CRT Monitor Effect ─────────────────────────────────────────────────── */
 
 /* Slow rolling scanline — moves top-to-bottom like a real CRT refresh */
