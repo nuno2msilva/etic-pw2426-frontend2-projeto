@@ -91,11 +91,56 @@ function removeFromTablePresence(tableId: number | null, res: Response): void {
   if (set.size === 0) tableClients.delete(tableId);
 }
 
-/** Send an event to every connected client. */
+/** Send an event to every connected client, with graceful error handling. */
 export function broadcast(event: ServerEvent): void {
   const data = `data: ${JSON.stringify(event)}\n\n`;
+  const deadClients: Response[] = [];
+
   for (const res of clients) {
-    res.write(data);
+    try {
+      res.write(data);
+    } catch (err) {
+      // Connection is broken; mark for cleanup
+      deadClients.push(res);
+    }
+  }
+
+  // Clean up dead connections
+  for (const res of deadClients) {
+    cleanupConnection(res);
+  }
+}
+
+/**
+ * Safely cleans up a connection from all tracking structures.
+ * Called when a connection is detected as closed/broken.
+ */
+function cleanupConnection(res: Response): void {
+  clients.delete(res);
+
+  // Remove from all table presence maps
+  for (const [tableId, set] of tableClients) {
+    if (set.has(res)) {
+      set.delete(res);
+      if (set.size === 0) {
+        tableClients.delete(tableId);
+      }
+    }
+  }
+
+  // Remove from client connections if it's tracked
+  for (const [clientId, entry] of clientConnections) {
+    if (entry.connection === res) {
+      clientConnections.delete(clientId);
+      break;
+    }
+  }
+
+  // Ensure connection is ended
+  try {
+    res.end();
+  } catch {
+    // Already closed
   }
 }
 
@@ -132,17 +177,24 @@ export function sseHandler(req: Request, res: Response): void {
   const authenticatedCustomerTableId = req.customerAuth?.tableId ?? null;
   const tableId = resolveTrackedTableId(requestedTableId, authenticatedCustomerTableId);
 
-  const rawClientId = req.query.clientId;
-  const clientId = typeof rawClientId === "string" ? rawClientId : null;
+  let rawClientId = req.query.clientId;
+  // If no clientId provided, this is a staff/non-tracked connection
+  const clientId = typeof rawClientId === "string" && rawClientId.trim() ? rawClientId : null;
 
   // Replace any existing SSE connection for this browser client id.
   // This prevents stale table presence when a user switches tables.
+  // This only applies to customer connections with valid clientId.
   if (clientId) {
     const replaced = upsertClientConnection(clientConnections, clientId, res, tableId);
     if (replaced && replaced.connection !== res) {
+      // Ensure old connection is fully cleaned up
       clients.delete(replaced.connection);
       removeFromTablePresence(replaced.tableId, replaced.connection);
-      replaced.connection.end();
+      try {
+        replaced.connection.end();
+      } catch {
+        // Connection already closed
+      }
     }
   }
 
@@ -156,26 +208,41 @@ export function sseHandler(req: Request, res: Response): void {
 
   // Send current presence snapshot to the newly connected client
   const presenceData = `data: ${JSON.stringify({ type: "table-presence", presence: getPresence() })}\n\n`;
-  res.write(presenceData);
+  try {
+    res.write(presenceData);
+  } catch {
+    // Connection already closed, clean up
+    cleanupConnection(res);
+    return;
+  }
 
   // Keep-alive ping every 30s to prevent proxy/timeout disconnects
   const keepAlive = setInterval(() => {
-    res.write(":ping\n\n");
+    try {
+      res.write(":ping\n\n");
+    } catch {
+      // Connection broken, stop keep-alive
+      clearInterval(keepAlive);
+      cleanupConnection(res);
+    }
   }, 30_000);
 
+  // Handle normal connection closure
   req.on("close", () => {
     clearInterval(keepAlive);
-    clients.delete(res);
 
-    if (clientId) {
-      const tracked = clientConnections.get(clientId);
-      if (tracked?.connection === res) {
-        clientConnections.delete(clientId);
-      }
-    }
+    // Use the comprehensive cleanup function
+    // which handles all tracking structures
+    cleanupConnection(res);
 
-    // Remove from table presence tracking
-    removeFromTablePresence(tableId, res);
+    // Broadcast updated presence after cleanup
+    broadcastPresence();
+  });
+
+  // Also listen for errors on the response to catch abnormal closes
+  res.on("error", () => {
+    clearInterval(keepAlive);
+    cleanupConnection(res);
     broadcastPresence();
   });
 }
