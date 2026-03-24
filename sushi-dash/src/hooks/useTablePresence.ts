@@ -13,7 +13,7 @@ export function useTablePresence() {
       const data = (await res.json()) as { presence?: Record<number, number> };
       return data.presence ?? {};
     },
-    staleTime: 1000,
-    refetchInterval: 3000,
+    staleTime: 500,
+    refetchInterval: 1000,
   });
 }
