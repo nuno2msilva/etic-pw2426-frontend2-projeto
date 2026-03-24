@@ -63,6 +63,32 @@ A full-stack sushi restaurant ordering system with real-time order management, r
    ```
 4. Init DB, start backend, start frontend (same as steps 3-6 above)
 
+## ⚡ Quick Setup (Priority Make Commands)
+
+If you want the fastest reliable setup path, run these in order from `sushi-dash/`:
+
+```sh
+make install      # 1) install frontend + server dependencies
+make db-reset     # 2) create schema + seed data
+make dev-all      # 3) run backend and frontend together
+```
+
+Then verify quality before/after changes:
+
+```sh
+make lint         # static checks
+make test         # full Jest suite
+make test-verbose # print every test case (useful for demos/grading)
+make test-coverage
+```
+
+If needed, run services separately:
+
+```sh
+make dev-server   # backend only (:3001)
+make dev          # frontend only (:5173)
+```
+
 ## 📦 Available Commands
 
 ### Frontend (`sushi-dash/`)
@@ -96,6 +122,7 @@ make dev-server     # Start Express API server
 make dev-all        # Start backend + frontend concurrently
 make build          # Production build
 make test           # Run all frontend tests (Jest)
+make test-verbose   # Run all tests with every test case printed
 make test-watch     # Run tests in watch mode
 make test-coverage  # Run tests with coverage report
 make db-check       # Verify API can connect to database
