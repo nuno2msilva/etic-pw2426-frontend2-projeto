@@ -43,9 +43,9 @@ export const OrderProgressModal = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-lg">📋 Order Progress</DialogTitle>
+            <DialogTitle className="text-base sm:text-lg">📋 Order Progress</DialogTitle>
           </DialogHeader>
 
           {orders.length === 0 ? (
@@ -63,9 +63,9 @@ export const OrderProgressModal = ({
                 return (
                   <div
                     key={order.id}
-                    className="flex items-center justify-between rounded-lg border bg-card px-3 py-2"
+                    className="flex flex-col sm:flex-row sm:items-center gap-2 rounded-lg border bg-card px-3 py-2"
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-1">
                       <span className="w-6 h-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0">
                         #{position > 0 ? position : "—"}
                       </span>
@@ -73,7 +73,7 @@ export const OrderProgressModal = ({
                         {itemsSummary}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 ml-2 shrink-0">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="sm">
                         {STATUS_LABELS[order.status]}
                       </Badge>

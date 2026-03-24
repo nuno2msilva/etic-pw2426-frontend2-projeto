@@ -35,7 +35,7 @@ const ManagerPage = () => {
   const { isInitialized, hasAccess: hasManagerAccess } = useProtectedStaffRoute("manager");
 
   // Collapsible state for each section
-  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["menu-management"]));
+  const [openSections, setOpenSections] = useState<Set<string>>(new Set(["tables"]));
 
   // useCallback — toggle a section open/closed
   const toggleSection = useCallback((section: string) => {
@@ -54,16 +54,6 @@ const ManagerPage = () => {
   // (declared before early returns to satisfy Rules of Hooks)
   const sections = useMemo(() => [
     {
-      id: "settings",
-      title: "⚡ Order Settings",
-      content: (
-        <OrderSettingsManager 
-          settings={settings} 
-          onUpdateSettings={updateSettings} 
-        />
-      ),
-    },
-    {
       id: "tables",
       title: "🍽️ Table Management",
       content: (
@@ -72,6 +62,16 @@ const ManagerPage = () => {
           onAddTable={addTable}
           onUpdateTable={updateTable}
           onRemoveTable={removeTable}
+        />
+      ),
+    },
+    {
+      id: "settings",
+      title: "⚡ Order Settings",
+      content: (
+        <OrderSettingsManager 
+          settings={settings} 
+          onUpdateSettings={updateSettings} 
         />
       ),
     },

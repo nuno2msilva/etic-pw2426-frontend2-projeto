@@ -98,7 +98,7 @@ describe("Can you review your order before the kitchen judges you?", () => {
     expect(screen.getByText(/Table 1/)).toBeDefined();
   });
 
-  it("has the big scary 'Send to Kitchen' button", () => {
+  it("has the 'Order Now' action button", () => {
     render(
       <OrderConfirmation
         open={true}
@@ -115,7 +115,7 @@ describe("Can you review your order before the kitchen judges you?", () => {
       />
     );
 
-    expect(screen.getByText(/Send to Kitchen/)).toBeDefined();
+    expect(screen.getByText(/Order Now/)).toBeDefined();
   });
 });
 

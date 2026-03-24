@@ -66,10 +66,10 @@ const OrderConfirmation = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col">
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg sm:max-w-md max-h-[85vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle className="text-lg">Confirm Order — {table.label}</DialogTitle>
-          <DialogDescription>Review your items before sending to the kitchen.</DialogDescription>
+          <DialogTitle className="text-base sm:text-lg">Confirm Order — {table.label}</DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm">Review your items before placing the order.</DialogDescription>
         </DialogHeader>
 
       {totalItems === 0 ? (
@@ -108,12 +108,12 @@ const OrderConfirmation = ({
                   {/* Left: emoji with qty badge + name */}
                   <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="relative shrink-0">
-                      <span className="text-lg">{item.emoji}</span>
+                      <span className="text-base sm:text-lg">{item.emoji}</span>
                       <Badge size="xs" className="absolute -top-2 -right-4 shadow-sm">
                         {qty}x
                       </Badge>
                     </div>
-                    <span className="text-lg font-semibold truncate">
+                    <span className="text-sm sm:text-lg font-semibold truncate">
                       {item.name}
                     </span>
                   </div>
@@ -185,22 +185,22 @@ const OrderConfirmation = ({
             })}
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-2 border-t">
+          {/* Action Buttons — responsive layout */}
+          <div className="flex flex-col-reverse sm:flex-row gap-2 pt-2 border-t">
             <Button
               variant="outline"
               size="lg"
               onClick={onAddMore}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-base"
             >
               Add More
             </Button>
             <Button
               size="lg"
               onClick={onConfirm}
-              className="flex-1"
+              className="flex-1 text-xs sm:text-base"
             >
-              Send to Kitchen 🚀
+              Order Now 🚀
             </Button>
           </div>
         </>
