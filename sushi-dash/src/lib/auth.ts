@@ -281,7 +281,13 @@ export function resolveStaffPermission(
   if (!session) return undefined;
   const normalizedRole = normalizeAuthRole(session.role);
   if (!normalizedRole || normalizedRole === 'customer') return undefined;
-  return normalizePermission(session.permission ?? normalizedRole);
+
+  // The role comes from the authenticated token and is the canonical source.
+  // Prefer it over stored permission metadata, which may be stale in local storage.
+  const permissionFromRole = normalizePermission(normalizedRole);
+  if (permissionFromRole) return permissionFromRole;
+
+  return normalizePermission(session.permission);
 }
 
 export function hasStaffPermission(

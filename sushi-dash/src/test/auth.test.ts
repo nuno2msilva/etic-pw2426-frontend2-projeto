@@ -513,4 +513,17 @@ describe("Permission resolution hardening", () => {
     expect(hasStaffPermission(kitchenSession, "manager")).toBe(false);
     expect(hasStaffPermission(kitchenSession, "admin")).toBe(false);
   });
+
+  it("prefers role over stale permission metadata for manager access", () => {
+    const staleSession: AuthSession = {
+      role: "manager",
+      permission: "admin",
+      authenticatedAt: Date.now(),
+    };
+
+    expect(resolveStaffPermission(staleSession)).toBe("manager");
+    expect(hasStaffPermission(staleSession, "kitchen")).toBe(true);
+    expect(hasStaffPermission(staleSession, "manager")).toBe(true);
+    expect(hasStaffPermission(staleSession, "admin")).toBe(false);
+  });
 });

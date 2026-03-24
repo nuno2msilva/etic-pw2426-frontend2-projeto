@@ -51,6 +51,16 @@ function makeManagerSessionWithoutPermission(): AuthSession {
   };
 }
 
+function makeManagerSessionWithStaleAdminPermission(): AuthSession {
+  return {
+    role: "manager",
+    permission: "admin",
+    authenticatedAt: Date.now(),
+    userId: 3,
+    email: "manager-stale@sushi-dash.dev",
+  };
+}
+
 function mockAuthState(staffSession: AuthSession | null) {
   mockUseAuth.mockReturnValue({
     customerSession: null,
@@ -183,5 +193,16 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     render(<AppHeader />);
 
     expect(screen.getByRole("link", { name: "Kitchen" })).toBeInTheDocument();
+  });
+
+  it("manager role with stale admin permission metadata can still access kitchen", () => {
+    mockPathname = "/kitchen";
+    mockAuthState(makeManagerSessionWithStaleAdminPermission());
+
+    render(<KitchenPage />);
+
+    expect(screen.getByText(/Kitchen Dashboard/i)).toBeInTheDocument();
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 });
