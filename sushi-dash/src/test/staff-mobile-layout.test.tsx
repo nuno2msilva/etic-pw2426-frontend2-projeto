@@ -15,7 +15,7 @@ describe("Staff mobile layout hardening", () => {
 
   it("manager page keeps dynamic viewport-height container with overflow containment", () => {
     const source = ManagerPage.toString();
-    expect(source).toContain("h-[100dvh]");
+    expect(source).toContain("h-[calc(100dvh-4rem)]");
     expect(source).toContain("px-3 sm:px-4");
     expect(source).toContain("overflow-x-hidden");
   });

@@ -112,7 +112,7 @@ const ManagerPage = () => {
   // Show loading while auth initializes
   if (!isInitialized) {
     return (
-      <main className="h-[100dvh] sm:h-full overflow-y-auto overflow-x-hidden max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <main className="h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area overflow-x-hidden max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <SEOHead title="Manager Panel" description="Restaurant management dashboard" />
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-lg">Loading...</p>
@@ -127,7 +127,7 @@ const ManagerPage = () => {
   }
 
   return (
-    <main className="h-[100dvh] sm:h-full overflow-y-auto overflow-x-hidden max-w-5xl mx-auto w-full min-w-0 px-2.5 sm:px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:py-6">
+    <main className="h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area overflow-x-hidden max-w-5xl mx-auto w-full min-w-0 px-2.5 sm:px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:py-6">
       <SEOHead
         title="Manager Panel"
         description="Configure menu items, tables, and order limits for Sushi Dash."

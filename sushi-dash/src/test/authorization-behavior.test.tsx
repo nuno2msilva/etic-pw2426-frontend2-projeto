@@ -42,6 +42,15 @@ function makeStaffSession(role: "kitchen" | "manager" | "admin"): AuthSession {
   };
 }
 
+function makeManagerSessionWithoutPermission(): AuthSession {
+  return {
+    role: "manager",
+    authenticatedAt: Date.now(),
+    userId: 2,
+    email: "manager-no-permission@sushi-dash.dev",
+  };
+}
+
 function mockAuthState(staffSession: AuthSession | null) {
   mockUseAuth.mockReturnValue({
     customerSession: null,
@@ -155,5 +164,24 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(screen.getByText(/Kitchen Dashboard/i)).toBeInTheDocument();
     expect(mockBack).not.toHaveBeenCalled();
     expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("manager can access kitchen even when legacy session misses explicit permission", () => {
+    mockPathname = "/kitchen";
+    mockAuthState(makeManagerSessionWithoutPermission());
+
+    render(<KitchenPage />);
+
+    expect(screen.getByText(/Kitchen Dashboard/i)).toBeInTheDocument();
+    expect(mockBack).not.toHaveBeenCalled();
+    expect(mockReplace).not.toHaveBeenCalled();
+  });
+
+  it("header still shows kitchen shortcut for manager with missing permission", () => {
+    mockAuthState(makeManagerSessionWithoutPermission());
+
+    render(<AppHeader />);
+
+    expect(screen.getByRole("link", { name: "Kitchen" })).toBeInTheDocument();
   });
 });
