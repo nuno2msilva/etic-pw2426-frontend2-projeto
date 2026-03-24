@@ -221,7 +221,8 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
       <div className="space-y-1">
         {tables.map((table) => {
           const pd = pinData[table.id];
-          const isInUse = (presence[Number(table.id)] ?? 0) > 0;
+          const presenceCount = typeof presence[Number(table.id)] === 'number' ? presence[Number(table.id)] : 0;
+          const isInUse = presenceCount > 0;
           const isEditingName = table.id in editingName;
           const isEditingPinVal = table.id in editingPin;
           const isEditing = isEditingName || isEditingPinVal;
@@ -248,8 +249,8 @@ const TableManager = ({ tables, onAddTable, onRemoveTable, onUpdateTable }: Tabl
                   />
                 ) : (
                   <span className="font-medium text-foreground text-sm">
-                    {isInUse && <span className="text-red-600 font-semibold mr-1">ON</span>}
                     {table.label}
+                    {isInUse && <span className="text-red-600 font-semibold ml-2">ON</span>}
                   </span>
                 )}
               </div>
