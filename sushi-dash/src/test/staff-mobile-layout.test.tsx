@@ -13,11 +13,11 @@ describe("Staff mobile layout hardening", () => {
     expect(source).toContain("text-2xl sm:text-3xl");
   });
 
-  it("manager page keeps dynamic viewport-height container and responsive heading scale", () => {
+  it("manager page keeps dynamic viewport-height container with overflow containment", () => {
     const source = ManagerPage.toString();
     expect(source).toContain("h-[100dvh]");
     expect(source).toContain("px-3 sm:px-4");
-    expect(source).toContain("text-2xl sm:text-3xl");
+    expect(source).toContain("overflow-x-hidden");
   });
 
   it("admin route container uses dynamic viewport-height for mobile", () => {

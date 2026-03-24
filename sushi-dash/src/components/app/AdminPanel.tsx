@@ -343,7 +343,7 @@ export const AdminPanel = () => {
                   {user.passwordPreview}
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">Password hidden after first login</span>
+                <span className="text-xs text-muted-foreground">No longer available</span>
               )}
             </div>
 
@@ -431,7 +431,7 @@ export const AdminPanel = () => {
                         {user.passwordPreview}
                       </span>
                     ) : (
-                      <span className="text-muted-foreground">Not visible after first login</span>
+                      <span className="text-muted-foreground">No longer available</span>
                     )}
                   </td>
                   <td className="px-4 py-3">

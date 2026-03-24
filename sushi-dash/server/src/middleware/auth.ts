@@ -221,6 +221,11 @@ export function requireRole(...roles: AuthRole[]) {
     
     const userRole = req.auth.role;
     const userPermission = req.auth.permission as Permission | undefined;
+    const roleHierarchy: Record<Exclude<AuthRole, "customer">, number> = {
+      kitchen: 1,
+      manager: 2,
+      admin: 3,
+    };
 
     // Customer is never allowed in these contexts
     if (userRole === "customer") {
@@ -231,6 +236,16 @@ export function requireRole(...roles: AuthRole[]) {
     // Check direct role match
     if (allowedRoles.has(userRole)) {
       return next();
+    }
+
+    // Legacy/session fallback: infer hierarchy from role even when permission is missing.
+    const userRoleLevel = userRole === "customer" ? 0 : roleHierarchy[userRole];
+    if (userRoleLevel > 0) {
+      for (const role of roles) {
+        if (role === "customer") continue;
+        const requiredRoleLevel = roleHierarchy[role];
+        if (userRoleLevel >= requiredRoleLevel) return next();
+      }
     }
 
     // Check permission-based access (for staff users)

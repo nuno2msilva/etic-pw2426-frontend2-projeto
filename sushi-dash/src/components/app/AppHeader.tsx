@@ -30,8 +30,10 @@ const AppHeader = () => {
   } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
 
-  const isStaffPage = pathname === "/manager" || pathname === "/kitchen" || pathname === "/admin";
-  const staffPermission = staffSession?.permission ?? (staffSession?.role === "customer" ? undefined : staffSession?.role);
+  const staffRole = typeof staffSession?.role === "string" ? staffSession.role.toLowerCase() : undefined;
+  const staffPermission =
+    (typeof staffSession?.permission === "string" ? staffSession.permission.toLowerCase() : undefined) ??
+    (staffRole === "customer" ? undefined : staffRole);
   const canAccessKitchen = staffPermission === "kitchen" || staffPermission === "manager";
   const canAccessManager = staffPermission === "manager";
   const canAccessAdmin = staffPermission === "admin";

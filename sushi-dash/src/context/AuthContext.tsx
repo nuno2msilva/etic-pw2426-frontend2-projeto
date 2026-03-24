@@ -71,6 +71,24 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
+function normalizeStaffRole(value?: string): AuthRole | undefined {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (normalized === 'customer' || normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
+    return normalized;
+  }
+  return undefined;
+}
+
+function normalizePermission(value?: string): 'kitchen' | 'manager' | 'admin' | undefined {
+  if (!value) return undefined;
+  const normalized = value.toLowerCase();
+  if (normalized === 'kitchen' || normalized === 'manager' || normalized === 'admin') {
+    return normalized;
+  }
+  return undefined;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [customerSession, setCustomerSession] = useState<AuthSession | null>(null);
   const [staffSession, setStaffSession] = useState<AuthSession | null>(null);
@@ -91,9 +109,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const existingStaff = getAuthSession('staff');
       if (existingCustomer) setCustomerSession(existingCustomer);
       if (existingStaff) {
-        setStaffSession(existingStaff);
-        setPasswordResetRequired(existingStaff.passwordResetRequired ?? false);
-        setSkipPasswordResetReminder(existingStaff.skipPasswordResetReminder ?? false);
+        const normalizedRole = normalizeStaffRole(existingStaff.role);
+        const normalizedPermission = normalizePermission(existingStaff.permission ?? existingStaff.role);
+        if (normalizedRole && normalizedRole !== 'customer') {
+          const normalizedStaffSession: AuthSession = {
+            ...existingStaff,
+            role: normalizedRole,
+            permission: normalizedPermission,
+          };
+          saveAuthSession(normalizedStaffSession);
+          setStaffSession(normalizedStaffSession);
+          setPasswordResetRequired(normalizedStaffSession.passwordResetRequired ?? false);
+          setSkipPasswordResetReminder(normalizedStaffSession.skipPasswordResetReminder ?? false);
+        }
       }
       if (existingCustomer || existingStaff) invalidateAllCaches();
       setIsInitialized(true);
@@ -174,12 +202,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const result = await loginAsStaff(identifier, password);
       if (result.success && result.role) {
+        const normalizedRole = normalizeStaffRole(result.role);
+        const normalizedPermission = normalizePermission(result.permission ?? result.role);
+        if (!normalizedRole || normalizedRole === 'customer') {
+          return { success: false, error: 'Invalid staff role received from server' };
+        }
         const newSession: AuthSession = {
-          role: result.role as AuthRole,
+          role: normalizedRole,
           userId: result.userId,
           email: result.email,
           username: result.username ?? null,
-          permission: result.permission,
+          permission: normalizedPermission,
           authenticatedAt: Date.now(),
           passwordResetRequired: result.passwordResetRequired ?? false,
           skipPasswordResetReminder: result.skipPasswordResetReminder ?? false,
@@ -193,7 +226,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         invalidateAllCaches();
         return {
           success: true,
-          role: result.role,
+          role: normalizedRole,
           passwordResetRequired: result.passwordResetRequired ?? false,
           skipPasswordResetReminder: result.skipPasswordResetReminder ?? false,
         };

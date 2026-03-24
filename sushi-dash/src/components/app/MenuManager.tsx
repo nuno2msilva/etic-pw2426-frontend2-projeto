@@ -203,7 +203,7 @@ const MenuManager = ({
 
   // ---------- render ----------
   return (
-    <Card variant="section">
+    <Card variant="section" className="overflow-hidden">
       <div className="space-y-2">
         {categoryList.map((cat) => {
           const items = itemsByCategory[cat.name] ?? [];
@@ -217,26 +217,26 @@ const MenuManager = ({
               onOpenChange={() => toggleCategory(cat.name)}
             >
               {/* Category header row */}
-              <div className="flex flex-col sm:flex-row sm:items-center rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                <CollapsibleTrigger className="flex-1 group">
-                  <div className="flex items-center gap-3 px-4 py-3">
+              <div className="flex flex-col sm:flex-row sm:items-center rounded-lg bg-muted/50 hover:bg-muted transition-colors min-w-0 overflow-hidden">
+                <CollapsibleTrigger className="flex-1 group min-w-0">
+                  <div className="flex items-center gap-3 px-4 py-3 min-w-0">
                     <ChevronDown
                       className={cn(
                         "h-4 w-4 text-muted-foreground transition-transform",
                         isOpen && "rotate-180"
                       )}
                     />
-                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide">
+                    <h3 className="text-sm font-semibold text-foreground uppercase tracking-wide truncate">
                       {cat.name}
                     </h3>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground truncate">
                       {availCount}/{items.length} available
                     </span>
                   </div>
                 </CollapsibleTrigger>
 
                 {/* Right-side actions */}
-                <div className="flex items-center gap-1 pr-2 pb-2 sm:pb-0 self-end sm:self-auto">
+                <div className="flex items-center justify-end gap-1 px-2 pb-2 sm:pb-0 self-stretch sm:self-auto">
                   <Button
                     variant="outline"
                     size="sm"
@@ -265,7 +265,7 @@ const MenuManager = ({
               </div>
 
               {/* Items list */}
-              <CollapsibleContent className="mt-1 space-y-1 pl-4 pr-1">
+              <CollapsibleContent className="mt-1 space-y-1 pl-2 pr-1 sm:pl-4">
                 {items.length === 0 ? (
                   <p className="text-sm text-muted-foreground italic py-2 pl-2">
                     No items yet — click "Add Item" above.
@@ -282,7 +282,7 @@ const MenuManager = ({
                           !available && "opacity-50"
                         )}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <span className="text-xl flex-shrink-0">{item.emoji}</span>
                           <span className="text-xs font-mono text-muted-foreground flex-shrink-0">#{item.id}</span>
                           <span className={cn(
@@ -298,7 +298,7 @@ const MenuManager = ({
                           )}
                         </div>
 
-                        <div className="flex items-center gap-1 flex-shrink-0 self-end sm:self-auto">
+                        <div className="flex items-center flex-wrap justify-end gap-1 flex-shrink-0 self-end sm:self-auto">
                           {/* Edit */}
                           <Button
                             variant="ghost"

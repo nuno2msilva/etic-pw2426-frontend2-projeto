@@ -13,8 +13,10 @@ const KitchenPage = () => {
   const router = useRouter();
 
   // Route access: kitchen staff and managers can access /kitchen.
+  const staffRole = typeof staffSession?.role === "string" ? staffSession.role.toLowerCase() : undefined;
   const staffPermission =
-    staffSession?.permission ?? (staffSession?.role === "customer" ? undefined : staffSession?.role);
+    (typeof staffSession?.permission === "string" ? staffSession.permission.toLowerCase() : undefined) ??
+    (staffRole === "customer" ? undefined : staffRole);
   const isManager = staffPermission === "manager";
   const hasKitchenAccess = staffPermission === "kitchen" || isManager;
 
