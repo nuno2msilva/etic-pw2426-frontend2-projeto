@@ -281,21 +281,110 @@ export const AdminPanel = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold">👥 User Management</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Manage staff users, permissions, and passwords
           </p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)} className="gap-2">
+        <Button onClick={() => setShowAddDialog(true)} className="gap-2 w-full sm:w-auto">
           <Plus className="w-4 h-4" />
           Add User
         </Button>
       </div>
 
-      {/* Users Table */}
-      <div className="border rounded-lg overflow-hidden">
+      {/* Mobile Cards */}
+      <div className="space-y-3 sm:hidden">
+        {users.map((user) => (
+          <div key={user.id} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{user.username}</p>
+                <p className="text-sm text-muted-foreground truncate">{user.email}</p>
+              </div>
+              <Badge variant={user.isActive ? 'outline' : 'destructive'}>
+                {user.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+
+            <div className="mt-3 flex items-center gap-2 flex-wrap">
+              <Badge
+                variant={
+                  user.permission === 'admin'
+                    ? 'default'
+                    : user.permission === 'manager'
+                    ? 'secondary'
+                    : 'outline'
+                }
+              >
+                {user.permission}
+              </Badge>
+              {user.passwordPreview ? (
+                <span className="inline-flex rounded border bg-muted px-2 py-1 font-mono text-xs font-semibold tracking-wider">
+                  {user.passwordPreview}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">Password hidden after first login</span>
+              )}
+            </div>
+
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => openEditDialog(user)}
+                title="Edit user"
+                className="h-9"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSelectedUser(user);
+                  setShowResetDialog(true);
+                }}
+                title="Reset password"
+                className="h-9"
+              >
+                <RotateCcw className="w-4 h-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => handleToggleActive(user)}
+                title={user.permission === 'admin' ? 'Admin users cannot be disabled' : user.isActive ? 'Disable' : 'Enable'}
+                className="h-9"
+                disabled={user.permission === 'admin'}
+              >
+                {user.isActive ? (
+                  <Lock className="w-4 h-4" />
+                ) : (
+                  <Unlock className="w-4 h-4" />
+                )}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setSelectedUser(user);
+                  setShowDeleteDialog(true);
+                }}
+                title={user.permission === 'admin' ? 'Admin users cannot be deleted' : 'Delete'}
+                className="h-9 text-destructive hover:text-destructive"
+                disabled={user.permission === 'admin'}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table */}
+      <div className="hidden sm:block border rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-muted border-b">

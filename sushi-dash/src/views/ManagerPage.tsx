@@ -114,7 +114,7 @@ const ManagerPage = () => {
   // Show loading while auth initializes
   if (!isInitialized) {
     return (
-      <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
+      <main className="h-[100dvh] sm:h-full overflow-y-auto max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
         <SEOHead title="Manager Panel" description="Restaurant management dashboard" />
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-lg">Loading...</p>
@@ -129,24 +129,24 @@ const ManagerPage = () => {
   }
 
   return (
-    <main className="h-full overflow-y-auto max-w-5xl mx-auto px-4 py-8">
+    <main className="h-[100dvh] sm:h-full overflow-y-auto max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
       <SEOHead
         title="Manager Panel"
         description="Configure menu items, tables, and order limits for Sushi Dash."
       />
       {/* Page Header */}
       <div className="mb-2">
-        <h1 className="text-3xl font-display font-bold text-foreground">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
           ⚙️ Manager Panel
         </h1>
       </div>
-      <p className="text-muted-foreground mb-8">
+      <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">
         Configure menu items, tables, and order limits.
       </p>
 
       {/* Management Settings - Collapsible Sections */}
       <section>
-        <h2 className="text-2xl font-display font-bold text-foreground mb-6">
+        <h2 className="text-xl sm:text-2xl font-display font-bold text-foreground mb-4 sm:mb-6">
           ⚙️ Restaurant Settings
         </h2>
         <div className="space-y-3">

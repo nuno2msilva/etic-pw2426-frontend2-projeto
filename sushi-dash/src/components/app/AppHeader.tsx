@@ -19,7 +19,15 @@ import {
 const AppHeader = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { customerSession, staffSession, logout, logoutStaff } = useAuth();
+  const {
+    customerSession,
+    staffSession,
+    logout,
+    logoutStaff,
+    passwordResetRequired,
+    skipPasswordResetReminder,
+    passwordChangeReminderDismissedThisSession,
+  } = useAuth();
   const [showChangePassword, setShowChangePassword] = useState(false);
 
   const isStaffPage = pathname === "/manager" || pathname === "/kitchen" || pathname === "/admin";
@@ -51,15 +59,17 @@ const AppHeader = () => {
     }
   }, [isDark, isThemeReady]);
 
+  // Show password change modal if needed
   useEffect(() => {
-    if (!staffSession) return;
-    const showOnce = localStorage.getItem("sushi-dash-show-password-reset-once") === "1";
-    if (showOnce) {
-      setShowChangePassword(true);
-      localStorage.removeItem("sushi-dash-show-password-reset-once");
+    if (!staffSession) {
+      setShowChangePassword(false);
+      return;
     }
-  }, [staffSession]);
-
+    // Show if: password needs reset AND user hasn't permanently skipped AND hasn't dismissed this session
+    if (passwordResetRequired && !skipPasswordResetReminder && !passwordChangeReminderDismissedThisSession) {
+      setShowChangePassword(true);
+    }
+  }, [staffSession, passwordResetRequired, skipPasswordResetReminder, passwordChangeReminderDismissedThisSession]);
   const toggleTheme = () => setIsDark(!isDark);
 
   const handleLogout = () => {
@@ -169,7 +179,11 @@ const AppHeader = () => {
         </div>
       </header>
 
-      <PasswordChangeModal open={showChangePassword} onOpenChange={setShowChangePassword} />
+      <PasswordChangeModal
+        open={showChangePassword}
+        onOpenChange={setShowChangePassword}
+        showReminderActions={passwordResetRequired && !skipPasswordResetReminder}
+      />
     </>
   );
 };

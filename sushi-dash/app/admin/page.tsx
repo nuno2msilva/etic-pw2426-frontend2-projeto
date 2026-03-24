@@ -8,8 +8,8 @@ export const metadata: Metadata = {
 
 export default function AdminPage() {
   return (
-    <main className="h-full overflow-y-auto bg-background">
-      <div className="container max-w-6xl mx-auto px-4 py-6">
+    <main className="h-[100dvh] sm:h-full overflow-y-auto bg-background">
+      <div className="container max-w-6xl mx-auto px-3 sm:px-4 py-5 sm:py-6">
         <AdminPanel />
       </div>
     </main>

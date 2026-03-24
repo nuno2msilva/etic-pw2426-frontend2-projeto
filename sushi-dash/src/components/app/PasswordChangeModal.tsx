@@ -1,6 +1,6 @@
 // PasswordChangeModal — Required password change dialog for staff users after admin resets password
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -18,18 +18,27 @@ interface PasswordChangeModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  showReminderActions?: boolean;
 }
 
 export const PasswordChangeModal = ({
   open,
   onOpenChange,
   onSuccess,
+  showReminderActions = false,
 }: PasswordChangeModalProps) => {
-  const { changePassword, skipResetReminder } = useAuth();
+  const { changePassword, skipResetReminder, remindMeLater } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showForm, setShowForm] = useState(!showReminderActions);
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  useEffect(() => {
+    if (open) {
+      setShowForm(!showReminderActions);
+    }
+  }, [open, showReminderActions]);
 
   const validatePassword = (password: string): { valid: boolean; error?: string } => {
     if (password.length < 8) {
@@ -81,6 +90,11 @@ export const PasswordChangeModal = ({
     setIsLoading(false);
   };
 
+  const handleRemindMeLater = () => {
+    remindMeLater();
+    onOpenChange(false);
+  };
+
   const handleSkipReminder = () => {
     skipResetReminder();
     onOpenChange(false);
@@ -96,7 +110,32 @@ export const PasswordChangeModal = ({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        {!showForm && showReminderActions && (
+          <div className="space-y-4">
+            <DialogDescription className="text-sm">
+              Your password is still temporary. Choose what you want to do now.
+            </DialogDescription>
+            <div className="grid grid-cols-3 gap-2 pt-2">
+              <Button type="button" onClick={() => setShowForm(true)}>
+                Change Now
+              </Button>
+              <Button type="button" variant="outline" onClick={handleRemindMeLater}>
+                Remind Later
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleSkipReminder}
+                className="text-destructive hover:text-destructive"
+              >
+                Don't Remind
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {showForm && (
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="current-password" className="text-sm">
               Current Password
@@ -142,25 +181,43 @@ export const PasswordChangeModal = ({
             />
           </div>
 
-          <div className="flex gap-2 pt-4">
+          <div className="grid grid-cols-3 gap-2 pt-4">
             <Button
               type="submit"
               disabled={isLoading}
-              className="flex-1"
             >
-              {isLoading ? 'Changing...' : 'Change Password'}
+              {isLoading ? 'Changing...' : 'Change Now'}
             </Button>
+            {showReminderActions ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForm(false)}
+                disabled={isLoading}
+              >
+                Back
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={isLoading}
+              >
+                Cancel
+              </Button>
+            )}
             <Button
               type="button"
               variant="outline"
-              onClick={handleSkipReminder}
+              onClick={handleRemindMeLater}
               disabled={isLoading}
-              className="flex-1"
             >
-              Don't Remind
+              Remind Later
             </Button>
           </div>
-        </form>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

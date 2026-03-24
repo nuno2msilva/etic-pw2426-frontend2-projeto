@@ -146,6 +146,8 @@ router.post("/", requireRole("admin"), async (req, res) => {
         passwordPreview: generatedPassword,
         permission,
         isActive: true,
+        passwordResetRequired: true,
+        skipPasswordResetReminder: false,
       },
       select: { id: true, email: true, username: true, passwordPreview: true, permission: true, isActive: true, createdAt: true },
     });

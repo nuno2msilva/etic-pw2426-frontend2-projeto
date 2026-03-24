@@ -43,7 +43,6 @@ export const StaffLoginForm = ({ onSuccess, onPasswordResetRequired }: StaffLogi
         }
 
         if (result.passwordResetRequired && !result.skipPasswordResetReminder) {
-          localStorage.setItem("sushi-dash-show-password-reset-once", "1");
           onPasswordResetRequired?.();
           onSuccess?.();
           if (result.role === "admin") {

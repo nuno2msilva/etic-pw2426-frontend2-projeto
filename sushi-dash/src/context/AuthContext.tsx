@@ -44,10 +44,14 @@ interface AuthContextType {
   changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; error?: string }>;
   /** Skip password reset reminder (user opts out of reset prompt) */
   skipResetReminder: () => void;
+    /** Dismiss password reset reminder for this session only (show again on next login) */
+    remindMeLater: () => void;
   /** Password reset flag from login */
   passwordResetRequired: boolean;
   /** User explicitly skipped reminder */
   skipPasswordResetReminder: boolean;
+    /** User dismissed reminder this session (gets reset on next login) */
+    passwordChangeReminderDismissedThisSession: boolean;
   /** Logout — clears customer session only (for SSE ejection) */
   logout: () => void;
   /** Logout staff session (kitchen/manager) */
@@ -73,6 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [passwordResetRequired, setPasswordResetRequired] = useState(false);
   const [skipPasswordResetReminder, setSkipPasswordResetReminder] = useState(false);
+    const [passwordChangeReminderDismissedThisSession, setPasswordChangeReminderDismissedThisSession] = useState(false);
   const queryClient = useQueryClient();
 
   const invalidateAllCaches = useCallback(() => {
@@ -139,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStaffSession(newSession);
         setPasswordResetRequired(result.passwordResetRequired ?? false);
         setSkipPasswordResetReminder(result.skipPasswordResetReminder ?? false);
+          // Reset session-level dismissal on each login (will show reminder again)
+          setPasswordChangeReminderDismissedThisSession(false);
         invalidateAllCaches();
         return {
           success: true,
@@ -163,6 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // Clear password reset flags once user changes password
         setPasswordResetRequired(false);
         setSkipPasswordResetReminder(false);
+        setPasswordChangeReminderDismissedThisSession(false);
         const updated = staffSession ? { ...staffSession, passwordResetRequired: false, skipPasswordResetReminder: false } : null;
         if (updated) {
           saveAuthSession(updated);
@@ -186,6 +194,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setStaffSession(updated);
     }
   }, [staffSession]);
+
+    const remindMeLater = useCallback(() => {
+      // Dismiss reminder for this session only (will show again on next login)
+      setPasswordChangeReminderDismissedThisSession(true);
+    }, []);
+
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(() => {
     clearAuthSession('customer');
@@ -205,6 +219,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStaffSession(null);
     setPasswordResetRequired(false);
     setSkipPasswordResetReminder(false);
+    setPasswordChangeReminderDismissedThisSession(false);
     fetch(`${API_BASE}/api/auth/logout`, {
       method: 'POST',
       credentials: 'include',
@@ -237,8 +252,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loginAsStaffUser,
     changePassword,
     skipResetReminder,
+      remindMeLater,
     passwordResetRequired,
     skipPasswordResetReminder,
+      passwordChangeReminderDismissedThisSession,
     logout,
     logoutStaff,
     checkAccess,
