@@ -24,11 +24,14 @@ export function resolvePresenceTableId(
 
 /** Invisible component that keeps a single SSE connection alive. */
 function LiveUpdates() {
-  const { authenticatedTableId, staffSession, logout } = useAuth();
+  const { authenticatedTableId, staffSession, logout, isViewingTableSelection } = useAuth();
   const presenceTableId = resolvePresenceTableId(authenticatedTableId, Boolean(staffSession));
 
+  // Don't maintain SSE presence when customer is at table selection (temporarily closes connection)
+  const effectiveTableId = isViewingTableSelection ? null : presenceTableId;
+
   useServerEvents({
-    tableId: presenceTableId,
+    tableId: effectiveTableId,
     onEjected: logout,
     enabled: true,
   });

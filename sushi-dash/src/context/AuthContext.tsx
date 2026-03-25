@@ -4,6 +4,12 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import { useQueryClient } from '@tanstack/react-query';
 import { API_BASE } from '@/lib/config';
 import {
+  CUSTOMER_SESSION_GRACE_PERIOD_MS,
+  CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS,
+  STAFF_SESSION_VALIDATION_INTERVAL_MS,
+  CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
+} from '@/lib/timeouts';
+import {
   AuthSession,
   AuthRole,
   normalizeAuthRole,
@@ -55,19 +61,24 @@ interface AuthContextType {
     /** User dismissed reminder this session (gets reset on next login) */
     passwordChangeReminderDismissedThisSession: boolean;
   /** Logout — clears customer session only (for SSE ejection) */
-  logout: () => void;
+  logout: () => Promise<void>;
   /** Logout staff session (kitchen/manager) */
-  logoutStaff: () => void;
+  logoutStaff: () => Promise<void>;
   /** Check if current session has access to a role/table */
   checkAccess: (requiredRole: AuthRole, tableId?: string) => boolean;
   /** Get the authenticated table ID (from customer session) */
   authenticatedTableId: string | null;
+  /** Whether customer is currently viewing table selection (closes SSE without logout) */
+  isViewingTableSelection: boolean;
+  /** Signal that customer is leaving the table (going to table selection). Closes SSE connection, preserves session. */
+  goToTableSelection: () => void;
+  /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
+  goToTable: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const CUSTOMER_LAST_SEEN_AT_KEY = 'sushi-dash-customer-last-seen-at';
-const CUSTOMER_RESTORE_GRACE_MS = 5 * 60 * 1000;
 
 type SessionSnapshot = {
   authenticated?: boolean;
@@ -93,6 +104,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [passwordResetRequired, setPasswordResetRequired] = useState(false);
   const [skipPasswordResetReminder, setSkipPasswordResetReminder] = useState(false);
     const [passwordChangeReminderDismissedThisSession, setPasswordChangeReminderDismissedThisSession] = useState(false);
+  const [isViewingTableSelection, setIsViewingTableSelection] = useState(false);
   const queryClient = useQueryClient();
 
   const invalidateAllCaches = useCallback(() => {
@@ -145,7 +157,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const lastSeenAt = lastSeenRaw ? Number(lastSeenRaw) : NaN;
         const hasRecentPresence = Number.isNaN(lastSeenAt)
           ? true
-          : Date.now() - lastSeenAt <= CUSTOMER_RESTORE_GRACE_MS;
+          : Date.now() - lastSeenAt <= CUSTOMER_SESSION_GRACE_PERIOD_MS;
 
         if (hasRecentPresence) {
           setCustomerSession(existingCustomer);
@@ -191,7 +203,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     markCustomerPresence();
-    const timer = setInterval(markCustomerPresence, 30_000);
+    const timer = setInterval(markCustomerPresence, CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS);
     window.addEventListener('focus', markCustomerPresence);
     window.addEventListener('pagehide', markCustomerPresence);
     document.addEventListener('visibilitychange', onVisibilityChange);
@@ -261,7 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     validateSession();
-    const timer = setInterval(validateSession, 5000);
+    const timer = setInterval(validateSession, STAFF_SESSION_VALIDATION_INTERVAL_MS);
 
     return () => {
       cancelled = true;
@@ -300,7 +312,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     validateCustomerSession();
-    const timer = setInterval(validateCustomerSession, 2000);
+    const timer = setInterval(validateCustomerSession, CUSTOMER_SESSION_VALIDATION_INTERVAL_MS);
 
     return () => {
       cancelled = true;
@@ -414,20 +426,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }, []);
 
   /** Logout customer session — used by SSE ejection */
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
     clearAuthSession('customer');
     localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
     setCustomerSession(null);
-    sendLogoutRequest('customer', true);
+    queryClient.setQueryData(['table-presence'], {});
+    await sendLogoutRequest('customer');
     invalidateAllCaches();
-  }, [invalidateAllCaches, sendLogoutRequest]);
+  }, [invalidateAllCaches, queryClient, sendLogoutRequest]);
 
   /** Logout staff session */
-  const logoutStaff = useCallback(() => {
+  const logoutStaff = useCallback(async () => {
     userIsLoggedOffFromStaffSession();
-    sendLogoutRequest(staffSession?.role ?? 'manager');
+    queryClient.setQueryData(['table-presence'], {});
+    await sendLogoutRequest(staffSession?.role ?? 'manager');
     invalidateAllCaches();
-  }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
+  }, [invalidateAllCaches, queryClient, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
+
+  /** Signal that customer is leaving the table. Closes SSE without logout (preserves session for 5-min grace). */
+  const goToTableSelection = useCallback(() => {
+    setIsViewingTableSelection(true);
+    queryClient.setQueryData(['table-presence'], {});
+  }, [queryClient]);
+
+  /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
+  const goToTable = useCallback(() => {
+    setIsViewingTableSelection(false);
+  }, []);
 
   // Combined session for backwards compat (staff takes priority)
   const session = staffSession ?? customerSession;
@@ -460,6 +485,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     logoutStaff,
     checkAccess,
     authenticatedTableId,
+    isViewingTableSelection,
+    goToTableSelection,
+    goToTable,
   };
 
   return (

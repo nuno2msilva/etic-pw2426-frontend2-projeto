@@ -11,6 +11,7 @@
 import { Router } from "express";
 import prisma from "../db/prisma.js";
 import { issueToken, clearToken, verifyPassword, hashPassword, authenticate } from "../middleware/auth.js";
+import { disconnectCustomerConnectionsByJti } from "../events.js";
 
 const router = Router();
 
@@ -119,6 +120,12 @@ router.post("/login/staff", async (req, res) => {
 router.post("/logout", (req, res) => {
   // If a role is specified, only clear that cookie
   const { role } = req.body as { role?: string };
+
+  // Hard-stop lingering customer SSE presence for this exact authenticated token.
+  if (req.customerAuth?.jti) {
+    disconnectCustomerConnectionsByJti(req.customerAuth.jti);
+  }
+
   if (role === "customer") {
     clearToken(res, "customer");
   } else if (role && ["kitchen", "manager", "admin"].includes(role)) {

@@ -19,6 +19,26 @@
 
 import type { Request, Response } from "express";
 
+// ── Timeout Configuration ────────────────────────────────────────────
+/** Server-side idle timeout: disconnect customer if no new orders placed for this duration (30 minutes) */
+const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
+
+/** Server-side keep-alive ping interval to prevent proxy/firewall timeout (30 seconds) */
+const KEEP_ALIVE_INTERVAL_MS = 30 * 1000;
+
+/**
+ * Exported for testing/monitoring.
+ * Note: These values are mirrored in src/lib/timeouts.ts for client-side use.
+ * Keep them in sync if changing timeout behavior.
+ */
+export function getIdleTimeoutMs(): number {
+  return IDLE_TIMEOUT_MS;
+}
+
+export function getKeepAliveIntervalMs(): number {
+  return KEEP_ALIVE_INTERVAL_MS;
+}
+
 // ── Event types ──────────────────────────────────────────────
 export type ServerEvent =
   | { type: "pin-changed";    tableId: number }
@@ -47,6 +67,15 @@ export interface ClientConnectionEntry<TConnection> {
   tableId: number | null;
 }
 
+interface ConnectionMeta {
+  tableId: number | null;
+  clientId: string | null;
+  customerJti: string | null;
+  lastOrderTime: number; // Timestamp of last order at this table (for idle timeout)
+}
+
+const connectionMeta = new Map<Response, ConnectionMeta>();
+
 /**
  * Upserts a client connection in a table-agnostic way.
  * Returns previous entry when replacing an older connection for the same client.
@@ -71,14 +100,20 @@ export function resolveTrackedTableId(
   requestedTableId: number | null,
   authenticatedCustomerTableId: number | null,
 ): number | null {
-  // Presence must be authoritative to authenticated customer session.
-  // Never trust client-provided tableId over server-decoded auth cookie.
-  if (authenticatedCustomerTableId && !Number.isNaN(authenticatedCustomerTableId)) {
-    return authenticatedCustomerTableId;
+  const hasRequestedTableId = typeof requestedTableId === "number" && !Number.isNaN(requestedTableId);
+  const hasAuthenticatedCustomerTableId =
+    typeof authenticatedCustomerTableId === "number" && !Number.isNaN(authenticatedCustomerTableId);
+
+  // Only track presence for explicit customer-table subscriptions.
+  // This prevents selector/logout SSE connections (no tableId requested)
+  // from showing a table as ON if a stale cookie still exists briefly.
+  if (!hasRequestedTableId || !hasAuthenticatedCustomerTableId) {
+    return null;
   }
 
-  // No authenticated customer session -> do not track table presence.
-  return null;
+  // Presence remains authoritative to authenticated customer session.
+  // If request/auth mismatch, prefer server-decoded table id.
+  return authenticatedCustomerTableId;
 }
 
 function removeFromTablePresence(tableId: number | null, res: Response): void {
@@ -117,6 +152,7 @@ export function broadcast(event: ServerEvent): void {
  */
 function cleanupConnection(res: Response): void {
   clients.delete(res);
+  connectionMeta.delete(res);
 
   // Remove from all table presence maps
   for (const [tableId, set] of tableClients) {
@@ -144,6 +180,38 @@ function cleanupConnection(res: Response): void {
   }
 }
 
+/** Force-disconnect tracked browser client connection (if present). */
+export function disconnectClientById(clientId: string): boolean {
+  const tracked = clientConnections.get(clientId);
+  if (!tracked) return false;
+
+  cleanupConnection(tracked.connection);
+  broadcastPresence();
+  return true;
+}
+
+/** Force-disconnect all active customer connections for the provided token id. */
+export function disconnectCustomerConnectionsByJti(jti: string): number {
+  if (!jti) return 0;
+
+  const toDisconnect: Response[] = [];
+  for (const [res, meta] of connectionMeta) {
+    if (meta.customerJti === jti) {
+      toDisconnect.push(res);
+    }
+  }
+
+  for (const res of toDisconnect) {
+    cleanupConnection(res);
+  }
+
+  if (toDisconnect.length > 0) {
+    broadcastPresence();
+  }
+
+  return toDisconnect.length;
+}
+
 /** Get current presence counts: { tableId: connectedCount } */
 export function getPresence(): Record<number, number> {
   const presence: Record<number, number> = {};
@@ -153,8 +221,69 @@ export function getPresence(): Record<number, number> {
   return presence;
 }
 
+/** Update last order timestamp for all connections to a given table. */
+export function updateLastOrderTimeForTable(tableId: number): void {
+  const connectionSet = tableClients.get(tableId);
+  if (!connectionSet) return;
+
+  const now = Date.now();
+  for (const res of connectionSet) {
+    const meta = connectionMeta.get(res);
+    if (meta) {
+      meta.lastOrderTime = now;
+    }
+  }
+}
+
+/**
+ * Remove idle connections (no orders for 30+ minutes).
+ * Separated from broadcast to avoid recursion.
+ */
+function cleanupIdleConnections(): void {
+  const now = Date.now();
+  const toDisconnect: Response[] = [];
+
+  // Identify idle connections
+  for (const [res, meta] of connectionMeta) {
+    if (
+      meta.tableId &&
+      !Number.isNaN(meta.tableId) &&
+      now - meta.lastOrderTime > IDLE_TIMEOUT_MS
+    ) {
+      toDisconnect.push(res);
+    }
+  }
+
+  // Clean them up
+  for (const res of toDisconnect) {
+    const meta = connectionMeta.get(res);
+    clients.delete(res);
+    connectionMeta.delete(res);
+
+    if (meta?.tableId) {
+      removeFromTablePresence(meta.tableId, res);
+    }
+
+    // Remove from client connections tracking if present
+    for (const [clientId, entry] of clientConnections) {
+      if (entry.connection === res) {
+        clientConnections.delete(clientId);
+        break;
+      }
+    }
+
+    try {
+      res.end();
+    } catch {
+      // Already closed
+    }
+  }
+}
+
 /** Broadcast current table presence to all clients */
 function broadcastPresence(): void {
+  // Clean up any idle connections before broadcasting
+  cleanupIdleConnections();
   broadcast({ type: "table-presence", presence: getPresence() });
 }
 
@@ -180,6 +309,14 @@ export function sseHandler(req: Request, res: Response): void {
   let rawClientId = req.query.clientId;
   // If no clientId provided, this is a staff/non-tracked connection
   const clientId = typeof rawClientId === "string" && rawClientId.trim() ? rawClientId : null;
+  const customerJti = req.customerAuth?.jti ?? null;
+
+  connectionMeta.set(res, {
+    tableId,
+    clientId,
+    customerJti,
+    lastOrderTime: Date.now(), // Fresh connection; order timestamp is now
+  });
 
   // Replace any existing SSE connection for this browser client id.
   // This prevents stale table presence when a user switches tables.
@@ -225,7 +362,7 @@ export function sseHandler(req: Request, res: Response): void {
       clearInterval(keepAlive);
       cleanupConnection(res);
     }
-  }, 30_000);
+  }, KEEP_ALIVE_INTERVAL_MS);
 
   // Handle normal connection closure
   req.on("close", () => {

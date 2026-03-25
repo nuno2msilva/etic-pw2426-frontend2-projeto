@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/config";
+import { SSE_RECONNECT_DELAY_MS } from "@/lib/timeouts";
 import { toast } from "sonner";
 import { queryKeys } from "./useApiQueries";
 
@@ -146,15 +147,23 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
       es.onerror = () => {
         es?.close();
         // Reconnect after a short delay
-        reconnectTimer = setTimeout(connect, 2000);
+        reconnectTimer = setTimeout(connect, SSE_RECONNECT_DELAY_MS);
       };
     }
 
     connect();
 
+    // Graceful close on tab/browser unload (triggers server cleanup without logout)
+    const handleBeforeUnload = () => {
+      es?.close();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
       clearTimeout(reconnectTimer);
       es?.close();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [queryClient, tableId, enabled]); // reconnect when tableId changes
 }

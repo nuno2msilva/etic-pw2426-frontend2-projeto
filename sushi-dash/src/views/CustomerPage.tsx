@@ -29,7 +29,7 @@ const CustomerPage = () => {
   const skipAutoRestore = useRef(selectParam === "true");
 
   const { tables, settings, tablesError, reloadTables } = useApp();
-  const { isInitialized, customerSession, loginAsCustomer, logout } = useAuth();
+  const { isInitialized, customerSession, loginAsCustomer, logout, goToTableSelection, goToTable } = useAuth();
 
   const isCustomerAuthenticated = customerSession !== null;
 
@@ -53,6 +53,8 @@ const CustomerPage = () => {
   // Logo click: reset to table selection when ?select=true appears in the URL
   useEffect(() => {
     if (selectParam === "true" && step !== "table") {
+      // Signal that customer is leaving the table (closes SSE without logout)
+      goToTableSelection();
       setStep("table");
       setSelectedTable(null);
       flow.setCart({});
@@ -105,14 +107,17 @@ const CustomerPage = () => {
               const table = tables.find((t) => t.id === customerSession.tableId);
               if (table) {
                 setSelectedTable(table);
+                goToTable(); // Signal that customer is now at a table
                 setStep("menu");
               }
             } else {
-              logout();
+              void logout();
             }
           },
         )
-        .catch(() => logout());
+        .catch(() => {
+          void logout();
+        });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
@@ -122,6 +127,7 @@ const CustomerPage = () => {
   const handleSelectTable = (table: Table) => {
     if (isCustomerAuthenticated && customerSession?.tableId === table.id) {
       setSelectedTable(table);
+      goToTable(); // Signal that customer is now at a table
       setStep("menu");
       return;
     }
@@ -136,6 +142,7 @@ const CustomerPage = () => {
       setSelectedTable(pendingTable);
       setPendingTable(null);
       setShowPinPad(false);
+      goToTable(); // Signal that customer is now at a table
       setStep("menu");
       toast.success(UI_TEXT.tableWelcomeFor(pendingTable.label));
     }

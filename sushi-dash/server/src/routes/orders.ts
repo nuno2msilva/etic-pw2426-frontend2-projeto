@@ -12,7 +12,7 @@
 import { Router } from "express";
 import prisma from "../db/prisma.js";
 import { requireRole, requireTable } from "../middleware/auth.js";
-import { broadcast } from "../events.js";
+import { broadcast, updateLastOrderTimeForTable } from "../events.js";
 import { OrderStatus } from "@prisma/client";
 
 const router = Router();
@@ -130,6 +130,9 @@ router.post("/table/:tableId", requireTable, async (req, res) => {
       },
       include: orderInclude,
     });
+
+    // Update last order timestamp for this table's connections (resets idle timeout)
+    updateLastOrderTimeForTable(tableId);
 
     broadcast({ type: "order-created", tableId, orderId: order.id });
     res.status(201).json(formatOrder(order));

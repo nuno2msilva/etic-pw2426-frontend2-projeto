@@ -72,12 +72,12 @@ const AppHeader = () => {
   }, [staffSession, passwordResetRequired, skipPasswordResetReminder, passwordChangeReminderDismissedThisSession]);
   const toggleTheme = () => setIsDark(!isDark);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (staffSession) {
-      logoutStaff();
+      await logoutStaff();
       router.replace("/?select=true");
     } else if (customerSession) {
-      logout();
+      await logout();
       router.replace("/?select=true");
     }
   };
