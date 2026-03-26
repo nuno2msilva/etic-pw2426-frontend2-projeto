@@ -7,7 +7,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { useServerEvents } from "@/hooks/useServerEvents";
+import { useServerEvents, usePresencePolling } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
 import CRTScreen from "@/components/app/CRTScreen";
 import WebVitalsReporter from "@/components/app/WebVitalsReporter";
@@ -35,6 +35,10 @@ function LiveUpdates() {
     onEjected: logout,
     enabled: true,
   });
+
+  // Aggressive presence polling as fallback (Vercel optimization)
+  usePresencePolling();
+
   return null;
 }
 

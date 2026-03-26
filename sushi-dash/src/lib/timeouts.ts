@@ -3,6 +3,11 @@
  *
  * All time-related constants used throughout the app for easy customization.
  * All values are in milliseconds (ms).
+ *
+ * VERCEL OPTIMIZATION:
+ *   - Aggressive presence polling (3s) ensures UI stays fresh despite network latency
+ *   - Shorter keep-alive (15s) prevents Vercel proxy timeouts
+ *   - Exponential backoff with cap prevents reconnect storms
  */
 
 // ── Customer Session Grace Period ────────────────────────────────────
@@ -16,11 +21,18 @@ export const CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS = 30 * 1000; // 30 seconds
 /** Server-side idle timeout: disconnect customer if no new orders placed for this duration */
 export const SSE_IDLE_TIMEOUT_MS = 30 * 60 * 1000; // 30 minutes
 
-/** Server-side keep-alive ping interval to prevent proxy/firewall timeout */
-export const SSE_KEEP_ALIVE_INTERVAL_MS = 30 * 1000; // 30 seconds
+/** Server-side keep-alive ping interval to prevent proxy/firewall timeout (reduced for Vercel) */
+export const SSE_KEEP_ALIVE_INTERVAL_MS = 15 * 1000; // 15 seconds (was 30s, reduced for Vercel)
 
-/** Client-side reconnection delay after SSE connection closes */
-export const SSE_RECONNECT_DELAY_MS = 2 * 1000; // 2 seconds
+/** Client-side initial reconnection delay after SSE connection closes */
+export const SSE_RECONNECT_DELAY_MS = 1 * 1000; // 1 second (initial backoff)
+
+/** Maximum reconnection delay (exponential backoff cap to prevent storm) */
+export const SSE_MAX_RECONNECT_DELAY_MS = 30 * 1000; // 30 seconds max
+
+// ── Presence Polling ─────────────────────────────────────────────────
+/** Aggressive polling interval for table presence (fallback if SSE drops) — Vercel optimization */
+export const PRESENCE_POLLING_INTERVAL_MS = 3 * 1000; // 3 seconds (aggressive for Vercel latency)
 
 // ── Session Validation Polling ───────────────────────────────────────
 /** Interval for staff session server-side validation (detects admin logout actions) */

@@ -5,9 +5,12 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 ## ✨ Features
 
 - **Customer View** — Browse 145+ menu items with search, categories, and a persistent cart banner. 4-digit shuffled PinPad for table authentication with session persistence and reduced shoulder-surfing risk.
+- **Real-Time Table Presence** — Server-Sent Events (SSE) with aggressive polling fallback (3s) for table status badges. Exponential backoff reconnection, 5-minute grace period for accidental tab closes. Explicit table leave signal (`goToTableSelection`) for accurate presence tracking.
+- **Session Grace Period** — Customers who accidentally close their tab can restore their session within 5 minutes without re-entering PIN. `beforeunload` handler ensures graceful SSE disconnection.
 - **Kitchen Dashboard** — Real-time order queue with status workflow (Queued → Preparing → Ready → Delivered).
 - **Manager Panel** — Full operational control: menu CRUD, table & PIN management, order cancel/delete, and order limit configuration.
 - **PIN System** — Each table has a 4-digit PIN. Changing a PIN invalidates active sessions. Managers can set or randomize PINs; randomized keypad layout and PIN scrambling reduce repeated-observation/snooping attacks in shared dining areas.
+- **Idle Timeout** — Customers inactive for 30 minutes (no new orders) are automatically disconnected. Timer resets on each order placement.
 - **Role-based Auth** — JWT via httpOnly cookies for customers and staff; bcrypt-hashed passwords for staff users (kitchen, manager, admin).
 - **Responsive Design** — Mobile-first with Tailwind CSS and dark mode support.
 
@@ -174,21 +177,32 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 - **Next.js 16** — React framework with App Router & Turbopack
 - **React 18** + **TypeScript**
 - **TanStack React Query** — Server state & caching
+- **Server-Sent Events (SSE)** — Real-time table presence, order updates, PIN changes
+- **Aggressive Polling** — 3-second presence fallback for Vercel resilience (exponential backoff + polling endpoint)
 - **Radix UI / shadcn/ui** — Accessible component primitives
 - **Tailwind CSS** — Utility-first styling
 - **Sonner** — Toast notifications
 - **Lucide React** — Icons
 
 ### Backend
-- **Express.js** — REST API
+- **Express.js** — REST API with SSE broadcast
+- **Server-Sent Events (SSE)** — Real-time pub/sub: presence, orders, menu, PIN changes
 - **Prisma ORM** — Type-safe database access
 - **PostgreSQL 15** — Relational database
-- **JWT** — httpOnly cookie authentication
+- **JWT** — httpOnly cookie authentication with jti-based session identity
+- **Exponential Backoff** — Intelligent SSE reconnection (1s → 2s → 4s... capped at 30s)
+- **Idle Timeout** — Automatic disconnection after 30 minutes without orders
 - **dotenv** — Environment configuration
 
+### Real-Time Architecture
+- **SSE Keep-Alive**: 15 seconds (reduced from 30s for Vercel proxy tolerance)
+- **Session Grace Period**: 5 minutes (allows tab reload without re-entering PIN)
+- **Presence Polling Fallback**: 3-second interval (Vercel optimization)
+- **Timeout Configuration**: All intervals defined in `src/lib/timeouts.ts` for easy customization
+
 ### Testing
-- **Jest** + **Testing Library** — 198 tests across 13 suites
-- API, auth, components, data integrity, order-status, and utility tests
+- **Jest** + **Testing Library** — 252 tests across 17 suites
+- API, auth, components, data integrity, order-status, presence lifecycle, idle timeout, and utility tests
 
 ## 📂 Project Structure
 

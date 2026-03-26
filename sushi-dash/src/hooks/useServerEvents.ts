@@ -1,9 +1,9 @@
-// useServerEvents.ts — Real-time SSE listener. Connects to GET /api/events and reacts to server-pushed events. Auto-reconnects on disconnects (with 2s backoff).
+// useServerEvents.ts — Real-time SSE listener. Connects to GET /api/events and reacts to server-pushed events. Auto-reconnects on disconnects with exponential backoff.
 
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/config";
-import { SSE_RECONNECT_DELAY_MS } from "@/lib/timeouts";
+import { SSE_RECONNECT_DELAY_MS, SSE_MAX_RECONNECT_DELAY_MS, PRESENCE_POLLING_INTERVAL_MS } from "@/lib/timeouts";
 import { toast } from "sonner";
 import { queryKeys } from "./useApiQueries";
 
@@ -64,6 +64,13 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
 
     let es: EventSource | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout>;
+    let reconnectAttempts = 0; // Track attempts for exponential backoff
+
+    function calculateBackoffDelay(attempts: number): number {
+      // Exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s (capped)
+      const exponential = SSE_RECONNECT_DELAY_MS * Math.pow(2, attempts);
+      return Math.min(exponential, SSE_MAX_RECONNECT_DELAY_MS);
+    }
 
     function connect() {
       const base = API_BASE;
@@ -85,6 +92,9 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
       es = new EventSource(url);
 
       es.onmessage = (msg) => {
+        // Connection successful, reset backoff counter
+        reconnectAttempts = 0;
+
         let event: ServerEvent;
         try {
           event = JSON.parse(msg.data);
@@ -146,8 +156,10 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
 
       es.onerror = () => {
         es?.close();
-        // Reconnect after a short delay
-        reconnectTimer = setTimeout(connect, SSE_RECONNECT_DELAY_MS);
+        // Exponential backoff with cap to prevent reconnect storms (Vercel optimization)
+        reconnectAttempts++;
+        const delay = calculateBackoffDelay(reconnectAttempts);
+        reconnectTimer = setTimeout(connect, delay);
       };
     }
 
@@ -166,4 +178,42 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, [queryClient, tableId, enabled]); // reconnect when tableId changes
+}
+
+/**
+ * Aggressive presence polling hook (Vercel optimization).
+ * Polls table presence every 3 seconds as a fallback if SSE drops.
+ * This ensures table badges stay accurate despite network latency.
+ */
+export function usePresencePolling(): void {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    let pollTimer: ReturnType<typeof setInterval>;
+
+    async function pollPresence() {
+      try {
+        const response = await fetch(`${API_BASE}/api/events/presence`, {
+          credentials: "include",
+        });
+        if (!response.ok) return;
+
+        const data = (await response.json()) as {
+          presence?: Record<number, number>;
+        };
+        if (data.presence) {
+          queryClient.setQueryData(presenceKey, data.presence);
+        }
+      } catch {
+        // Silently fail; SSE fallback or next poll will retry
+      }
+    }
+
+    // Start polling
+    pollTimer = setInterval(pollPresence, PRESENCE_POLLING_INTERVAL_MS);
+
+    return () => {
+      clearInterval(pollTimer);
+    };
+  }, [queryClient]);
 }

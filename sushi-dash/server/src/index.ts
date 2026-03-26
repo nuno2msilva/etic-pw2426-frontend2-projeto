@@ -10,7 +10,7 @@ import express from "express";
 import cookieParser from "cookie-parser";
 
 import { authenticate } from "./middleware/auth.js";
-import { sseHandler } from "./events.js";
+import { sseHandler, getPresence } from "./events.js";
 import prisma from "./db/prisma.js";
 import authRoutes from "./routes/auth.js";
 import usersRoutes from "./routes/users.js";
@@ -56,6 +56,11 @@ app.use("/api/tables", tablesRoutes);
 app.use("/api/orders", ordersRoutes);
 app.use("/api/settings", settingsRoutes);
 app.get("/api/events", sseHandler);      // SSE real-time stream
+
+// Presence polling endpoint (Vercel optimization: fallback if SSE drops)
+app.get("/api/events/presence", (_req, res) => {
+  res.json({ presence: getPresence() });
+});
 
 // ─── Health check ────────────────────────────────────────────
 app.get("/api/health", async (_req, res) => {

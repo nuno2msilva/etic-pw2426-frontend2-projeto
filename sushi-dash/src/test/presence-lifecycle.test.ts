@@ -19,6 +19,8 @@ import {
   SSE_IDLE_TIMEOUT_MS,
   SSE_KEEP_ALIVE_INTERVAL_MS,
   SSE_RECONNECT_DELAY_MS,
+  SSE_MAX_RECONNECT_DELAY_MS,
+  PRESENCE_POLLING_INTERVAL_MS,
   STAFF_SESSION_VALIDATION_INTERVAL_MS,
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
 } from "../../src/lib/timeouts";
@@ -38,13 +40,21 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(getIdleTimeoutMs()).toBe(30 * 60 * 1000);
     });
 
-    it("should export keep-alive interval constant (30 seconds)", () => {
-      expect(SSE_KEEP_ALIVE_INTERVAL_MS).toBe(30 * 1000);
-      expect(getKeepAliveIntervalMs()).toBe(30 * 1000);
+    it("should export keep-alive interval constant (15 seconds for Vercel)", () => {
+      expect(SSE_KEEP_ALIVE_INTERVAL_MS).toBe(15 * 1000);
+      expect(getKeepAliveIntervalMs()).toBe(15 * 1000);
     });
 
-    it("should export SSE reconnect delay constant (2 seconds)", () => {
-      expect(SSE_RECONNECT_DELAY_MS).toBe(2 * 1000);
+    it("should export SSE reconnect delay constant (1 second initial, exponential backoff)", () => {
+      expect(SSE_RECONNECT_DELAY_MS).toBe(1 * 1000);
+    });
+
+    it("should export max exponential backoff cap (30 seconds)", () => {
+      expect(SSE_MAX_RECONNECT_DELAY_MS).toBe(30 * 1000);
+    });
+
+    it("should export aggressive presence polling interval (3 seconds for Vercel)", () => {
+      expect(PRESENCE_POLLING_INTERVAL_MS).toBe(3 * 1000);
     });
 
     it("should export staff session validation interval (5 seconds)", () => {

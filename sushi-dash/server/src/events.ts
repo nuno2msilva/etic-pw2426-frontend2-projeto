@@ -23,8 +23,8 @@ import type { Request, Response } from "express";
 /** Server-side idle timeout: disconnect customer if no new orders placed for this duration (30 minutes) */
 const IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 
-/** Server-side keep-alive ping interval to prevent proxy/firewall timeout (30 seconds) */
-const KEEP_ALIVE_INTERVAL_MS = 30 * 1000;
+/** Server-side keep-alive ping interval to prevent proxy/firewall timeout (reduced to 15s for Vercel) */
+const KEEP_ALIVE_INTERVAL_MS = 15 * 1000;
 
 /**
  * Exported for testing/monitoring.
