@@ -3,6 +3,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { API_BASE } from "@/lib/config";
@@ -10,14 +11,12 @@ import { UI_TEXT } from "@/lib/ui-text";
 
 import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
-import { useOrderingFlow } from "@/hooks/useOrderingFlow";
-import {
-  TableSelector,
-  MenuOrderingView,
-  PinPad,
-  StaffLoginModal,
-} from "@/components/app";
+import TableSelector from "@/components/app/TableSelector";
 import type { Table } from "@/types/models";
+
+const PinPad = dynamic(() => import("@/components/app/PinPad").then((mod) => mod.PinPad));
+const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal"));
+const CustomerMenuStep = dynamic(() => import("@/views/CustomerMenuStep"));
 
 type Step = "table" | "menu";
 
@@ -28,7 +27,7 @@ const CustomerPage = () => {
   // Skip auto-restore when user explicitly navigated here (e.g. logo click)
   const skipAutoRestore = useRef(selectParam === "true");
 
-  const { tables, settings, tablesError, reloadTables } = useApp();
+  const { tables, tablesError, reloadTables } = useApp();
   const { isInitialized, customerSession, loginAsCustomer, logout, goToTableSelection, goToTable } = useAuth();
 
   const isCustomerAuthenticated = customerSession !== null;
@@ -45,9 +44,6 @@ const CustomerPage = () => {
     ? tables.find((t) => t.id === selectedTable.id) ?? selectedTable
     : null;
 
-  // Shared cart + ordering logic
-  const flow = useOrderingFlow(liveTable);
-
   // ── Session effects ───────────────────────────────────────────────────────
 
   // Logo click: reset to table selection when ?select=true appears in the URL
@@ -57,8 +53,6 @@ const CustomerPage = () => {
       goToTableSelection();
       setStep("table");
       setSelectedTable(null);
-      flow.setCart({});
-      flow.setOpenCategories(new Set());
       skipAutoRestore.current = true;
     }
 
@@ -74,8 +68,6 @@ const CustomerPage = () => {
     if (isInitialized && !isCustomerAuthenticated && step !== "table") {
       setStep("table");
       setSelectedTable(null);
-      flow.setCart({});
-      flow.setOpenCategories(new Set());
     }
   }, [isInitialized, isCustomerAuthenticated, step]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -168,7 +160,7 @@ const CustomerPage = () => {
 
       {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
       {step === "menu" && liveTable && (
-        <MenuOrderingView table={liveTable} flow={flow} />
+        <CustomerMenuStep table={liveTable} />
       )}
 
       {/* Modals */}

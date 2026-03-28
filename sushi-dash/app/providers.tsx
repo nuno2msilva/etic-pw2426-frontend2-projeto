@@ -11,7 +11,7 @@ import { useServerEvents, usePresencePolling } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
 import CRTScreen from "@/components/app/CRTScreen";
 import WebVitalsReporter from "@/components/app/WebVitalsReporter";
-import { ENABLE_CRT_EFFECT } from "@/lib/config";
+import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
 
 const queryClient = new QueryClient();
 
@@ -48,7 +48,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
       <TooltipProvider>
         <Sonner />
         <AuthProvider>
-          <WebVitalsReporter />
+          {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
           <LiveUpdates />
           <AppProvider>
             <CRTScreen enabled={ENABLE_CRT_EFFECT}>

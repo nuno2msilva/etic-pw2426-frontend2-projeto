@@ -1,6 +1,5 @@
 // TableSelector — Landing grid of table buttons with SSE presence badges and staff-login shortcut.
 
-import { motion } from "framer-motion";
 import type { Table } from "@/types/models";
 import { cardVariants } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,16 +24,11 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
     <div className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start px-4 pt-8">
         <div className="text-center mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35 }}
-            className="flex items-center justify-center"
-          >
+          <div className="flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
             <p className="text-muted-foreground">
               All-you-can-eat! Select your table to start ordering.
             </p>
-          </motion.div>
+          </div>
         </div>
 
         {showEmptyState ? (
@@ -64,20 +58,18 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
               const users = presence[Number(table.id)] ?? 0;
               const isInUse = users > 0;
               return (
-                <motion.button
+                <button
                   key={table.id}
                   type="button"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: Math.min(index * 0.03, 0.2) }}
                   onClick={() => onSelectTable(table)}
                   className={cn(
                     cardVariants({ variant: "item" }),
-                    "p-6 text-center relative transition-all",
+                    "p-6 text-center relative transition-all animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
                     isInUse
                       ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.7),0_0_26px_rgba(239,68,68,0.45)]"
                       : "hover:border-primary hover:shadow-lg",
                   )}
+                  style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
                 >
                   {isInUse && (
                     <>
@@ -99,7 +91,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
                   )}
                   <span className="text-3xl block mb-2">🪑</span>
                   <span className="font-bold text-card-foreground">{table.label}</span>
-                </motion.button>
+                </button>
               );
             })}
           </div>
