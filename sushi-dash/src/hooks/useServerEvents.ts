@@ -192,6 +192,10 @@ export function usePresencePolling(): void {
     let pollTimer: ReturnType<typeof setInterval>;
 
     async function pollPresence() {
+      if (typeof document !== "undefined" && document.hidden) {
+        return;
+      }
+
       try {
         const response = await fetch(`${API_BASE}/api/events/presence`, {
           credentials: "include",
@@ -210,6 +214,7 @@ export function usePresencePolling(): void {
     }
 
     // Start polling
+  void pollPresence();
     pollTimer = setInterval(pollPresence, PRESENCE_POLLING_INTERVAL_MS);
 
     return () => {

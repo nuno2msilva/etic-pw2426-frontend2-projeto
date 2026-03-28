@@ -99,12 +99,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Auth — determines whether to fetch all orders or just for the customer's table
   const { authenticatedTableId, staffSession } = useAuth();
   const isStaff = staffSession !== null;
+  const shouldFetchOrders = isStaff || Boolean(authenticatedTableId);
 
   // React Query hooks — fetch data from the backend API
   const menuQuery = useMenuQuery();
   const tablesQuery = useTablesQuery();
   // Staff (kitchen/manager) fetch all orders; customers fetch only their table
-  const ordersQuery = useOrdersQuery(isStaff ? undefined : authenticatedTableId);
+  const ordersQuery = useOrdersQuery(isStaff ? undefined : authenticatedTableId, shouldFetchOrders);
   const settingsQuery = useSettingsQuery();
   const categoriesQuery = useCategoriesQuery();
 

@@ -166,12 +166,13 @@ export function useRemoveTable() {
 // Order hooks
 
 // Fetches orders — scoped to a table for customers, or all orders for staff
-export function useOrdersQuery(tableId?: string | null) {
+export function useOrdersQuery(tableId?: string | null, enabled = true) {
   return useQuery({
     queryKey: tableId ? [...queryKeys.orders, tableId] : queryKeys.orders,
     queryFn: () => tableId ? api.fetchOrdersForTable(tableId) : api.fetchOrders(),
+    enabled,
     staleTime: 1000,
-    refetchInterval: 1000, // 1 s polling fallback — essential for kitchen/customer UX
+    refetchInterval: enabled ? 1000 : false, // 1 s polling fallback — essential for kitchen/customer UX
   });
 }
 
