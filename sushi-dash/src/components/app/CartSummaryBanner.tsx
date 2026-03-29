@@ -75,7 +75,7 @@ const CartSummaryBanner = ({
         phase === 'stretching'
           ? 'transition-[transform,opacity] duration-200 ease-in translate-y-4 opacity-80'
           : phase === 'moved'
-            ? 'transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] translate-y-0 opacity-100'
+            ? 'transition-[transform,opacity] duration-500 ease-&lsqb;cubic-bezier(0.34,1.56,0.64,1)&rsqb; translate-y-0 opacity-100'
             : '',
       ].join(' ')}
     >
