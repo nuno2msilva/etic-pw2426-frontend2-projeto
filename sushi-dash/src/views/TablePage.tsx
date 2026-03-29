@@ -4,7 +4,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useSearchParams, useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { notifySuccess } from "@/lib/notify";
 import { UI_TEXT } from "@/lib/ui-text";
 
 import { useApp } from "@/context/AppContext";
@@ -38,7 +38,7 @@ const TablePage = () => {
       loginAsCustomer(tableId, pin)
         .then((ok) => {
           if (ok) {
-            toast.success(UI_TEXT.tableWelcome);
+            void notifySuccess(UI_TEXT.tableWelcome);
             const url = new URL(window.location.href);
             url.searchParams.delete("pin");
             window.history.replaceState({}, "", url.pathname + url.search);

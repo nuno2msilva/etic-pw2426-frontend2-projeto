@@ -6,8 +6,8 @@ import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { API_BASE } from "@/lib/config";
+import { notifySuccess } from "@/lib/notify";
 import { UI_TEXT } from "@/lib/ui-text";
 
 import { useAuth } from "@/context/AuthContext";
@@ -156,7 +156,7 @@ const CustomerPage = () => {
       setShowPinPad(false);
       goToTable(); // Signal that customer is now at a table
       setStep("menu");
-      toast.success(UI_TEXT.tableWelcomeFor(pendingTable.label));
+      void notifySuccess(UI_TEXT.tableWelcomeFor(pendingTable.label));
     }
     return success;
   };

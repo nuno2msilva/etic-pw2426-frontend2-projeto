@@ -3,8 +3,8 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/config";
+import { notifyError } from "@/lib/notify";
 import { SSE_RECONNECT_DELAY_MS, SSE_MAX_RECONNECT_DELAY_MS, PRESENCE_POLLING_INTERVAL_MS } from "@/lib/timeouts";
-import { toast } from "sonner";
 import { queryKeys } from "./useApiQueries";
 
 /** Must match ServerEvent union in server/src/events.ts */
@@ -107,7 +107,7 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
           case "pin-changed": {
             // If this customer is sitting at the affected table → eject
             if (tableIdRef.current && Number(tableIdRef.current) === event.tableId) {
-              toast.error("Your table's PIN was changed — please log in again.");
+              void notifyError("Your table's PIN was changed — please log in again.");
               onEjectedRef.current?.();
             }
             queryClient.invalidateQueries({ queryKey: queryKeys.tables });
@@ -116,7 +116,7 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
 
           case "table-deleted": {
             if (tableIdRef.current && Number(tableIdRef.current) === event.tableId) {
-              toast.error("Your table was removed — returning to table selection.");
+              void notifyError("Your table was removed — returning to table selection.");
               onEjectedRef.current?.();
             }
             queryClient.invalidateQueries({ queryKey: queryKeys.tables });

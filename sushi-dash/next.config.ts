@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     optimizeCss: true,
+    optimizePackageImports: ["lucide-react", "sonner"],
   },
 
   // Dev: proxy /api/* to the standalone Express server on :3001

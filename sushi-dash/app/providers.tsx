@@ -3,15 +3,20 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useServerEvents, usePresencePolling } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
 import CRTScreen from "@/components/app/CRTScreen";
-import WebVitalsReporter from "@/components/app/WebVitalsReporter";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
+
+const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.Toaster), {
+  ssr: false,
+});
+const WebVitalsReporter = dynamic(() => import("@/components/app/WebVitalsReporter"), {
+  ssr: false,
+});
 
 const queryClient = new QueryClient();
 
@@ -49,19 +54,17 @@ function LiveUpdates() {
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Sonner />
-        <AuthProvider>
-          {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
-          <LiveUpdates />
-          <CRTScreen enabled={ENABLE_CRT_EFFECT}>
-            <div className="h-dvh flex flex-col overflow-hidden">
-              <AppHeader />
-              <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-            </div>
-          </CRTScreen>
-        </AuthProvider>
-      </TooltipProvider>
+      <Sonner />
+      <AuthProvider>
+        {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
+        <LiveUpdates />
+        <CRTScreen enabled={ENABLE_CRT_EFFECT}>
+          <div className="h-dvh flex flex-col overflow-hidden">
+            <AppHeader />
+            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+          </div>
+        </CRTScreen>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
