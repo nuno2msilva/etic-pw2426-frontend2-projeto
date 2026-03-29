@@ -44,7 +44,7 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     --font-display: 'Playfair Display', serif;
-    --font-body: 'Noto Sans JP', sans-serif;
+    --font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
 
     --sushi-green: 150 40% 42%;
     --sushi-green-foreground: 40 30% 96%;

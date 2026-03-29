@@ -185,10 +185,12 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
  * Polls table presence every 3 seconds as a fallback if SSE drops.
  * This ensures table badges stay accurate despite network latency.
  */
-export function usePresencePolling(): void {
+export function usePresencePolling(enabled = true): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    if (!enabled) return;
+
     let pollTimer: ReturnType<typeof setInterval>;
 
     async function pollPresence() {
@@ -220,5 +222,5 @@ export function usePresencePolling(): void {
     return () => {
       clearInterval(pollTimer);
     };
-  }, [queryClient]);
+  }, [enabled, queryClient]);
 }

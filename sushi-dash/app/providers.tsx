@@ -3,6 +3,7 @@
 "use client";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { usePathname } from "next/navigation";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider } from "@/context/AppContext";
@@ -25,7 +26,11 @@ export function resolvePresenceTableId(
 /** Invisible component that keeps a single SSE connection alive. */
 function LiveUpdates() {
   const { authenticatedTableId, staffSession, logout, isViewingTableSelection } = useAuth();
+  const pathname = usePathname();
   const presenceTableId = resolvePresenceTableId(authenticatedTableId, Boolean(staffSession));
+  const isAuthenticated = Boolean(authenticatedTableId || staffSession);
+
+  const shouldPollPresence = pathname === "/" || Boolean(pathname?.startsWith("/manager"));
 
   // Don't maintain SSE presence when customer is at table selection (temporarily closes connection)
   const effectiveTableId = isViewingTableSelection ? null : presenceTableId;
@@ -33,11 +38,11 @@ function LiveUpdates() {
   useServerEvents({
     tableId: effectiveTableId,
     onEjected: logout,
-    enabled: true,
+    enabled: isAuthenticated,
   });
 
   // Aggressive presence polling as fallback (Vercel optimization)
-  usePresencePolling();
+  usePresencePolling(shouldPollPresence);
 
   return null;
 }

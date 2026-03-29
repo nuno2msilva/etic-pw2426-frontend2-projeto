@@ -1,6 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  experimental: {
+    optimizeCss: true,
+  },
+
   // Dev: proxy /api/* to the standalone Express server on :3001
   // Production (Vercel): pages/api/[...path].ts handles /api/* natively
   async rewrites() {
