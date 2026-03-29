@@ -53,16 +53,16 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(SSE_MAX_RECONNECT_DELAY_MS).toBe(30 * 1000);
     });
 
-    it("should export aggressive presence polling interval (3 seconds for Vercel)", () => {
-      expect(PRESENCE_POLLING_INTERVAL_MS).toBe(3 * 1000);
+    it("should export presence polling interval (8 seconds for lighter mobile runtime)", () => {
+      expect(PRESENCE_POLLING_INTERVAL_MS).toBe(8 * 1000);
     });
 
-    it("should export staff session validation interval (5 seconds)", () => {
-      expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
+    it("should export staff session validation interval (10 seconds)", () => {
+      expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(10 * 1000);
     });
 
-    it("should export customer session validation interval (2 seconds)", () => {
-      expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(2 * 1000);
+    it("should export customer session validation interval (5 seconds)", () => {
+      expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
   });
 
@@ -210,14 +210,14 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
   });
 
   describe("Session Validation Polling", () => {
-    it("should validate staff session every 5 seconds", () => {
+    it("should validate staff session every 10 seconds", () => {
       // Detects if admin logs out the staff user or changes permissions
-      expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
+      expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(10 * 1000);
     });
 
-    it("should validate customer session every 2 seconds", () => {
+    it("should validate customer session every 5 seconds", () => {
       // Detects if manager randomizes PIN (ejecting customer)
-      expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(2 * 1000);
+      expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
 
     it("should validate customer session faster than staff", () => {

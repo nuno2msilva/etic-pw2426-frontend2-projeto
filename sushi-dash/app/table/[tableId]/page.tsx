@@ -5,6 +5,7 @@
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import TablePage from "@/views/TablePage";
+import WithAppProvider from "@/components/app/WithAppProvider";
 
 type TablePageProps = {
   params: Promise<{ tableId: string }>;
@@ -21,7 +22,9 @@ export async function generateMetadata({ params }: TablePageProps): Promise<Meta
 export default function Page() {
   return (
     <Suspense>
-      <TablePage />
+      <WithAppProvider>
+        <TablePage />
+      </WithAppProvider>
     </Suspense>
   );
 }

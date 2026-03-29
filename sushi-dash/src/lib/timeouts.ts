@@ -32,14 +32,14 @@ export const SSE_MAX_RECONNECT_DELAY_MS = 30 * 1000; // 30 seconds max
 
 // ── Presence Polling ─────────────────────────────────────────────────
 /** Aggressive polling interval for table presence (fallback if SSE drops) — Vercel optimization */
-export const PRESENCE_POLLING_INTERVAL_MS = 3 * 1000; // 3 seconds (aggressive for Vercel latency)
+export const PRESENCE_POLLING_INTERVAL_MS = 8 * 1000; // 8 seconds (lighter mobile runtime, still responsive)
 
 // ── Session Validation Polling ───────────────────────────────────────
 /** Interval for staff session server-side validation (detects admin logout actions) */
-export const STAFF_SESSION_VALIDATION_INTERVAL_MS = 5 * 1000; // 5 seconds
+export const STAFF_SESSION_VALIDATION_INTERVAL_MS = 10 * 1000; // 10 seconds
 
 /** Interval for customer session server-side validation (detects PIN randomization ejection) */
-export const CUSTOMER_SESSION_VALIDATION_INTERVAL_MS = 2 * 1000; // 2 seconds
+export const CUSTOMER_SESSION_VALIDATION_INTERVAL_MS = 5 * 1000; // 5 seconds
 
 /** Interval for customer presence polling (tracks last activity) */
 export const CUSTOMER_PRESENCE_POLLING_INTERVAL_MS = 60 * 1000; // 60 seconds

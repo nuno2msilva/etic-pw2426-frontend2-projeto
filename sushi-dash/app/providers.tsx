@@ -6,7 +6,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { usePathname } from "next/navigation";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AppProvider } from "@/context/AppContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { useServerEvents, usePresencePolling } from "@/hooks/useServerEvents";
 import AppHeader from "@/components/app/AppHeader";
@@ -55,14 +54,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AuthProvider>
           {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
           <LiveUpdates />
-          <AppProvider>
-            <CRTScreen enabled={ENABLE_CRT_EFFECT}>
-              <div className="h-dvh flex flex-col overflow-hidden">
-                <AppHeader />
-                <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-              </div>
-            </CRTScreen>
-          </AppProvider>
+          <CRTScreen enabled={ENABLE_CRT_EFFECT}>
+            <div className="h-dvh flex flex-col overflow-hidden">
+              <AppHeader />
+              <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+            </div>
+          </CRTScreen>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

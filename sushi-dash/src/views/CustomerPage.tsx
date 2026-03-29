@@ -5,11 +5,11 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { API_BASE } from "@/lib/config";
 import { UI_TEXT } from "@/lib/ui-text";
 
-import { useApp } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import TableSelector from "@/components/app/TableSelector";
 import type { Table } from "@/types/models";
@@ -17,6 +17,7 @@ import type { Table } from "@/types/models";
 const PinPad = dynamic(() => import("@/components/app/PinPad").then((mod) => mod.PinPad));
 const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal"));
 const CustomerMenuStep = dynamic(() => import("@/views/CustomerMenuStep"));
+const AppProvider = dynamic(() => import("@/context/AppContext").then((mod) => mod.AppProvider));
 
 type Step = "table" | "menu";
 
@@ -27,8 +28,27 @@ const CustomerPage = () => {
   // Skip auto-restore when user explicitly navigated here (e.g. logo click)
   const skipAutoRestore = useRef(selectParam === "true");
 
-  const { tables, tablesError, reloadTables } = useApp();
   const { isInitialized, customerSession, loginAsCustomer, logout, goToTableSelection, goToTable } = useAuth();
+
+  const tablesQuery = useQuery<Table[]>({
+    queryKey: ["tables"],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/api/tables`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error("Failed to fetch tables");
+      }
+      const raw = (await res.json()) as Array<Record<string, unknown>>;
+      return raw.map((table) => ({
+        ...(table as Omit<Table, "id">),
+        id: String(table.id),
+      }));
+    },
+    staleTime: 1000 * 60 * 5,
+    refetchInterval: 1000 * 30,
+  });
+
+  const tables = tablesQuery.data ?? [];
+  const tablesError = tablesQuery.error instanceof Error ? tablesQuery.error.message : null;
 
   const isCustomerAuthenticated = customerSession !== null;
 
@@ -151,7 +171,7 @@ const CustomerPage = () => {
           tables={tables}
           loadError={tablesError}
           onRetryLoad={() => {
-            void reloadTables();
+            void tablesQuery.refetch();
           }}
           onSelectTable={handleSelectTable}
           onStaffLogin={() => setShowStaffLogin(true)}
@@ -160,7 +180,9 @@ const CustomerPage = () => {
 
       {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
       {step === "menu" && liveTable && (
-        <CustomerMenuStep table={liveTable} />
+        <AppProvider>
+          <CustomerMenuStep table={liveTable} />
+        </AppProvider>
       )}
 
       {/* Modals */}
