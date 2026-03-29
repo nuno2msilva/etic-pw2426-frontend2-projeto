@@ -55,56 +55,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        {/* Structured Data (JSON-LD) */}
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Restaurant",
-              name: "Sushi Dash",
-              description:
-                "All-you-can-eat sushi restaurant with 100+ menu items and real-time ordering.",
-              url: "https://sushi-dash.vercel.app/",
-              image: "https://sushi-dash.vercel.app/og-image.png",
-              servesCuisine: ["Japanese", "Sushi"],
-              priceRange: "$$",
-              address: {
-                "@type": "PostalAddress",
-                addressLocality: "Lisbon",
-                addressCountry: "PT",
-              },
-              hasMenu: {
-                "@type": "Menu",
-                name: "All-You-Can-Eat Menu",
-                description:
-                  "100+ sushi items across Nigiri, Rolls, Sashimi, Hot Dishes, Sides, Noodles, Drinks and Desserts",
-                hasMenuSection: [
-                  { "@type": "MenuSection", name: "Nigiri", description: "Classic hand-pressed sushi" },
-                  { "@type": "MenuSection", name: "Rolls", description: "Maki and specialty rolls" },
-                  { "@type": "MenuSection", name: "Sashimi", description: "Fresh sliced fish" },
-                  { "@type": "MenuSection", name: "Hot Dishes", description: "Teriyaki, tempura and more" },
-                  { "@type": "MenuSection", name: "Sides", description: "Edamame, gyoza, salads" },
-                  { "@type": "MenuSection", name: "Noodles", description: "Ramen, udon and more" },
-                  { "@type": "MenuSection", name: "Drinks", description: "Tea, sake, sodas" },
-                  { "@type": "MenuSection", name: "Desserts", description: "Mochi, ice cream, cakes" },
-                ],
-              },
-              potentialAction: {
-                "@type": "OrderAction",
-                target: {
-                  "@type": "EntryPoint",
-                  urlTemplate: "https://sushi-dash.vercel.app/table/{tableId}",
-                  actionPlatform: "http://schema.org/DesktopWebPlatform",
-                },
-                deliveryMethod:
-                  "http://purl.org/goodrelations/v1#DeliveryModeOwnFleet",
-              },
-            }),
-          }}
-        />
-      </head>
+      <head />
       <body>
         <Providers>{children}</Providers>
       </body>

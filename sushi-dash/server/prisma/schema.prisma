@@ -61,6 +61,7 @@ model TableConfig {
   label      String @unique @db.VarChar(100)
   pin        String @db.VarChar(4)
   pinVersion Int    @default(1) @map("pin_version")
+  isActive   Boolean @default(true) @map("is_active")
 
   sessions Session[]
   orders   Order[]
@@ -122,7 +123,7 @@ model Order {
   status    OrderStatus @default(queued)
   createdAt DateTime    @default(now()) @map("created_at")
 
-  table TableConfig  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  table TableConfig  @relation(fields: [tableId], references: [id], onDelete: Restrict)
   items OrderItem[]
 
   @@index([tableId, status], name: "idx_orders_table_status")

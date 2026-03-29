@@ -28,10 +28,10 @@ router.post("/login/table/:tableId", async (req, res) => {
 
     const table = await prisma.tableConfig.findUnique({
       where: { id: tableId },
-      select: { id: true, pin: true, pinVersion: true },
+      select: { id: true, pin: true, pinVersion: true, isActive: true },
     });
 
-    if (!table) {
+    if (!table || !table.isActive) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -270,9 +270,9 @@ router.get("/session", async (req, res) => {
       try {
         const table = await prisma.tableConfig.findUnique({
           where: { id: ca.tableId },
-          select: { pinVersion: true },
+          select: { pinVersion: true, isActive: true },
         });
-        if (!table || table.pinVersion !== ca.pinVersion) {
+        if (!table || !table.isActive || table.pinVersion !== ca.pinVersion) {
           clearToken(res, "customer");
           // Customer session expired — don't include it
         } else {

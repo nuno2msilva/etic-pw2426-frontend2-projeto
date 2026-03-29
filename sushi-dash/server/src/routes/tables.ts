@@ -33,10 +33,14 @@ router.get("/", async (req, res) => {
     const isManager = req.auth?.role === "manager";
 
     if (isManager) {
-      const rows = await prisma.tableConfig.findMany({ orderBy: { id: "asc" } });
+      const rows = await prisma.tableConfig.findMany({
+        where: { isActive: true },
+        orderBy: { id: "asc" },
+      });
       res.json(rows.map((r) => ({ id: r.id, label: r.label, pin: r.pin, pin_version: r.pinVersion })));
     } else {
       const rows = await prisma.tableConfig.findMany({
+        where: { isActive: true },
         select: { id: true, label: true },
         orderBy: { id: "asc" },
       });
@@ -61,7 +65,7 @@ router.post("/", requireRole("manager"), async (req, res) => {
     const tablePin = pin && /^\d{4}$/.test(pin) ? pin : generatePin();
 
     const table = await prisma.tableConfig.create({
-      data: { label, pin: tablePin, pinVersion: 1 },
+      data: { label, pin: tablePin, pinVersion: 1, isActive: true },
     });
 
     broadcast({ type: "table-added", tableId: table.id });
@@ -83,15 +87,12 @@ router.put("/:id", requireRole("manager"), async (req, res) => {
       return;
     }
 
-    const updated = await prisma.tableConfig.update({
-      where: { id },
+    const updated = await prisma.tableConfig.updateMany({
+      where: { id, isActive: true },
       data: { label },
-    }).catch((e: any) => {
-      if (e.code === "P2025") return null;
-      throw e;
     });
 
-    if (!updated) {
+    if (updated.count === 0) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -109,12 +110,13 @@ router.delete("/:id", requireRole("manager"), async (req, res) => {
   try {
     const id = Number(req.params.id);
 
-    const deleted = await prisma.tableConfig.delete({ where: { id } }).catch((e: any) => {
-      if (e.code === "P2025") return null;
-      throw e;
+    // Soft-delete table to preserve historical orders and non-reusable IDs.
+    const deleted = await prisma.tableConfig.updateMany({
+      where: { id, isActive: true },
+      data: { isActive: false },
     });
 
-    if (!deleted) {
+    if (deleted.count === 0) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -139,15 +141,12 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
       return;
     }
 
-    const updated = await prisma.tableConfig.update({
-      where: { id },
+    const updated = await prisma.tableConfig.updateMany({
+      where: { id, isActive: true },
       data: { pin, pinVersion: { increment: 1 } },
-    }).catch((e: any) => {
-      if (e.code === "P2025") return null;
-      throw e;
     });
 
-    if (!updated) {
+    if (updated.count === 0) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
@@ -167,18 +166,20 @@ router.post("/:id/pin/randomize", requireRole("manager"), async (req, res) => {
     const id = Number(req.params.id);
     const newPin = generatePin();
 
-    const updated = await prisma.tableConfig.update({
-      where: { id },
-      data: { pin: newPin, pinVersion: { increment: 1 } },
-    }).catch((e: any) => {
-      if (e.code === "P2025") return null;
-      throw e;
+    const existing = await prisma.tableConfig.findFirst({
+      where: { id, isActive: true },
+      select: { id: true },
     });
 
-    if (!updated) {
+    if (!existing) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
+
+    const updated = await prisma.tableConfig.update({
+      where: { id },
+      data: { pin: newPin, pinVersion: { increment: 1 } },
+    });
 
     broadcast({ type: "pin-changed", tableId: id });
     res.json({ success: true, pin: newPin, pin_version: updated.pinVersion });

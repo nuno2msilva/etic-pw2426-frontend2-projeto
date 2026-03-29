@@ -291,10 +291,10 @@ export async function requireTable(req: Request, res: Response, next: NextFuncti
   const prisma = (await import("../db/prisma.js")).default;
   const table = await prisma.tableConfig.findUnique({
     where: { id: requestedTableId },
-    select: { pinVersion: true },
+    select: { pinVersion: true, isActive: true },
   });
 
-  if (!table || table.pinVersion !== req.auth.pinVersion) {
+  if (!table || !table.isActive || table.pinVersion !== req.auth.pinVersion) {
     clearToken(res, "customer");
     res.clearCookie("sushi_token", { path: "/" });
     res.status(401).json({ error: "Session expired — PIN has been changed" });

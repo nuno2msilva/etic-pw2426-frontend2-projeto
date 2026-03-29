@@ -92,8 +92,8 @@ async function seed() {
       const pin = TABLE_PINS[t.id] ?? generatePin();
       await prisma.tableConfig.upsert({
         where: { id: Number(t.id) },
-        update: { label: t.label, pin },
-        create: { id: Number(t.id), label: t.label, pin, pinVersion: 1 },
+        update: { label: t.label, pin, isActive: true },
+        create: { id: Number(t.id), label: t.label, pin, pinVersion: 1, isActive: true },
       });
     }
 
