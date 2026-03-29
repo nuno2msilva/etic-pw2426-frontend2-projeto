@@ -100,14 +100,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const { authenticatedTableId, staffSession } = useAuth();
   const isStaff = staffSession !== null;
   const shouldFetchOrders = isStaff || Boolean(authenticatedTableId);
+  const shouldFetchCatalog = isStaff || Boolean(authenticatedTableId);
 
   // React Query hooks — fetch data from the backend API
-  const menuQuery = useMenuQuery();
+  const menuQuery = useMenuQuery(shouldFetchCatalog);
   const tablesQuery = useTablesQuery();
   // Staff (kitchen/manager) fetch all orders; customers fetch only their table
   const ordersQuery = useOrdersQuery(isStaff ? undefined : authenticatedTableId, shouldFetchOrders);
-  const settingsQuery = useSettingsQuery();
-  const categoriesQuery = useCategoriesQuery();
+  const settingsQuery = useSettingsQuery(shouldFetchCatalog);
+  const categoriesQuery = useCategoriesQuery(shouldFetchCatalog);
 
   // Mutation hooks
   const addMenuMutation = useAddMenuItem();

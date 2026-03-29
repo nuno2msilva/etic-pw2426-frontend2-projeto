@@ -162,7 +162,7 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 
 | Action | Customer | Kitchen | Manager | Admin |
 |--------|----------|---------|---------|-------|
-| Place orders | ✅ (own table) | ✅ | ✅ | ✅ |
+| Place orders | ✅ ( | ✅ | ✅ | ✅ |
 | Update order status | ❌ | ✅ | ✅ | ❌ |
 | Cancel own queued orders | ✅ (own table) | ❌ | ✅ | ❌ |
 | Delete orders | ❌ | ❌ | ✅ | ❌ |

@@ -18,12 +18,13 @@ export const queryKeys = {
 // Menu hooks
 
 // Fetches the full menu with 5-min cache and 30s polling fallback
-export function useMenuQuery() {
+export function useMenuQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.menu,
     queryFn: api.fetchMenu,
+    enabled,
     staleTime: 1000 * 60 * 5,
-    refetchInterval: 1000 * 30, // 30 s polling fallback if SSE drops
+    refetchInterval: enabled ? 1000 * 30 : false, // 30 s polling fallback if SSE drops
   });
 }
 
@@ -80,12 +81,13 @@ export function useToggleItemAvailability() {
 // Category hooks
 
 // Fetches all categories with 5-min cache
-export function useCategoriesQuery() {
+export function useCategoriesQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.categories,
     queryFn: api.fetchCategories,
+    enabled,
     staleTime: 1000 * 60 * 5,
-    refetchInterval: 1000 * 30,
+    refetchInterval: enabled ? 1000 * 30 : false,
   });
 }
 
@@ -284,12 +286,13 @@ export function useDeleteOrder() {
 // Settings hooks
 
 // Fetches order settings (max items, max active orders)
-export function useSettingsQuery() {
+export function useSettingsQuery(enabled = true) {
   return useQuery({
     queryKey: queryKeys.settings,
     queryFn: api.fetchSettings,
+    enabled,
     staleTime: 1000 * 60 * 10,
-    refetchInterval: 1000 * 30,
+    refetchInterval: enabled ? 1000 * 30 : false,
   });
 }
 

@@ -2,6 +2,8 @@
 
 "use client";
 
+import "./crt.css";
+
 type CRTScreenProps = {
   children: React.ReactNode;
   enabled?: boolean;
