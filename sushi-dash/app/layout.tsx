@@ -1,17 +1,8 @@
 // RootLayout — HTML shell + metadata + provider tree wrapping every page.
 
 import type { Metadata } from "next";
-import { Playfair_Display } from "next/font/google";
 import "@/index.css";
 import { Providers } from "./providers";
-
-const displayFont = Playfair_Display({
-  subsets: ["latin"],
-  weight: ["700"],
-  variable: "--font-display",
-  display: "swap",
-  preload: false,
-});
 
 export const metadata: Metadata = {
   title: "Sushi Dash — All-You-Can-Eat Sushi Ordering System",
@@ -63,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={displayFont.variable}>
+    <html lang="en">
       <head />
       <body>
         <Providers>{children}</Providers>

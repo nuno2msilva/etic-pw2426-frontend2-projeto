@@ -21,7 +21,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
   const showEmptyState = Boolean(loadError) || tables.length === 0;
 
   return (
-    <div className="h-full flex flex-col overflow-hidden">
+    <main aria-label="Table selection" className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start px-4 pt-8">
         <div className="text-center mb-8">
           <div className="flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
@@ -108,7 +108,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
           🔐 Staff Login
         </button>
       </div>
-    </div>
+    </main>
   );
 };
 
