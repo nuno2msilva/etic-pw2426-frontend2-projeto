@@ -164,7 +164,7 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 |--------|----------|---------|---------|-------|
 | Place orders | ✅  | ✅ | ✅ | ✅ |
 | Update order status | ❌ | ✅ | ✅ | ❌ |
-| Cancel own queued orders | ✅ (own table) | ❌ | ✅ | ❌ |
+| Cancel own queued orders | ✅ | ❌ | ✅ | ❌ |
 | Delete orders | ❌ | ❌ | ✅ | ❌ |
 | Manage menu/tables/PINs | ❌ | ❌ | ✅ | ❌ |
 | Manage users/permissions | ❌ | ❌ | ❌ | ✅ |

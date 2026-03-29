@@ -10,6 +10,7 @@ import CollapsibleSection from "@/components/app/CollapsibleSection";
 import MenuGrid from "@/components/app/MenuGrid";
 import OrderCard from "@/components/app/OrderCard";
 import AppHeader from "@/components/app/AppHeader";
+import StaffHeaderMenu from "@/components/app/StaffHeaderMenu";
 import KitchenPage from "@/views/KitchenPage";
 import ManagerPage from "@/views/ManagerPage";
 import { AuthProvider } from "@/context/AuthContext";
@@ -479,8 +480,8 @@ describe("Can you cancel and delete orders without accidentally nuking dinner?",
 
 describe("Does the app header let staff bounce between kitchen and manager?", () => {
   it("has links to both /kitchen and /manager in the source", () => {
-    // Verify AppHeader source contains the expected route paths
-    const src = AppHeader.toString();
+    // AppHeader can lazy-load staff nav, so verify both source strings.
+    const src = `${AppHeader.toString()}\n${StaffHeaderMenu.toString()}`;
     expect(src).toContain("/kitchen");
     expect(src).toContain("/manager");
   });

@@ -111,24 +111,24 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     });
   });
 
-  it("manager sees kitchen and manager shortcuts, but not admin", () => {
+  it("manager sees kitchen and manager shortcuts, but not admin", async () => {
     mockAuthState(makeStaffSession("manager"));
 
     render(<AppHeader />);
 
-    expect(screen.getByRole("link", { name: "Kitchen" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Manager" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Kitchen" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Manager" })).toBeInTheDocument();
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });
 
-  it("admin does not see kitchen or manager shortcuts", () => {
+  it("admin does not see kitchen or manager shortcuts", async () => {
     mockAuthState(makeStaffSession("admin"));
 
     render(<AppHeader />);
 
     expect(screen.queryByRole("link", { name: "Kitchen" })).toBeNull();
     expect(screen.queryByRole("link", { name: "Manager" })).toBeNull();
-    expect(screen.getByRole("link", { name: "Admin" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Admin" })).toBeInTheDocument();
   });
 
   it("admin manually opening /kitchen is redirected away", async () => {
@@ -187,12 +187,12 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("header still shows kitchen shortcut for manager with missing permission", () => {
+  it("header still shows kitchen shortcut for manager with missing permission", async () => {
     mockAuthState(makeManagerSessionWithoutPermission());
 
     render(<AppHeader />);
 
-    expect(screen.getByRole("link", { name: "Kitchen" })).toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Kitchen" })).toBeInTheDocument();
   });
 
   it("manager role with stale admin permission metadata can still access kitchen", () => {
