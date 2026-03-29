@@ -40,12 +40,12 @@ export default function MenuOrderingView({
 
   return (
     <>
-      <main className="h-[100dvh] sm:h-full max-w-5xl mx-auto px-3 sm:px-4 pt-6 sm:pt-8 pb-20 sm:pb-3 flex flex-col">
+      <main className="page-shell page-shell-roomy flex flex-col">
         {children}
 
         {/* Header — title on left, orders button on right, same line, matching height */}
         <div className="flex flex-row items-center justify-between gap-3 mb-3 sm:mb-4">
-          <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground shrink-0">
+          <h1 className="type-display shrink-0">
             {table.label}
           </h1>
           <button
@@ -98,7 +98,7 @@ export default function MenuOrderingView({
           </div>
         </div>
 
-        <div className="shrink-0 mt-2 border-t border-border/70 bg-background/95 backdrop-blur-sm px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)]">
+        <div className="shrink-0 mt-2 border-t border-border/70 bg-background/95 backdrop-blur-sm px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] sm:pb-1">
           <CartSummaryBanner
             summary={flow.cartSummary}
             onReview={flow.totalItems > 0 ? () => flow.setShowConfirm(true) : undefined}

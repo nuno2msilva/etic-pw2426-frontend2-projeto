@@ -58,7 +58,7 @@ const OrderCard = ({
   return (
     <Card variant="section" className="p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-display font-bold text-card-foreground">{order.table.label}</h3>
+        <h3 className="type-subtitle text-card-foreground">{order.table.label}</h3>
         <Badge variant={STATUS_BADGE_VARIANT[order.status]} size="md">
           {STATUS_LABELS[order.status]}
         </Badge>

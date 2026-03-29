@@ -178,7 +178,7 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 - **React 18** + **TypeScript**
 - **TanStack React Query** — Server state & caching
 - **Server-Sent Events (SSE)** — Real-time table presence, order updates, PIN changes
-- **Aggressive Polling** — 3-second presence fallback for Vercel resilience (exponential backoff + polling endpoint)
+- **Polling Fallback** — 8-second presence interval for Vercel resilience (exponential backoff + polling endpoint)
 - **Radix UI / shadcn/ui** — Accessible component primitives
 - **Tailwind CSS** — Utility-first styling
 - **Sonner** — Toast notifications
@@ -197,11 +197,66 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 ### Real-Time Architecture
 - **SSE Keep-Alive**: 15 seconds (reduced from 30s for Vercel proxy tolerance)
 - **Session Grace Period**: 5 minutes (allows tab reload without re-entering PIN)
-- **Presence Polling Fallback**: 3-second interval (Vercel optimization)
+- **Presence Polling Fallback**: 8-second interval (optimized for mobile browser resource usage)
+- **Staff Session Validation**: 10-second interval (manager/kitchen presence checks)
+- **Customer Session Validation**: 5-second interval (table authentication keep-alive)
 - **Timeout Configuration**: All intervals defined in `src/lib/timeouts.ts` for easy customization
 
+### Design System
+
+Sushi Dash uses shared utility classes in `src/index.css` to maintain consistent spacing, typography, and layout across desktop and mobile without losing responsive behavior.
+
+#### Page Shell Utilities
+Used in all major route layouts (Kitchen, Manager, Admin, Customer Menu):
+
+| Class | Purpose | Mobile | Desktop |
+|-------|---------|--------|---------|
+| `.page-shell` | Base container (height, overflow, padding) | Full-height minus header (100dvh-4rem) | Full height |
+| `.page-shell-tight` | Compact vertical padding | pt-4 pb-3.5 | pt-6 pb-6 |
+| `.page-shell-roomy` | Generous vertical padding | pt-6 pb-4 | pt-8 pb-8 |
+| `.section-heading` | Subsection titles | text-base | text-lg |
+
+**Applied in**: [KitchenPage](src/views/KitchenPage.tsx), [ManagerPage](src/views/ManagerPage.tsx), [MenuOrderingView](src/components/app/MenuOrderingView.tsx), [TablePage](src/views/TablePage.tsx)
+
+#### Typography Utilities
+Unified type scale with consistent breakpoints (mobile → desktop):
+
+| Class | Size | Weight | Use Case |
+|-------|------|--------|----------|
+| `.type-display` | text-xl sm:text-2xl | bold | Major page headings (table ordering h1) |
+| `.type-title` | text-lg sm:text-xl | bold | Section titles, component branding |
+| `.type-subtitle` | text-base sm:text-lg | semibold | Card titles, subsection headings |
+| `.type-body` | text-sm sm:text-base | regular | Primary content text |
+| `.type-body-muted` | text-sm sm:text-base | regular, muted | Secondary/helper text, labels |
+| `.type-caption` | text-xs sm:text-sm | regular, muted | Labels, hints, timestamps |
+
+**Applied in**: [AppHeader](src/components/app/AppHeader.tsx) (branding, logout label), [TableSelector](src/components/app/TableSelector.tsx) (messaging, instructions), [CollapsibleSection](src/components/app/CollapsibleSection.tsx) (section titles), [MenuOrderingView](src/components/app/MenuOrderingView.tsx) (table heading), [OrderCard](src/components/app/OrderCard.tsx) (order titles)
+
+#### Component Density Unification
+UI primitives made responsive to balance mobile tightness with desktop roominess:
+
+| Component | Property | Mobile | Desktop | File |
+|-----------|----------|--------|---------|------|
+| **Button** | rounded | lg | lg | [button.tsx](src/components/ui/button.tsx) |
+| **Card** | padding (section) | p-4 | sm:p-6 | [card.tsx](src/components/ui/card.tsx) |
+| **Card** | padding (item) | p-3.5 | sm:p-4 | [card.tsx](src/components/ui/card.tsx) |
+| **Input** | rounded | lg | lg | [input.tsx](src/components/ui/input.tsx) |
+| **Dialog** | content padding | p-4 | sm:p-6 | [dialog.tsx](src/components/ui/dialog.tsx) |
+| **Dialog** | close button pos | right-3 top-3 | sm:right-4 sm:top-4 | [dialog.tsx](src/components/ui/dialog.tsx) |
+
+#### Adding New Components
+When creating new components or pages:
+
+1. **Page shells** use `.page-shell` + `.page-shell-tight` or `.page-shell-roomy` for consistent container behavior
+2. **Headings** use `.type-display`, `.type-title`, or `.type-subtitle` based on hierarchy
+3. **Body text** use `.type-body` (or `.type-body-muted` for secondary)
+4. **Labels/hints** use `.type-caption`
+5. **Card/component padding** follow the pattern: `p-X sm:p-Y` (tight mobile, roomy desktop)
+
+This ensures new components automatically align with existing visual rhythm across all breakpoints.
+
 ### Testing
-- **Jest** + **Testing Library** — 252 tests across 17 suites
+- **Jest** + **Testing Library** — 255 tests across 18 suites
 - API, auth, components, data integrity, order-status, presence lifecycle, idle timeout, and utility tests
 
 ## 📂 Project Structure

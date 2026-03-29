@@ -46,7 +46,7 @@ const KitchenPage = () => {
   if (!isInitialized || !hasKitchenAccess) return null;
 
   return (
-    <main className="h-[100dvh] sm:h-full overflow-y-auto max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+    <main className="page-shell page-shell-roomy">
       <SEOHead
         title="Kitchen Dashboard"
         description="Process incoming sushi orders. View active and delivered orders in real time."
@@ -72,7 +72,7 @@ const KitchenPage = () => {
       {/* Active Orders Section */}
       {activeOrders.length > 0 && (
         <section className="mb-6 sm:mb-8">
-          <h2 className="text-base sm:text-lg font-bold text-foreground mb-3 sm:mb-4">
+          <h2 className="section-heading">
             Active Orders ({activeOrders.length})
           </h2>
 
@@ -93,7 +93,7 @@ const KitchenPage = () => {
       {/* Completed Orders Section (Delivered + Cancelled) */}
       {completedOrders.length > 0 && (
         <section>
-          <h2 className="text-base sm:text-lg font-bold text-muted-foreground mb-3 sm:mb-4">
+          <h2 className="section-heading text-muted-foreground">
             Completed ({completedOrders.length})
           </h2>
 

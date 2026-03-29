@@ -44,11 +44,11 @@ const CollapsibleSection = ({
           <div className="text-left min-w-0 flex-1 pr-3">
             <div className="flex items-center gap-3 min-w-0">
               {icon && <span className="text-lg">{icon}</span>}
-              <span className="text-base sm:text-lg font-semibold truncate">{title}</span>
+              <span className="type-subtitle truncate">{title}</span>
               {badge}
             </div>
             {subtitle && (
-              <span className="text-sm text-muted-foreground block mt-0.5 truncate">
+              <span className="type-caption block mt-0.5 truncate">
                 {subtitle}
               </span>
             )}

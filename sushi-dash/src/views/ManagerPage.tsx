@@ -96,7 +96,7 @@ const ManagerPage = () => {
   // Show loading while auth initializes
   if (!isInitialized) {
     return (
-      <main className="h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area overflow-x-hidden max-w-5xl mx-auto px-3 sm:px-4 py-6 sm:py-8">
+      <main className="page-shell page-shell-roomy">
         <SEOHead title="Manager Panel" description="Restaurant management dashboard" />
         <div className="text-center py-20 text-muted-foreground">
           <p className="text-lg">{UI_TEXT.loading}</p>
@@ -111,13 +111,13 @@ const ManagerPage = () => {
   }
 
   return (
-    <main className="h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area overflow-x-hidden max-w-5xl mx-auto w-full min-w-0 px-2.5 sm:px-4 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:py-6">
+    <main className="page-shell page-shell-tight">
       <SEOHead
         title="Manager Panel"
         description="Configure menu items, tables, and order limits for Sushi Dash."
       />
       <section className="w-full min-w-0">
-        <div className="space-y-2.5 sm:space-y-3 w-full min-w-0">
+        <div className="space-y-3 sm:space-y-4 w-full min-w-0">
           {sections.map((section) => {
             const isOpen = openSections.has(section.id);
 

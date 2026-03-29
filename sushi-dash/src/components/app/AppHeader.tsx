@@ -65,7 +65,7 @@ const AppHeader = () => {
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href={logoHref} className="flex items-center gap-2">
             <span className="text-2xl">🍣</span>
-            <span className="font-display text-xl font-bold text-foreground">
+            <span className="type-title">
               Sushi <span className="text-primary">Dash</span>
             </span>
           </Link>
@@ -80,7 +80,7 @@ const AppHeader = () => {
                 aria-label="Logout"
               >
                 <span aria-hidden="true">↩</span>
-                <span className="hidden sm:inline">Logout</span>
+                <span className="hidden sm:inline type-caption">Logout</span>
               </button>
             )}
 
