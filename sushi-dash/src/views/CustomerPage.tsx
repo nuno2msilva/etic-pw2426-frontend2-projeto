@@ -43,8 +43,10 @@ const CustomerPage = () => {
         id: String(table.id),
       }));
     },
-    staleTime: 1000 * 60 * 5,
-    refetchInterval: 1000 * 30,
+    staleTime: 1000 * 60 * 15,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
   });
 
   const tables = tablesQuery.data ?? [];

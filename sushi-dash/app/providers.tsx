@@ -21,7 +21,17 @@ const CRTScreen = dynamic(() => import("@/components/app/CRTScreen"), {
   ssr: false,
 });
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30 * 1000,
+      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnReconnect: false,
+      retry: 1,
+    },
+  },
+});
 
 export function resolvePresenceTableId(
   authenticatedTableId: string | null,
@@ -34,34 +44,10 @@ export function resolvePresenceTableId(
 function LiveUpdates() {
   const { authenticatedTableId, staffSession, logout, isViewingTableSelection } = useAuth();
   const pathname = usePathname();
-  const [hasHomeInteraction, setHasHomeInteraction] = useState(false);
   const presenceTableId = resolvePresenceTableId(authenticatedTableId, Boolean(staffSession));
   const isAuthenticated = Boolean(authenticatedTableId || staffSession);
 
-  const shouldPollPresence = Boolean(pathname?.startsWith("/manager")) ||
-    (pathname === "/" && hasHomeInteraction);
-
-  useEffect(() => {
-    if (pathname !== "/") {
-      setHasHomeInteraction(false);
-      return;
-    }
-
-    const activate = () => setHasHomeInteraction(true);
-    const opts: AddEventListenerOptions = { once: true, passive: true };
-
-    window.addEventListener("pointerdown", activate, opts);
-    window.addEventListener("keydown", activate, { once: true });
-    window.addEventListener("touchstart", activate, opts);
-    window.addEventListener("scroll", activate, opts);
-
-    return () => {
-      window.removeEventListener("pointerdown", activate);
-      window.removeEventListener("keydown", activate);
-      window.removeEventListener("touchstart", activate);
-      window.removeEventListener("scroll", activate);
-    };
-  }, [pathname]);
+  const shouldPollPresence = Boolean(pathname?.startsWith("/manager"));
 
   // Don't maintain SSE presence when customer is at table selection (temporarily closes connection)
   const effectiveTableId = isViewingTableSelection ? null : presenceTableId;

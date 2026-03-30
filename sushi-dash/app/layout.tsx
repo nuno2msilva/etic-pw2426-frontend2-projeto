@@ -56,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head />
-      <body>
+      <body className="perf-max">
         <Providers>{children}</Providers>
       </body>
     </html>

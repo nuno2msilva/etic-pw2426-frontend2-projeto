@@ -104,6 +104,30 @@
     font-family: var(--font-body);
   }
 
+  /* Maximum Lighthouse mode: aggressively suppress costly visual effects. */
+  .perf-max *,
+  .perf-max *::before,
+  .perf-max *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .perf-max .shadow,
+  .perf-max .shadow-sm,
+  .perf-max .shadow-md,
+  .perf-max .shadow-lg,
+  .perf-max .shadow-xl,
+  .perf-max .shadow-2xl,
+  .perf-max .drop-shadow,
+  .perf-max .drop-shadow-sm,
+  .perf-max .drop-shadow-md,
+  .perf-max .drop-shadow-lg,
+  .perf-max .drop-shadow-xl,
+  .perf-max .drop-shadow-2xl {
+    box-shadow: none !important;
+    filter: none !important;
+  }
+
   h1, h2, h3 {
     font-family: var(--font-display);
   }
