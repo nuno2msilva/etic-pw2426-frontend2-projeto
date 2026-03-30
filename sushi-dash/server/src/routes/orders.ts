@@ -10,9 +10,9 @@
  */
 
 import { Router } from "express";
-import prisma from "../db/prisma.js";
-import { requireRole, requireTable } from "../middleware/auth.js";
-import { broadcast, updateLastOrderTimeForTable } from "../events.js";
+import prisma from "../db/prisma";
+import { requireRole, requireTable } from "../middleware/auth";
+import { broadcast, updateLastOrderTimeForTable } from "../events";
 import { OrderStatus } from "@prisma/client";
 
 const router = Router();

@@ -11,9 +11,9 @@
 
 import { Router } from "express";
 import { randomInt } from "crypto";
-import prisma from "../db/prisma.js";
-import { requireRole, hashPassword } from "../middleware/auth.js";
-import type { Permission } from "../middleware/auth.js";
+import prisma from "../db/prisma";
+import { requireRole, hashPassword } from "../middleware/auth";
+import type { Permission } from "../middleware/auth";
 
 const router = Router();
 

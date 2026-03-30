@@ -6,9 +6,9 @@
  */
 
 import { Router } from "express";
-import prisma from "../db/prisma.js";
-import { requireRole } from "../middleware/auth.js";
-import { broadcast } from "../events.js";
+import prisma from "../db/prisma";
+import { requireRole } from "../middleware/auth";
+import { broadcast } from "../events";
 
 const router = Router();
 
@@ -69,7 +69,7 @@ router.put("/passwords", requireRole("manager"), async (req, res) => {
     }
 
     // Import hashPassword inline to avoid circular dep issues
-    const { hashPassword } = await import("../middleware/auth.js");
+    const { hashPassword } = await import("../middleware/auth");
     const hash = await hashPassword(password);
 
     await prisma.password.update({

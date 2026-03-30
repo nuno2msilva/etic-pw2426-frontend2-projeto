@@ -186,7 +186,7 @@ export function requireRole(...roles: AuthRole[]) {
     // This ensures live boot-out when admin disables account or resets password.
     if (req.auth.role !== "customer" && req.auth.userId) {
       try {
-        const prisma = (await import("../db/prisma.js")).default;
+        const prisma = (await import("../db/prisma")).default;
         const user = await prisma.user.findUnique({
           where: { id: req.auth.userId },
           select: { isActive: true, passwordResetRequired: true, passwordPreview: true, permission: true },
@@ -288,7 +288,7 @@ export async function requireTable(req: Request, res: Response, next: NextFuncti
   }
 
   // Check pinVersion — if the manager randomized the PIN, the session is invalid
-  const prisma = (await import("../db/prisma.js")).default;
+  const prisma = (await import("../db/prisma")).default;
   const table = await prisma.tableConfig.findUnique({
     where: { id: requestedTableId },
     select: { pinVersion: true, isActive: true },

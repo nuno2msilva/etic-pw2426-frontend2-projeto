@@ -9,16 +9,16 @@ import "dotenv/config";
 import express from "express";
 import cookieParser from "cookie-parser";
 
-import { authenticate } from "./middleware/auth.js";
-import { sseHandler, getPresence } from "./events.js";
-import prisma from "./db/prisma.js";
-import authRoutes from "./routes/auth.js";
-import usersRoutes from "./routes/users.js";
-import categoriesRoutes from "./routes/categories.js";
-import menuRoutes from "./routes/menu.js";
-import tablesRoutes from "./routes/tables.js";
-import ordersRoutes from "./routes/orders.js";
-import settingsRoutes from "./routes/settings.js";
+import { authenticate } from "./middleware/auth";
+import { sseHandler, getPresence } from "./events";
+import prisma from "./db/prisma";
+import authRoutes from "./routes/auth";
+import usersRoutes from "./routes/users";
+import categoriesRoutes from "./routes/categories";
+import menuRoutes from "./routes/menu";
+import tablesRoutes from "./routes/tables";
+import ordersRoutes from "./routes/orders";
+import settingsRoutes from "./routes/settings";
 
 const app = express();
 const PORT = Number(process.env.PORT ?? 3001);

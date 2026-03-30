@@ -9,9 +9,9 @@
  */
 
 import { Router } from "express";
-import prisma from "../db/prisma.js";
-import { issueToken, clearToken, verifyPassword, hashPassword, authenticate } from "../middleware/auth.js";
-import { disconnectCustomerConnectionsByJti } from "../events.js";
+import prisma from "../db/prisma";
+import { issueToken, clearToken, verifyPassword, hashPassword, authenticate } from "../middleware/auth";
+import { disconnectCustomerConnectionsByJti } from "../events";
 
 const router = Router();
 

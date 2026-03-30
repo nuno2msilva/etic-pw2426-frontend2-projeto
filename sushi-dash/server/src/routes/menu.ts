@@ -9,9 +9,9 @@
  */
 
 import { Router } from "express";
-import prisma from "../db/prisma.js";
-import { requireRole } from "../middleware/auth.js";
-import { broadcast } from "../events.js";
+import prisma from "../db/prisma";
+import { requireRole } from "../middleware/auth";
+import { broadcast } from "../events";
 
 const router = Router();
 

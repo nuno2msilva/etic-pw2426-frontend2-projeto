@@ -9,10 +9,10 @@
 
 import "dotenv/config";
 import bcrypt from "bcryptjs";
-import prisma from "./prisma.js";
+import prisma from "./prisma";
 
 // Import default data from the frontend source (dynamic import for cross-package-boundary compatibility)
-const { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } = await import("../../../src/data/seedData.js");
+const { DEFAULT_MENU, DEFAULT_TABLES, DEFAULT_SETTINGS } = await import("../../../src/data/seedData");
 
 /** Generate a random 4-digit PIN */
 function generatePin(): string {
