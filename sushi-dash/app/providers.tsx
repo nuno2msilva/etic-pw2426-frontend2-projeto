@@ -3,8 +3,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AuthProvider } from "@/context/AuthContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import AppHeader from "@/components/app/AppHeader";
 import QueryRuntimeProvider from "@/components/app/QueryRuntimeProvider";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
@@ -61,10 +62,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
 }
 
 function ProvidersShell({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
+  const pathname = usePathname();
+  const { authenticatedTableId, staffSession } = useAuth();
+  const hasSession = Boolean(authenticatedTableId || staffSession);
+  const shouldMountLiveUpdates = hasSession;
+  const shouldMountToaster = showToaster && (hasSession || pathname !== "/");
+
   const appContent = (
     <>
       {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
-      <LiveUpdatesClient />
+      {shouldMountLiveUpdates ? <LiveUpdatesClient /> : null}
       {ENABLE_CRT_EFFECT ? (
         <CRTScreen enabled>
           <div className="h-dvh flex flex-col overflow-hidden">
@@ -83,7 +90,7 @@ function ProvidersShell({ children, showToaster }: { children: React.ReactNode; 
 
   return (
     <>
-      {showToaster ? <Sonner /> : null}
+      {shouldMountToaster ? <Sonner /> : null}
       {appContent}
     </>
   );
