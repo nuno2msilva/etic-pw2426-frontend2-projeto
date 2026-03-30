@@ -50,7 +50,7 @@ export default function MenuOrderingView({
           </h1>
           <button
             onClick={() => flow.setShowProgress(true)}
-            className="inline-flex items-center justify-center gap-1 rounded-lg border border-border bg-card px-2 py-2 sm:py-2.5 text-[10px] sm:text-xs shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-all active:scale-[0.98] whitespace-nowrap shrink-0 h-[2.5rem] sm:h-auto"
+            className="inline-flex items-center justify-center gap-1 rounded-lg border border-border bg-card px-2 py-2 sm:py-2.5 text-[10px] sm:text-xs shadow-sm hover:shadow-md hover:border-primary/40 hover:bg-accent/40 transition-colors transition-shadow duration-200 active:scale-[0.98] whitespace-nowrap shrink-0 h-[2.5rem] sm:h-auto"
             aria-label="View order progress"
           >
             <span className="text-xs sm:text-sm leading-none" aria-hidden="true">{atLimit ? "⚠️" : "📋"}</span>
@@ -105,7 +105,7 @@ export default function MenuOrderingView({
             onClear={showClearCart && flow.totalItems > 0 ? flow.handleClearCart : undefined}
             totalItems={flow.totalItems}
             maxItems={settings.maxItemsPerOrder}
-            useFloatingDock={true}
+            useFloatingDock={false}
           />
         </div>
       </main>

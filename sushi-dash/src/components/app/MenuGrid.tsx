@@ -34,7 +34,7 @@ const MenuGrid = ({
         return (
           <div
             key={item.id}
-            className={`relative rounded-xl border-2 bg-card p-3 min-h-[120px] transition-all hover:shadow-md ${
+            className={`relative rounded-xl border-2 bg-card p-3 min-h-[120px] transition-colors transition-shadow duration-200 hover:shadow-md ${
               !available
                 ? "border-border opacity-50 grayscale"
                 : qty > 0 ? "border-primary shadow-sm" : "border-border"

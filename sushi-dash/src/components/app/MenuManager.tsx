@@ -425,7 +425,7 @@ const MenuManager = ({
                     type="button"
                     onClick={() => setNewItemEmoji(e)}
                     className={cn(
-                      "w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all",
+                      "w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-transform transition-colors duration-150",
                       newItemEmoji === e
                         ? "bg-primary text-primary-foreground scale-110 ring-2 ring-primary"
                         : "bg-secondary hover:bg-muted"
@@ -490,7 +490,7 @@ const MenuManager = ({
                     type="button"
                     onClick={() => setEditEmoji(e)}
                     className={cn(
-                      "w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all",
+                      "w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-transform transition-colors duration-150",
                       editEmoji === e
                         ? "bg-primary text-primary-foreground scale-110 ring-2 ring-primary"
                         : "bg-secondary hover:bg-muted"

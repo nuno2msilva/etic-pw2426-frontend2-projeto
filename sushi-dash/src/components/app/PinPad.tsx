@@ -121,7 +121,7 @@ export function PinPad({ isOpen, tableLabel, onSubmit, onClose }: PinPadProps) {
             <div
               key={i}
               className={cn(
-                "w-4 h-4 rounded-full border-2 transition-all duration-150",
+                "w-4 h-4 rounded-full border-2 transition-transform transition-colors duration-150",
                 i < digits.length
                   ? `${dotColor} border-transparent scale-110`
                   : "border-muted-foreground/40",

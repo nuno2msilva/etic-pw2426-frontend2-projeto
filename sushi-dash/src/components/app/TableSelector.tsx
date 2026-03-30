@@ -24,7 +24,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
     <main aria-label="Table selection" className="h-full flex flex-col overflow-hidden">
       <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start px-4 pt-8">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center animate-in fade-in-0 slide-in-from-bottom-1 duration-300">
+          <div className="flex items-center justify-center">
             <p className="type-body-muted">
               All-you-can-eat! Select your table to start ordering.
             </p>
@@ -54,7 +54,7 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
-            {tables.map((table, index) => {
+            {tables.map((table) => {
               const users = presence[Number(table.id)] ?? 0;
               const isInUse = users > 0;
               return (
@@ -64,12 +64,11 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
                   onClick={() => onSelectTable(table)}
                   className={cn(
                     cardVariants({ variant: "item" }),
-                    "p-6 text-center relative transition-all animate-in fade-in-0 slide-in-from-bottom-2 duration-300",
+                    "p-6 text-center relative transition-colors transition-shadow duration-200",
                     isInUse
                       ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.7),0_0_26px_rgba(239,68,68,0.45)]"
                       : "hover:border-primary hover:shadow-lg",
                   )}
-                  style={{ animationDelay: `${Math.min(index * 30, 200)}ms` }}
                 >
                   {isInUse && (
                     <>
