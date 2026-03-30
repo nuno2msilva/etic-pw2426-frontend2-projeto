@@ -29,6 +29,25 @@ const nextConfig: NextConfig = {
       templateLiteral: true,
     };
 
+      // Optimize chunk splitting to isolate React Query into lazy-loaded chunk
+      // This prevents React Query from bloating the landing page bundle
+      if (!isServer) {
+        config.optimization.splitChunks = {
+          ...config.optimization.splitChunks,
+          cacheGroups: {
+            ...config.optimization.splitChunks?.cacheGroups,
+            // Isolate React Query into a separate chunk loaded only when needed
+            reactQuery: {
+              test: /[\\/]node_modules[\\/](@tanstack[\\/]react-query)[\\/]/,
+              name: "react-query",
+              priority: 10,
+              reuseExistingChunk: true,
+              enforce: true,
+            },
+          },
+        };
+      }
+
     return config;
   },
 
