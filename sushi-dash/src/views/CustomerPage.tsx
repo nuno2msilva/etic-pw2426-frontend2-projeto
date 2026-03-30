@@ -19,9 +19,9 @@ const PinPad = dynamic(() => import("@/components/app/PinPad").then((mod) => mod
 const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal"), {
   ssr: false,
 });
-const CustomerMenuStep = dynamic(() => import("@/views/CustomerMenuStep"));
-const AppProvider = dynamic(() => import("@/context/AppContext").then((mod) => mod.AppProvider));
-const QueryRuntimeProvider = dynamic(() => import("@/components/app/QueryRuntimeProvider"));
+const DeferredCustomerMenu = dynamic(() => import("@/views/DeferredCustomerMenu"), {
+  ssr: false,
+});
 
 type Step = "table" | "menu";
 
@@ -194,11 +194,7 @@ const CustomerPage = () => {
 
       {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
       {step === "menu" && liveTable && (
-        <QueryRuntimeProvider>
-          <AppProvider>
-            <CustomerMenuStep table={liveTable} />
-          </AppProvider>
-        </QueryRuntimeProvider>
+        <DeferredCustomerMenu table={liveTable} />
       )}
 
       {/* Modals */}
