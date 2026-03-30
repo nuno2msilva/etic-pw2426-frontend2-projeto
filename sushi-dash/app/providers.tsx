@@ -1,4 +1,4 @@
-// Providers — Client-side context tree: QueryClient → Tooltip → Sonner → Auth → SSE → App → CRT.
+// Providers — Client-side context tree: Auth → QueryClient (conditional) → Tooltip → Sonner → SSE → App → CRT.
 
 "use client";
 
@@ -34,6 +34,16 @@ export function resolvePresenceTableId(
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryRuntimeProvider>
+      <AuthProvider>
+        <ProvidersShell>{children}</ProvidersShell>
+      </AuthProvider>
+    </QueryRuntimeProvider>
+  );
+}
+
+function ProvidersShell({ children }: { children: React.ReactNode }) {
   const [showToaster, setShowToaster] = useState(false);
 
   useEffect(() => {
@@ -56,15 +66,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <QueryRuntimeProvider>
-      <AuthProvider>
-        <ProvidersShell showToaster={showToaster}>{children}</ProvidersShell>
-      </AuthProvider>
-    </QueryRuntimeProvider>
+    <ProviderContent showToaster={showToaster}>{children}</ProviderContent>
   );
 }
 
-function ProvidersShell({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
+function ProviderContent({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
   const pathname = usePathname();
   const { authenticatedTableId, staffSession } = useAuth();
   const hasSession = Boolean(authenticatedTableId || staffSession);

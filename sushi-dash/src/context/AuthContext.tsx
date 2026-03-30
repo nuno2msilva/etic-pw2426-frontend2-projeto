@@ -1,7 +1,7 @@
 // AuthContext — dual-session auth (customer PIN + staff password) with role-based access control.
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useOptionalQueryClient } from '@/hooks/useOptionalQueryClient';
 import { API_BASE } from '@/lib/config';
 import {
   CUSTOMER_SESSION_GRACE_PERIOD_MS,
@@ -105,10 +105,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [skipPasswordResetReminder, setSkipPasswordResetReminder] = useState(false);
     const [passwordChangeReminderDismissedThisSession, setPasswordChangeReminderDismissedThisSession] = useState(false);
   const [isViewingTableSelection, setIsViewingTableSelection] = useState(false);
-  const queryClient = useQueryClient();
+  
+  // QueryClient is optional - only available when wrapped in QueryClientProvider
+  const queryClient = useOptionalQueryClient();
 
   const invalidateAllCaches = useCallback(() => {
-    queryClient.invalidateQueries();
+    if (queryClient) {
+      queryClient.invalidateQueries();
+    }
   }, [queryClient]);
 
   const sendLogoutRequest = useCallback((role: 'customer' | AuthRole, keepalive = false) => {
@@ -430,7 +434,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuthSession('customer');
     localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
     setCustomerSession(null);
-    queryClient.setQueryData(['table-presence'], {});
+    if (queryClient) queryClient.setQueryData(['table-presence'], {});
     await sendLogoutRequest('customer');
     invalidateAllCaches();
   }, [invalidateAllCaches, queryClient, sendLogoutRequest]);
@@ -438,7 +442,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Logout staff session */
   const logoutStaff = useCallback(async () => {
     userIsLoggedOffFromStaffSession();
-    queryClient.setQueryData(['table-presence'], {});
+    if (queryClient) queryClient.setQueryData(['table-presence'], {});
     await sendLogoutRequest(staffSession?.role ?? 'manager');
     invalidateAllCaches();
   }, [invalidateAllCaches, queryClient, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
@@ -446,7 +450,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Signal that customer is leaving the table. Closes SSE without logout (preserves session for 5-min grace). */
   const goToTableSelection = useCallback(() => {
     setIsViewingTableSelection(true);
-    queryClient.setQueryData(['table-presence'], {});
+    if (queryClient) queryClient.setQueryData(['table-presence'], {});
   }, [queryClient]);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
