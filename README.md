@@ -192,7 +192,6 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 - **JWT** — httpOnly cookie authentication with jti-based session identity
 - **Exponential Backoff** — Intelligent SSE reconnection (1s → 2s → 4s... capped at 30s)
 - **Idle Timeout** — Automatic disconnection after 30 minutes without orders
-- **dotenv** — Environment configuration
 
 ### Real-Time Architecture
 - **SSE Keep-Alive**: 15 seconds (reduced from 30s for Vercel proxy tolerance)
