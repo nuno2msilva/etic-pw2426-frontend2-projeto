@@ -21,6 +21,7 @@ const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal")
 });
 const CustomerMenuStep = dynamic(() => import("@/views/CustomerMenuStep"));
 const AppProvider = dynamic(() => import("@/context/AppContext").then((mod) => mod.AppProvider));
+const QueryRuntimeProvider = dynamic(() => import("@/components/app/QueryRuntimeProvider"));
 
 type Step = "table" | "menu";
 
@@ -193,9 +194,11 @@ const CustomerPage = () => {
 
       {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
       {step === "menu" && liveTable && (
-        <AppProvider>
-          <CustomerMenuStep table={liveTable} />
-        </AppProvider>
+        <QueryRuntimeProvider>
+          <AppProvider>
+            <CustomerMenuStep table={liveTable} />
+          </AppProvider>
+        </QueryRuntimeProvider>
       )}
 
       {/* Modals */}

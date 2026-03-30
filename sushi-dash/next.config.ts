@@ -2,9 +2,13 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   experimental: {
+    inlineCss: true,
     optimizeCss: true,
     optimizePackageImports: ["lucide-react", "sonner"],
   },
+
+  // Allow Turbopack builds in Next 16 (webpack config kept for compatibility fallback).
+  turbopack: {},
 
   // Configure webpack to target ES2020+ and eliminate polyfills
   // Mobile Lighthouse requires this to avoid 12 KiB of polyfill overhead
@@ -13,6 +17,16 @@ const nextConfig: NextConfig = {
     config.resolve.extensionAlias = {
       ".js": [".ts", ".tsx", ".js", ".jsx"],
     };
+
+    // Hard-exclude Next devtool internals from production bundles.
+    // Next.js 16 may include dev-overlay modules in root client chunks; these are dead in production.
+    if (process.env.NODE_ENV === "production") {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        "next/dist/next-devtools": false,
+        "next/dist/client/dev": false,
+      };
+    }
 
     // Set modern output targets via webpack output environment
     // This prevents SWC from transpiling to older targets and adding polyfills

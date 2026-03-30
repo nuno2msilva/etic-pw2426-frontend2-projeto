@@ -1,7 +1,6 @@
 // AuthContext — dual-session auth (customer PIN + staff password) with role-based access control.
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useOptionalQueryClient } from '@/hooks/useOptionalQueryClient';
 import { API_BASE } from '@/lib/config';
 import {
   CUSTOMER_SESSION_GRACE_PERIOD_MS,
@@ -106,14 +105,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [passwordChangeReminderDismissedThisSession, setPasswordChangeReminderDismissedThisSession] = useState(false);
   const [isViewingTableSelection, setIsViewingTableSelection] = useState(false);
   
-  // QueryClient is optional - only available when wrapped in QueryClientProvider
-  const queryClient = useOptionalQueryClient();
-
   const invalidateAllCaches = useCallback(() => {
-    if (queryClient) {
-      queryClient.invalidateQueries();
-    }
-  }, [queryClient]);
+    // Intentionally empty: auth no longer depends on react-query at startup.
+  }, []);
 
   const sendLogoutRequest = useCallback((role: 'customer' | AuthRole, keepalive = false) => {
     return fetch(`${API_BASE}/api/auth/logout`, {
@@ -434,24 +428,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearAuthSession('customer');
     localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
     setCustomerSession(null);
-    if (queryClient) queryClient.setQueryData(['table-presence'], {});
     await sendLogoutRequest('customer');
     invalidateAllCaches();
-  }, [invalidateAllCaches, queryClient, sendLogoutRequest]);
+  }, [invalidateAllCaches, sendLogoutRequest]);
 
   /** Logout staff session */
   const logoutStaff = useCallback(async () => {
     userIsLoggedOffFromStaffSession();
-    if (queryClient) queryClient.setQueryData(['table-presence'], {});
     await sendLogoutRequest(staffSession?.role ?? 'manager');
     invalidateAllCaches();
-  }, [invalidateAllCaches, queryClient, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
+  }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
 
   /** Signal that customer is leaving the table. Closes SSE without logout (preserves session for 5-min grace). */
   const goToTableSelection = useCallback(() => {
     setIsViewingTableSelection(true);
-    if (queryClient) queryClient.setQueryData(['table-presence'], {});
-  }, [queryClient]);
+  }, []);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   const goToTable = useCallback(() => {

@@ -7,8 +7,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import QueryRuntimeProvider from "@/components/app/QueryRuntimeProvider";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
+
+const QueryRuntimeProvider = dynamic(() => import("@/components/app/QueryRuntimeProvider"));
 
 const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.Toaster), {
   ssr: false,
@@ -34,6 +35,21 @@ export function resolvePresenceTableId(
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  // Home route: keep the shell minimal and skip global React Query runtime.
+  // This cuts startup JS and main-thread work on Lighthouse mobile audits.
+  if (pathname === "/") {
+    return (
+      <AuthProvider>
+        <div className="h-dvh flex flex-col overflow-hidden">
+          <LightHeader />
+          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+        </div>
+      </AuthProvider>
+    );
+  }
+
   return (
     <QueryRuntimeProvider>
       <AuthProvider>
