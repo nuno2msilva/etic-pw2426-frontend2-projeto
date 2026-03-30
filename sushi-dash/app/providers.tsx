@@ -3,10 +3,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import AppHeader from "@/components/app/AppHeader";
 import QueryRuntimeProvider from "@/components/app/QueryRuntimeProvider";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
 
@@ -20,6 +20,9 @@ const CRTScreen = dynamic(() => import("@/components/app/CRTScreen"), {
   ssr: false,
 });
 const LiveUpdatesClient = dynamic(() => import("@/components/app/LiveUpdatesClient"), {
+  ssr: false,
+});
+const AppHeader = dynamic(() => import("@/components/app/AppHeader"), {
   ssr: false,
 });
 
@@ -65,6 +68,7 @@ function ProvidersShell({ children, showToaster }: { children: React.ReactNode; 
   const pathname = usePathname();
   const { authenticatedTableId, staffSession } = useAuth();
   const hasSession = Boolean(authenticatedTableId || staffSession);
+  const useLightHeader = pathname === "/" && !hasSession;
   const shouldMountLiveUpdates = hasSession;
   const shouldMountToaster = showToaster && (hasSession || pathname !== "/");
 
@@ -75,13 +79,13 @@ function ProvidersShell({ children, showToaster }: { children: React.ReactNode; 
       {ENABLE_CRT_EFFECT ? (
         <CRTScreen enabled>
           <div className="h-dvh flex flex-col overflow-hidden">
-            <AppHeader />
+            {useLightHeader ? <LightHeader /> : <AppHeader />}
             <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
           </div>
         </CRTScreen>
       ) : (
         <div className="h-dvh flex flex-col overflow-hidden">
-          <AppHeader />
+          {useLightHeader ? <LightHeader /> : <AppHeader />}
           <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
         </div>
       )}
@@ -93,5 +97,20 @@ function ProvidersShell({ children, showToaster }: { children: React.ReactNode; 
       {shouldMountToaster ? <Sonner /> : null}
       {appContent}
     </>
+  );
+}
+
+function LightHeader() {
+  return (
+    <header className="sticky top-0 z-50 border-b bg-card/95">
+      <div className="max-w-5xl mx-auto px-4 h-16 flex items-center">
+        <Link href="/" className="flex items-center gap-2">
+          <span className="text-2xl">🍣</span>
+          <span className="type-title">
+            Sushi <span className="text-primary">Dash</span>
+          </span>
+        </Link>
+      </div>
+    </header>
   );
 }

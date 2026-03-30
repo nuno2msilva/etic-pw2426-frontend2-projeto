@@ -181,6 +181,7 @@ const CustomerPage = () => {
       {step === "table" && (
         <TableSelector
           tables={tables}
+          isLoading={isLoadingTables}
           loadError={!isLoadingTables ? tablesError : null}
           onRetryLoad={() => {
             void fetchTables();

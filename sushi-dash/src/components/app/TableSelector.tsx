@@ -8,12 +8,20 @@ interface TableSelectorProps {
   tables: Table[];
   onSelectTable: (table: Table) => void;
   onStaffLogin: () => void;
+  isLoading?: boolean;
   loadError?: string | null;
   onRetryLoad?: () => void;
 }
 
-const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, onRetryLoad }: TableSelectorProps) => {
-  const showEmptyState = Boolean(loadError) || tables.length === 0;
+const TableSelector = ({
+  tables,
+  onSelectTable,
+  onStaffLogin,
+  isLoading = false,
+  loadError = null,
+  onRetryLoad,
+}: TableSelectorProps) => {
+  const showEmptyState = !isLoading && (Boolean(loadError) || tables.length === 0);
 
   return (
     <main aria-label="Table selection" className="h-full flex flex-col overflow-hidden">
@@ -26,7 +34,19 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
           </div>
         </div>
 
-        {showEmptyState ? (
+        {isLoading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto w-full" aria-hidden="true">
+            {Array.from({ length: 6 }).map((_, index) => (
+              <div
+                key={`table-skeleton-${index}`}
+                className="rounded-xl border-2 border-border/70 bg-card/70 p-6 text-center min-h-[120px]"
+              >
+                <span className="text-3xl block mb-2 opacity-40">🪑</span>
+                <span className="type-subtitle text-card-foreground/40">Loading...</span>
+              </div>
+            ))}
+          </div>
+        ) : showEmptyState ? (
           <div className="flex items-center justify-center w-full flex-1">
             <div className="text-center px-6">
               <span className="text-5xl block mb-4">🪑</span>
