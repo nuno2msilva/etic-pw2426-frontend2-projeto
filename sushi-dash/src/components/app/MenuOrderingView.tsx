@@ -98,7 +98,7 @@ export default function MenuOrderingView({
           </div>
         </div>
 
-        <div className="shrink-0 mt-2 border-t border-border/70 bg-background/95 backdrop-blur-sm px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] sm:pb-1">
+        <div className="shrink-0 mt-2 border-t border-border/70 bg-background/95 px-1 pt-2 pb-[calc(env(safe-area-inset-bottom)+0.25rem)] sm:pb-1">
           <CartSummaryBanner
             summary={flow.cartSummary}
             onReview={flow.totalItems > 0 ? () => flow.setShowConfirm(true) : undefined}

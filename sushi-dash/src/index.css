@@ -156,30 +156,5 @@
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
-
-  /* Active-table wave glow used in table selector occupancy state. */
-  .table-on-wave {
-    animation: table-presence-wave 1.8s ease-in-out infinite;
-    will-change: transform, opacity;
-  }
-
-  .table-on-wave-delay {
-    animation-delay: 0.65s;
-  }
-}
-
-@keyframes table-presence-wave {
-  0% {
-    transform: scale(1);
-    opacity: 0.75;
-  }
-  60% {
-    transform: scale(1.035);
-    opacity: 0.28;
-  }
-  100% {
-    transform: scale(1.05);
-    opacity: 0.08;
-  }
 }
 

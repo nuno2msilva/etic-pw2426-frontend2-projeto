@@ -70,7 +70,7 @@ const CartSummaryBanner = ({
     <Card
       variant="item"
       className={[
-        'bg-secondary/95 backdrop-blur-sm text-foreground w-full',
+        'bg-secondary/95 text-foreground w-full',
         isAtBottom ? 'shadow-2xl' : 'shadow-sm',
         phase === 'stretching'
           ? 'transition-[transform,opacity] duration-200 ease-in translate-y-4 opacity-80'

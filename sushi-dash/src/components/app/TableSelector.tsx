@@ -66,20 +66,12 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
                     cardVariants({ variant: "item" }),
                     "p-6 text-center relative transition-colors transition-shadow duration-200",
                     isInUse
-                      ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.7),0_0_26px_rgba(239,68,68,0.45)]"
-                      : "hover:border-primary hover:shadow-lg",
+                      ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.45)]"
+                      : "hover:border-primary hover:shadow-sm",
                   )}
                 >
                   {isInUse && (
                     <>
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute -inset-0.5 rounded-2xl border-2 border-red-500/70 table-on-wave"
-                      />
-                      <span
-                        aria-hidden="true"
-                        className="pointer-events-none absolute -inset-1 rounded-2xl border border-red-400/45 table-on-wave table-on-wave-delay"
-                      />
                       <Badge
                         variant="secondary"
                         className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 border-red-300"

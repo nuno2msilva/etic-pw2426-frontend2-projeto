@@ -61,7 +61,7 @@ const AppHeader = () => {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b bg-card/80 backdrop-blur-md">
+      <header className="sticky top-0 z-50 border-b bg-card/95">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href={logoHref} className="flex items-center gap-2">
             <span className="text-2xl">🍣</span>
