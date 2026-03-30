@@ -5,7 +5,6 @@
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
 import { API_BASE } from "@/lib/config";
 import { notifySuccess } from "@/lib/notify";
 import { UI_TEXT } from "@/lib/ui-text";
@@ -33,28 +32,9 @@ const CustomerPage = () => {
   const skipAutoRestore = useRef(selectParam === "true");
 
   const { isInitialized, customerSession, loginAsCustomer, logout, goToTableSelection, goToTable } = useAuth();
-
-  const tablesQuery = useQuery<Table[]>({
-    queryKey: ["tables"],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/api/tables`, { credentials: "include" });
-      if (!res.ok) {
-        throw new Error("Failed to fetch tables");
-      }
-      const raw = (await res.json()) as Array<Record<string, unknown>>;
-      return raw.map((table) => ({
-        ...(table as Omit<Table, "id">),
-        id: String(table.id),
-      }));
-    },
-    staleTime: 1000 * 60 * 15,
-    refetchInterval: false,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-  });
-
-  const tables = tablesQuery.data ?? [];
-  const tablesError = tablesQuery.error instanceof Error ? tablesQuery.error.message : null;
+  const [tables, setTables] = useState<Table[]>([]);
+  const [tablesError, setTablesError] = useState<string | null>(null);
+  const [isLoadingTables, setIsLoadingTables] = useState(true);
 
   const isCustomerAuthenticated = customerSession !== null;
 
@@ -64,6 +44,32 @@ const CustomerPage = () => {
   const [pendingTable, setPendingTable] = useState<Table | null>(null);
   const [showPinPad, setShowPinPad] = useState(false);
   const [showStaffLogin, setShowStaffLogin] = useState(false);
+
+  const fetchTables = async () => {
+    setIsLoadingTables(true);
+    setTablesError(null);
+    try {
+      const res = await fetch(`${API_BASE}/api/tables`, { credentials: "include" });
+      if (!res.ok) {
+        throw new Error("Failed to fetch tables");
+      }
+      const raw = (await res.json()) as Array<Record<string, unknown>>;
+      const mapped = raw.map((table) => ({
+        ...(table as Omit<Table, "id">),
+        id: String(table.id),
+      }));
+      setTables(mapped);
+    } catch (error) {
+      setTablesError(error instanceof Error ? error.message : "Failed to fetch tables");
+      setTables([]);
+    } finally {
+      setIsLoadingTables(false);
+    }
+  };
+
+  useEffect(() => {
+    void fetchTables();
+  }, []);
 
   // Derive the live table from the tables array so SSE name changes propagate
   const liveTable = selectedTable
@@ -175,9 +181,9 @@ const CustomerPage = () => {
       {step === "table" && (
         <TableSelector
           tables={tables}
-          loadError={tablesError}
+          loadError={!isLoadingTables ? tablesError : null}
           onRetryLoad={() => {
-            void tablesQuery.refetch();
+            void fetchTables();
           }}
           onSelectTable={handleSelectTable}
           onStaffLogin={() => setShowStaffLogin(true)}

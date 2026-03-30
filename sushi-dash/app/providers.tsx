@@ -2,11 +2,11 @@
 
 "use client";
 
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { AuthProvider } from "@/context/AuthContext";
 import AppHeader from "@/components/app/AppHeader";
+import QueryRuntimeProvider from "@/components/app/QueryRuntimeProvider";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
 
 const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.Toaster), {
@@ -22,18 +22,6 @@ const LiveUpdatesClient = dynamic(() => import("@/components/app/LiveUpdatesClie
   ssr: false,
 });
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 30 * 1000,
-      gcTime: 5 * 60 * 1000,
-      refetchOnWindowFocus: false,
-      refetchOnReconnect: false,
-      retry: 1,
-    },
-  },
-});
-
 export function resolvePresenceTableId(
   authenticatedTableId: string | null,
   hasStaffSession: boolean,
@@ -43,7 +31,6 @@ export function resolvePresenceTableId(
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [showToaster, setShowToaster] = useState(false);
-  const [enableLiveUpdates, setEnableLiveUpdates] = useState(false);
 
   useEffect(() => {
     const idleWindow = window as Window & {
@@ -64,45 +51,40 @@ export function Providers({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeoutId);
   }, []);
 
-  useEffect(() => {
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (cb: () => void) => number;
-      cancelIdleCallback?: (id: number) => void;
-    };
-
-    if (typeof idleWindow.requestIdleCallback === "function") {
-      const idleId = idleWindow.requestIdleCallback(() => setEnableLiveUpdates(true));
-      return () => {
-        if (typeof idleWindow.cancelIdleCallback === "function") {
-          idleWindow.cancelIdleCallback(idleId);
-        }
-      };
-    }
-
-    const timeoutId = window.setTimeout(() => setEnableLiveUpdates(true), 1500);
-    return () => window.clearTimeout(timeoutId);
-  }, []);
-
   return (
-    <QueryClientProvider client={queryClient}>
-      {showToaster ? <Sonner /> : null}
+    <QueryRuntimeProvider>
       <AuthProvider>
-        {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
-        {enableLiveUpdates ? <LiveUpdatesClient /> : null}
-        {ENABLE_CRT_EFFECT ? (
-          <CRTScreen enabled>
-            <div className="h-dvh flex flex-col overflow-hidden">
-              <AppHeader />
-              <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-            </div>
-          </CRTScreen>
-        ) : (
+        <ProvidersShell showToaster={showToaster}>{children}</ProvidersShell>
+      </AuthProvider>
+    </QueryRuntimeProvider>
+  );
+}
+
+function ProvidersShell({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
+  const appContent = (
+    <>
+      {ENABLE_WEB_VITALS_REPORTER ? <WebVitalsReporter /> : null}
+      <LiveUpdatesClient />
+      {ENABLE_CRT_EFFECT ? (
+        <CRTScreen enabled>
           <div className="h-dvh flex flex-col overflow-hidden">
             <AppHeader />
             <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
           </div>
-        )}
-      </AuthProvider>
-    </QueryClientProvider>
+        </CRTScreen>
+      ) : (
+        <div className="h-dvh flex flex-col overflow-hidden">
+          <AppHeader />
+          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+        </div>
+      )}
+    </>
+  );
+
+  return (
+    <>
+      {showToaster ? <Sonner /> : null}
+      {appContent}
+    </>
   );
 }
