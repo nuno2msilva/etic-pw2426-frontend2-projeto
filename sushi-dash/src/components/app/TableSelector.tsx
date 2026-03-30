@@ -2,9 +2,7 @@
 
 import type { Table } from "@/types/models";
 import { cardVariants } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { useTablePresence } from "@/hooks/useTablePresence";
 
 interface TableSelectorProps {
   tables: Table[];
@@ -15,9 +13,6 @@ interface TableSelectorProps {
 }
 
 const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, onRetryLoad }: TableSelectorProps) => {
-  // Subscribe reactively — re-renders when SSE pushes new presence data
-  const { data: presence = {} } = useTablePresence();
-
   const showEmptyState = Boolean(loadError) || tables.length === 0;
 
   return (
@@ -55,8 +50,6 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
             {tables.map((table) => {
-              const users = presence[Number(table.id)] ?? 0;
-              const isInUse = users > 0;
               return (
                 <button
                   key={table.id}
@@ -65,21 +58,9 @@ const TableSelector = ({ tables, onSelectTable, onStaffLogin, loadError = null, 
                   className={cn(
                     cardVariants({ variant: "item" }),
                     "p-6 text-center relative transition-colors transition-shadow duration-200",
-                    isInUse
-                      ? "border-red-500 bg-red-50/60 dark:bg-red-950/20 shadow-[0_0_0_1px_rgba(239,68,68,0.45)]"
-                      : "hover:border-primary hover:shadow-sm",
+                    "hover:border-primary hover:shadow-sm",
                   )}
                 >
-                  {isInUse && (
-                    <>
-                      <Badge
-                        variant="secondary"
-                        className="absolute top-2 right-2 text-[10px] px-1.5 py-0.5 bg-red-100 text-red-700 border-red-300"
-                      >
-                        ON
-                      </Badge>
-                    </>
-                  )}
                   <span className="text-3xl block mb-2">🪑</span>
                   <span className="type-subtitle text-card-foreground">{table.label}</span>
                 </button>

@@ -17,10 +17,8 @@
   },
   "browserslist": {
     "production": [
-      "chrome >= 110",
-      "edge >= 110",
-      "firefox >= 110",
-      "safari >= 16"
+      "last 1 Chrome version",
+      "last 1 Edge version"
     ],
     "development": [
       "last 1 chrome version",

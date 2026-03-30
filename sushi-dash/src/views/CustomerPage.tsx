@@ -14,8 +14,12 @@ import { useAuth } from "@/context/AuthContext";
 import TableSelector from "@/components/app/TableSelector";
 import type { Table } from "@/types/models";
 
-const PinPad = dynamic(() => import("@/components/app/PinPad").then((mod) => mod.PinPad));
-const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal"));
+const PinPad = dynamic(() => import("@/components/app/PinPad").then((mod) => mod.PinPad), {
+  ssr: false,
+});
+const StaffLoginModal = dynamic(() => import("@/components/app/StaffLoginModal"), {
+  ssr: false,
+});
 const CustomerMenuStep = dynamic(() => import("@/views/CustomerMenuStep"));
 const AppProvider = dynamic(() => import("@/context/AppContext").then((mod) => mod.AppProvider));
 
@@ -188,17 +192,21 @@ const CustomerPage = () => {
       )}
 
       {/* Modals */}
-      <PinPad
-        isOpen={showPinPad}
-        tableLabel={pendingTable?.label || "Table"}
-        onSubmit={handlePinSubmit}
-        onClose={() => {
-          setShowPinPad(false);
-          setPendingTable(null);
-        }}
-      />
+      {showPinPad ? (
+        <PinPad
+          isOpen={showPinPad}
+          tableLabel={pendingTable?.label || "Table"}
+          onSubmit={handlePinSubmit}
+          onClose={() => {
+            setShowPinPad(false);
+            setPendingTable(null);
+          }}
+        />
+      ) : null}
 
-      <StaffLoginModal isOpen={showStaffLogin} onClose={() => setShowStaffLogin(false)} />
+      {showStaffLogin ? (
+        <StaffLoginModal isOpen={showStaffLogin} onClose={() => setShowStaffLogin(false)} />
+      ) : null}
     </>
   );
 };
