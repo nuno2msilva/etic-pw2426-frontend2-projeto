@@ -30,11 +30,11 @@ export default function CRTScreen({ children, enabled = true }: CRTScreenProps) 
   }
 
   return (
-    <div className="crt">
-      <div className={`crt-screen ${isInitialMount ? "crt-boot" : ""}`}>
+    <div className={`crt ${isInitialMount ? "crt-boot" : ""}`}>
+      <div className="crt-screen">
         {children}
       </div>
-      <div className={`crt-overlay ${isInitialMount ? "crt-boot" : ""}`}>AV1</div>
+      <div className="crt-overlay">AV1</div>
     </div>
   );
 }

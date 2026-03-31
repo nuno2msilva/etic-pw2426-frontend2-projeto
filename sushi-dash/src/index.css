@@ -122,6 +122,11 @@
   }
 
   .perf-max .crt::after {
+    animation: crt-scanline-roll 8s linear infinite !important;
+  }
+
+  /* Band flicker only during boot sequence */
+  .perf-max .crt.crt-boot::after {
     animation: crt-scanline-roll 8s linear infinite, crt-band-flicker 0.12s steps(2) infinite !important;
   }
 
@@ -129,8 +134,8 @@
     animation: unset !important;
   }
 
-  /* Boot animations only on initial mount */
-  .perf-max .crt > .crt-screen.crt-boot {
+  /* Boot animation for screen content only on initial mount */
+  .perf-max .crt.crt-boot > .crt-screen {
     animation: crt-turn-on 4s linear !important;
     animation-fill-mode: forwards;
   }
@@ -140,7 +145,7 @@
   }
 
   /* Boot animation for AV1 overlay only on initial mount */
-  .perf-max .crt > .crt-overlay.crt-boot {
+  .perf-max .crt.crt-boot > .crt-overlay {
     animation: crt-overlay-anim 5s linear !important;
     animation-fill-mode: forwards;
   }
