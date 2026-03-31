@@ -17,8 +17,10 @@
   },
   "browserslist": {
     "production": [
-      "last 1 Chrome version",
-      "last 1 Edge version"
+      "Chrome >= 105",
+      "Edge >= 105",
+      "Safari >= 15.4",
+      "Firefox >= 104"
     ],
     "development": [
       "last 1 chrome version",
@@ -46,7 +48,6 @@
     "critters": "^0.0.23",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
-    "framer-motion": "^12.38.0",
     "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.462.0",
     "next": "^16.1.6",

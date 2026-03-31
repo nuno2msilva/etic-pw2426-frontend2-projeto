@@ -18,9 +18,7 @@ const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.
 const WebVitalsReporter = dynamic(() => import("@/features/shared/components/WebVitalsReporter"), {
   ssr: false,
 });
-const CRTScreen = dynamic(() => import("@/features/shared/components/CRTScreen"), {
-  ssr: false,
-});
+const CRTScreen = dynamic(() => import("@/features/shared/components/CRTScreen"));
 const LiveUpdatesClient = dynamic(() => import("@/features/shared/components/LiveUpdatesClient"), {
   ssr: false,
 });

@@ -37,14 +37,23 @@ const TableSelector = ({
         </div>
 
         {isLoading ? (
-          <div className="flex items-center justify-center w-full flex-1">
-            <div className="text-center px-6">
-              <p className="type-body-muted">Loading tables...</p>
-            </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+            {Array.from({ length: 6 }, (_, i) => (
+              <div
+                key={i}
+                className={cn(
+                  cardVariants({ variant: "item" }),
+                  "p-6 text-center animate-pulse",
+                )}
+              >
+                <span className="text-3xl block mb-2 opacity-30">🪑</span>
+                <span className="inline-block h-4 w-16 rounded bg-muted" />
+              </div>
+            ))}
           </div>
         ) : showEmptyState ? (
-          <div className="flex items-center justify-center w-full flex-1">
-            <div className="text-center px-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+            <div className="col-span-2 sm:col-span-3 text-center px-6 py-8">
               <span className="text-5xl block mb-4">🪑</span>
               <p className="type-subtitle text-muted-foreground">
                 No tables available

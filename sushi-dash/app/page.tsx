@@ -44,9 +44,41 @@ export default function Page() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(homeStructuredData) }}
       />
-      <Suspense>
+      <Suspense
+        fallback={
+          <HomeHeroSkeleton />
+        }
+      >
         <CustomerPage />
       </Suspense>
     </>
+  );
+}
+
+/** SSR skeleton matching the real TableSelector layout so LCP text is in the initial HTML. */
+function HomeHeroSkeleton() {
+  return (
+    <main aria-label="Table selection" className="h-full flex flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-y-auto flex flex-col items-center justify-start px-4 pt-8">
+        <div className="text-center mb-8">
+          <div className="flex items-center justify-center">
+            <p className="type-body-muted">
+              All-you-can-eat! Select your table to start ordering.
+            </p>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
+          {Array.from({ length: 6 }, (_, i) => (
+            <div
+              key={i}
+              className="rounded-xl border bg-card p-6 text-center animate-pulse"
+            >
+              <span className="text-3xl block mb-2 opacity-30">🪑</span>
+              <span className="inline-block h-4 w-16 rounded bg-muted" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </main>
   );
 }
