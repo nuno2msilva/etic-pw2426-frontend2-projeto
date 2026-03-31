@@ -4,8 +4,8 @@
  */
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import TablePage from "@/views/TablePage";
-import WithAppProvider from "@/components/app/WithAppProvider";
+import TablePage from "@/features/customer/components/TablePage";
+import WithAppProvider from "@/features/shared/components/WithAppProvider";
 
 type TablePageProps = {
   params: Promise<{ tableId: string }>;

@@ -1,7 +1,7 @@
 /** Order status tests — badge variant mapping, status labels, emoji prefixes */
 
-import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/lib/order-status";
-import type { OrderStatus } from "@/types/models";
+import { STATUS_BADGE_VARIANT, STATUS_LABELS } from "@/features/shared/lib/order-status";
+import type { OrderStatus } from "@/features/shared/types/models";
 
 const ALL_STATUSES: OrderStatus[] = [
   "queued",

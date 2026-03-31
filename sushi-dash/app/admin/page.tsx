@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { AdminPanel } from "@/components/app/AdminPanel";
-import WithAppProvider from "@/components/app/WithAppProvider";
+import { AdminPanel } from "@/features/admin/components/AdminPanel";
+import WithAppProvider from "@/features/shared/components/WithAppProvider";
 
 export const metadata: Metadata = {
   title: "Admin Panel | Sushi Dash",

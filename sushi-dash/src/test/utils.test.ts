@@ -1,6 +1,6 @@
 /** Utils tests — cn() className merger with clsx + tailwind-merge */
 
-import { cn } from "@/lib/utils";
+import { cn } from "@/features/shared/lib/utils";
 
 describe("Can cn() merge Tailwind classes without losing its mind?", () => {
   it("smashes two class strings together like a pro", () => {

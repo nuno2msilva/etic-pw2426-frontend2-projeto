@@ -17,8 +17,8 @@ import {
   resolveStaffPermission,
   DEFAULT_KITCHEN_PASSWORD,
   DEFAULT_MANAGER_PASSWORD,
-} from "@/lib/auth";
-import type { AuthSession } from "@/lib/auth";
+} from "@/features/shared/lib/auth";
+import type { AuthSession } from "@/features/shared/lib/auth";
 
 // ---------------------------------------------------------------------------
 // Setup / Teardown

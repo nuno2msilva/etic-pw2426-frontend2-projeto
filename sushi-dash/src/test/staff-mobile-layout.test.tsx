@@ -1,8 +1,8 @@
 /** Staff layout responsiveness tests — verifies kitchen/manager/admin mobile-first class hooks remain present. */
 
-import KitchenPage from "@/views/KitchenPage";
-import ManagerPage from "@/views/ManagerPage";
-import { AdminPanel } from "@/components/app/AdminPanel";
+import KitchenPage from "@/features/kitchen/components/KitchenPage";
+import ManagerPage from "@/features/admin/components/ManagerPage";
+import { AdminPanel } from "@/features/admin/components/AdminPanel";
 import AdminPage from "../../app/admin/page";
 
 describe("Staff mobile layout hardening", () => {

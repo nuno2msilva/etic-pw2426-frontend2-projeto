@@ -22,7 +22,7 @@ import {
   deleteOrder,
   fetchSettings,
   updateSettings,
-} from "@/lib/api";
+} from "@/features/shared/lib/api";
 
 // ---------------------------------------------------------------------------
 // Helpers

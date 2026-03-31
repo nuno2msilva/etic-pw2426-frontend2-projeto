@@ -3,8 +3,8 @@
  * Route: /kitchen
  */
 import type { Metadata } from "next";
-import KitchenPage from "@/views/KitchenPage";
-import WithAppProvider from "@/components/app/WithAppProvider";
+import KitchenPage from "@/features/kitchen/components/KitchenPage";
+import WithAppProvider from "@/features/shared/components/WithAppProvider";
 
 export const metadata: Metadata = {
 	title: "Kitchen Dashboard | Sushi Dash",

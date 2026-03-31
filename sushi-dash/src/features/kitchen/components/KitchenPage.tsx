@@ -1,0 +1,118 @@
+// KitchenPage — Password-protected kitchen dashboard for processing orders through their lifecycle.
+
+"use client";
+
+import { useMemo, useCallback } from "react";
+import type { OrderStatus } from "@/features/shared/types/models";
+import { useApp } from "@/features/customer/context/AppContext";
+import { hasStaffPermission } from "@/features/shared/lib/auth";
+import { useProtectedStaffRoute } from "@/features/staff/hooks/useProtectedStaffRoute";
+import { OrderCard } from "@/features/customer";
+import { SEOHead } from "@/features/shared";
+const KitchenPage = () => {
+  const { orders, updateOrderStatus, cancelOrder, deleteOrder } = useApp();
+  const { isInitialized, staffSession, hasAccess: hasKitchenAccess } = useProtectedStaffRoute("kitchen");
+
+  // Route access: kitchen staff and managers can access /kitchen.
+  const isManager = hasStaffPermission(staffSession, "manager");
+
+  // useCallback — stable delete handler to prevent closure issues
+  const handleDeleteOrder = useCallback(
+    (orderId: string) => {
+      deleteOrder(orderId);
+    },
+    [deleteOrder]
+  );
+
+  // useCallback — stable cancel handler
+  const handleCancelOrder = useCallback(
+    (orderId: string) => {
+      cancelOrder(orderId);
+    },
+    [cancelOrder]
+  );
+
+  // useMemo — split orders into active vs completed (recalculates when orders change)
+  const activeOrders = useMemo(
+    () => orders.filter((o) => o.status !== "delivered" && o.status !== "cancelled"),
+    [orders]
+  );
+  const completedOrders = useMemo(
+    () => orders.filter((o) => o.status === "delivered" || o.status === "cancelled"),
+    [orders]
+  );
+
+  const hasNoOrders = activeOrders.length === 0 && completedOrders.length === 0;
+
+  // Wait for auth init; useEffect handles redirect if unauthorized
+  if (!isInitialized || !hasKitchenAccess) return null;
+
+  return (
+    <main className="page-shell page-shell-roomy">
+      <SEOHead
+        title="Kitchen Dashboard"
+        description="Process incoming sushi orders. View active and delivered orders in real time."
+      />
+      {/* Page Header */}
+      <div className="mb-2">
+        <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">
+          🔥 Kitchen Dashboard
+        </h1>
+      </div>
+      <p className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8">
+        Process orders in queue order.
+      </p>
+
+      {/* Empty State */}
+      {hasNoOrders && (
+        <div className="text-center py-20 text-muted-foreground">
+          <p className="text-5xl mb-4">🍵</p>
+          <p className="text-lg">No orders yet. Waiting for customers...</p>
+        </div>
+      )}
+
+      {/* Active Orders Section */}
+      {activeOrders.length > 0 && (
+        <section className="mb-6 sm:mb-8">
+          <h2 className="section-heading">
+            Active Orders ({activeOrders.length})
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+            {activeOrders.map((order) => (
+              <OrderCard
+                key={order.id}
+                order={order}
+                showActions
+                onUpdateStatus={(status: string) => updateOrderStatus(order.id, status as OrderStatus)}
+                onCancel={isManager ? () => handleCancelOrder(order.id) : undefined}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* Completed Orders Section (Delivered + Cancelled) */}
+      {completedOrders.length > 0 && (
+        <section>
+          <h2 className="section-heading text-muted-foreground">
+            Completed ({completedOrders.length})
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 opacity-60">
+            {completedOrders.map((order) => (
+              <OrderCard 
+                key={order.id} 
+                order={order}
+                showActions={isManager}
+                onDelete={isManager ? () => handleDeleteOrder(order.id) : undefined}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+    </main>
+  );
+};
+
+export default KitchenPage;

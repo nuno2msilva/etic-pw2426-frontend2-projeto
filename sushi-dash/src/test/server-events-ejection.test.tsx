@@ -1,7 +1,7 @@
 import React from "react";
 import { render, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useServerEvents } from "@/hooks/useServerEvents";
+import { useServerEvents } from "@/features/shared/hooks/useServerEvents";
 
 jest.mock("sonner", () => ({
   toast: {

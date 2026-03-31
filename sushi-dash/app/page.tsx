@@ -4,7 +4,7 @@
  */
 import { Suspense } from "react";
 import type { Metadata } from "next";
-import CustomerPage from "@/views/CustomerPage";
+import CustomerPage from "@/features/customer/components/CustomerPage";
 
 const homeStructuredData = {
   "@context": "https://schema.org",

@@ -1,4 +1,4 @@
-import { isPathAllowedForPermission } from "@/lib/route-permissions";
+import { isPathAllowedForPermission } from "@/features/shared/lib/route-permissions";
 
 describe("proxy access control", () => {
   it("allows manager to access kitchen", () => {

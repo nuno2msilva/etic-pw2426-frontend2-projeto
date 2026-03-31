@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import type { OrderingFlow } from "@/hooks/useOrderingFlow";
-import type { MenuItem, Table } from "@/types/models";
-import MenuOrderingView from "@/components/app/MenuOrderingView";
-import { useApp } from "@/context/AppContext";
+import type { OrderingFlow } from "@/features/customer/hooks/useOrderingFlow";
+import type { MenuItem, Table } from "@/features/shared/types/models";
+import MenuOrderingView from "@/features/customer/components/MenuOrderingView";
+import { useApp } from "@/features/customer/context/AppContext";
 
-jest.mock("@/context/AppContext", () => ({
+jest.mock("@/features/customer/context/AppContext", () => ({
   useApp: jest.fn(),
 }));
 

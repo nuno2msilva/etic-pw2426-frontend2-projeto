@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, waitFor, act } from "@testing-library/react";
-import { AdminPanel } from "@/components/app/AdminPanel";
+import { AdminPanel } from "@/features/admin/components/AdminPanel";
 
 jest.mock("sonner", () => ({
   toast: {

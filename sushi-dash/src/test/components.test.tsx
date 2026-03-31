@@ -2,18 +2,18 @@
 
 import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import CartSummaryBanner from "@/components/app/CartSummaryBanner";
-import OrderConfirmation from "@/components/app/OrderConfirmation";
-import { SEOHead } from "@/components/app/SEOHead";
+import CartSummaryBanner from "@/features/customer/components/CartSummaryBanner";
+import OrderConfirmation from "@/features/customer/components/OrderConfirmation";
+import { SEOHead } from "@/features/shared/components/SEOHead";
 import { StaffLoginModal } from "@/components/app";
-import CollapsibleSection from "@/components/app/CollapsibleSection";
-import MenuGrid from "@/components/app/MenuGrid";
-import OrderCard from "@/components/app/OrderCard";
-import AppHeader from "@/components/app/AppHeader";
-import StaffHeaderMenu from "@/components/app/StaffHeaderMenu";
-import KitchenPage from "@/views/KitchenPage";
-import ManagerPage from "@/views/ManagerPage";
-import { AuthProvider } from "@/context/AuthContext";
+import CollapsibleSection from "@/features/customer/components/CollapsibleSection";
+import MenuGrid from "@/features/customer/components/MenuGrid";
+import OrderCard from "@/features/customer/components/OrderCard";
+import AppHeader from "@/features/shared/components/AppHeader";
+import StaffHeaderMenu from "@/features/staff/components/StaffHeaderMenu";
+import KitchenPage from "@/features/kitchen/components/KitchenPage";
+import ManagerPage from "@/features/admin/components/ManagerPage";
+import { AuthProvider } from "@/features/shared/context/AuthContext";
 
 /** Wrapper with all providers needed for components using AuthProvider */
 function AllProviders({ children }: { children: React.ReactNode }) {

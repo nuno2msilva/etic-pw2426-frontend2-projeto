@@ -3,8 +3,8 @@
  * Route: /manager
  */
 import type { Metadata } from "next";
-import ManagerPage from "@/views/ManagerPage";
-import WithAppProvider from "@/components/app/WithAppProvider";
+import ManagerPage from "@/features/admin/components/ManagerPage";
+import WithAppProvider from "@/features/shared/components/WithAppProvider";
 
 export const metadata: Metadata = {
 	title: "Manager Panel | Sushi Dash",

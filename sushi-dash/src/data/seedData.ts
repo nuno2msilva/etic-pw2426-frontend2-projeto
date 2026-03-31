@@ -1,6 +1,6 @@
 // Default seed data — 145 menu items across 10 categories, 6 tables, and order limits.
 
-import type { MenuItem } from "@/types/models";
+import type { MenuItem } from "@/features/shared/types/models";
 
 // Default menu with 100+ items organized by category. Each item has a numbered prefix for easy ordering.
 export const DEFAULT_MENU: MenuItem[] = [

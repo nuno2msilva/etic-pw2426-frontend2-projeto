@@ -23,9 +23,18 @@
     "strictNullChecks": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@/features/*": ["./src/features/*"],
+      "@/features/customer": ["./src/features/customer"],
+      "@/features/customer/*": ["./src/features/customer/*"],
+      "@/features/staff": ["./src/features/staff"],
+      "@/features/staff/*": ["./src/features/staff/*"],
+      "@/features/admin": ["./src/features/admin"],
+      "@/features/admin/*": ["./src/features/admin/*"],
+      "@/features/kitchen": ["./src/features/kitchen"],
+      "@/features/kitchen/*": ["./src/features/kitchen/*"],
+      "@/features/shared": ["./src/features/shared"],
+      "@/features/shared/*": ["./src/features/shared/*"]
     },
     "plugins": [
       {

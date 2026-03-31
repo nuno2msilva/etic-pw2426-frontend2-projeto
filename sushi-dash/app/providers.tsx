@@ -6,24 +6,24 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/lib/config";
+import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
+import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/features/shared/lib/config";
 
-const QueryRuntimeProvider = dynamic(() => import("@/components/app/QueryRuntimeProvider"));
+const QueryRuntimeProvider = dynamic(() => import("@/features/shared/context/QueryRuntimeProvider"));
 
 const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.Toaster), {
   ssr: false,
 });
-const WebVitalsReporter = dynamic(() => import("@/components/app/WebVitalsReporter"), {
+const WebVitalsReporter = dynamic(() => import("@/features/shared/components/WebVitalsReporter"), {
   ssr: false,
 });
-const CRTScreen = dynamic(() => import("@/components/app/CRTScreen"), {
+const CRTScreen = dynamic(() => import("@/features/shared/components/CRTScreen"), {
   ssr: false,
 });
-const LiveUpdatesClient = dynamic(() => import("@/components/app/LiveUpdatesClient"), {
+const LiveUpdatesClient = dynamic(() => import("@/features/shared/components/LiveUpdatesClient"), {
   ssr: false,
 });
-const AppHeader = dynamic(() => import("@/components/app/AppHeader"), {
+const AppHeader = dynamic(() => import("@/features/shared/components/AppHeader"), {
   ssr: false,
 });
 

@@ -1,4 +1,4 @@
-import { stabilizePresenceSnapshot } from "@/hooks/useTablePresence";
+import { stabilizePresenceSnapshot } from "@/features/shared/hooks/useTablePresence";
 
 describe("table presence stability", () => {
   it("keeps table ON during short empty snapshots", () => {

@@ -23,7 +23,7 @@ import {
   PRESENCE_POLLING_INTERVAL_MS,
   STAFF_SESSION_VALIDATION_INTERVAL_MS,
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
-} from "../../src/lib/timeouts";
+} from "@/features/shared/lib/timeouts";
 
 describe("Presence Lifecycle: Table Leave & Reconnection", () => {
   describe("Timeout Constants Configuration", () => {

@@ -3,4 +3,4 @@
  */
 "use client";
 
-export { default } from "@/views/NotFound";
+export { default } from "@/features/shared/components/NotFound";

@@ -1,9 +1,9 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
-import AppHeader from "@/components/app/AppHeader";
-import KitchenPage from "@/views/KitchenPage";
-import ManagerPage from "@/views/ManagerPage";
-import type { AuthSession } from "@/lib/auth";
+import AppHeader from "@/features/shared/components/AppHeader";
+import KitchenPage from "@/features/kitchen/components/KitchenPage";
+import ManagerPage from "@/features/admin/components/ManagerPage";
+import type { AuthSession } from "@/features/shared/lib/auth";
 
 const mockPush = jest.fn();
 const mockReplace = jest.fn();
@@ -24,11 +24,11 @@ jest.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
 }));
 
-jest.mock("@/context/AuthContext", () => ({
+jest.mock("@/features/shared/context/AuthContext", () => ({
   useAuth: () => mockUseAuth(),
 }));
 
-jest.mock("@/context/AppContext", () => ({
+jest.mock("@/features/customer/context/AppContext", () => ({
   useApp: () => mockUseApp(),
 }));
 

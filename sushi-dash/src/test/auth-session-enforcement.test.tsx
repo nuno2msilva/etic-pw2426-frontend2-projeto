@@ -1,8 +1,8 @@
 import React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { AuthProvider, useAuth } from "@/context/AuthContext";
-import { saveAuthSession, getAuthSession, type AuthSession } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
+import { saveAuthSession, getAuthSession, type AuthSession } from "@/features/shared/lib/auth";
 
 function AuthStateProbe() {
   const { staffSession, customerSession } = useAuth();
