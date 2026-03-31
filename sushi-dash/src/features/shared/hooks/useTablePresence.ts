@@ -55,7 +55,8 @@ export function useTablePresence() {
       return data.presence ?? {};
     },
     staleTime: 1000,
-    refetchInterval: false,
+    refetchInterval: PRESENCE_POLLING_INTERVAL_MS,
+    refetchIntervalInBackground: true,
     retry: 1,
   });
 

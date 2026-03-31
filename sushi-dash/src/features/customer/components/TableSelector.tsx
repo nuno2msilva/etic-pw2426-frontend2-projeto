@@ -3,6 +3,7 @@
 import type { Table } from "@/features/shared/types/models";
 import { cardVariants } from "@/components/ui/card";
 import { cn } from "@/features/shared/lib/utils";
+import { useTablePresence } from "@/features/shared/hooks/useTablePresence";
 
 interface TableSelectorProps {
   tables: Table[];
@@ -21,6 +22,7 @@ const TableSelector = ({
   loadError = null,
   onRetryLoad,
 }: TableSelectorProps) => {
+  const { data: presence = {} } = useTablePresence();
   const showEmptyState = !isLoading && (Boolean(loadError) || tables.length === 0);
 
   return (
@@ -64,6 +66,9 @@ const TableSelector = ({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
             {tables.map((table) => {
+              const tablePresence = Number(table.id) in presence ? presence[Number(table.id)] : 0;
+              const isInUse = tablePresence > 0;
+
               return (
                 <button
                   key={table.id}
@@ -77,6 +82,9 @@ const TableSelector = ({
                 >
                   <span className="text-3xl block mb-2">🪑</span>
                   <span className="type-subtitle text-card-foreground">{table.label}</span>
+                  {isInUse ? (
+                    <span className="absolute top-2 right-2 text-[11px] font-bold text-red-600">ON</span>
+                  ) : null}
                 </button>
               );
             })}

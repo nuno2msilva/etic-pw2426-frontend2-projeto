@@ -43,48 +43,12 @@ export function resolveHomeHeaderMode(
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-
-  // Home route: keep the shell minimal and skip global React Query runtime.
-  // This cuts startup JS and main-thread work on Lighthouse mobile audits.
-  if (pathname === "/") {
-    return (
-      <AuthProvider>
-        <HomeRouteShell>{children}</HomeRouteShell>
-      </AuthProvider>
-    );
-  }
-
   return (
     <QueryRuntimeProvider>
       <AuthProvider>
         <ProvidersShell>{children}</ProvidersShell>
       </AuthProvider>
     </QueryRuntimeProvider>
-  );
-}
-
-function HomeRouteShell({ children }: { children: React.ReactNode }) {
-  const { authenticatedTableId, staffSession } = useAuth();
-  const homeHeaderMode = resolveHomeHeaderMode(authenticatedTableId, Boolean(staffSession));
-  const header = homeHeaderMode === "app" ? <AppHeader /> : <LightHeader />;
-
-  if (ENABLE_CRT_EFFECT) {
-    return (
-      <CRTScreen enabled>
-        <div className="h-dvh flex flex-col overflow-hidden">
-          {header}
-          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-        </div>
-      </CRTScreen>
-    );
-  }
-
-  return (
-    <div className="h-dvh flex flex-col overflow-hidden">
-      {header}
-      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-    </div>
   );
 }
 
@@ -123,7 +87,8 @@ function ProviderContent({ children, showToaster }: { children: React.ReactNode;
   usePageTracking();
   
   const hasSession = Boolean(authenticatedTableId || staffSession);
-  const useLightHeader = pathname === "/" && !hasSession;
+  const homeHeaderMode = resolveHomeHeaderMode(authenticatedTableId, Boolean(staffSession));
+  const useLightHeader = pathname === "/" && homeHeaderMode === "light";
   const shouldMountLiveUpdates = hasSession;
   const shouldMountToaster = showToaster && (hasSession || pathname !== "/");
 

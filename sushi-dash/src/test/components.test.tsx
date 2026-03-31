@@ -3,6 +3,7 @@
 import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import CartSummaryBanner from "@/features/customer/components/CartSummaryBanner";
+import TableSelector from "@/features/customer/components/TableSelector";
 import OrderConfirmation from "@/features/customer/components/OrderConfirmation";
 import { SEOHead } from "@/features/shared/components/SEOHead";
 import { StaffLoginModal } from "@/components/app";
@@ -14,6 +15,12 @@ import StaffHeaderMenu from "@/features/staff/components/StaffHeaderMenu";
 import KitchenPage from "@/features/kitchen/components/KitchenPage";
 import ManagerPage from "@/features/admin/components/ManagerPage";
 import { AuthProvider } from "@/features/shared/context/AuthContext";
+
+jest.mock("@/features/shared/hooks/useTablePresence", () => ({
+  useTablePresence: jest.fn(() => ({ data: {} })),
+}));
+
+const mockUseTablePresence = jest.requireMock("@/features/shared/hooks/useTablePresence").useTablePresence as jest.Mock;
 
 /** Wrapper with all providers needed for components using AuthProvider */
 function AllProviders({ children }: { children: React.ReactNode }) {
@@ -199,6 +206,36 @@ describe("Can staff log out and back in without a meltdown?", () => {
     expect(screen.getByText(/Staff Login/)).toBeDefined();
     expect(screen.getByPlaceholderText(/Your password/)).toBeDefined();
     expect(screen.getByText("Login")).toBeDefined();
+  });
+});
+
+describe("Table occupancy indicator", () => {
+  it("shows red ON badge when table has active presence", () => {
+    mockUseTablePresence.mockReturnValue({ data: { 1: 2 } });
+
+    render(
+      <TableSelector
+        tables={[{ id: "1", label: "Table 1" }]}
+        onSelectTable={() => {}}
+        onStaffLogin={() => {}}
+      />
+    );
+
+    expect(screen.getByText("ON")).toBeInTheDocument();
+  });
+
+  it("does not show ON badge when table has no active presence", () => {
+    mockUseTablePresence.mockReturnValue({ data: {} });
+
+    render(
+      <TableSelector
+        tables={[{ id: "2", label: "Table 2" }]}
+        onSelectTable={() => {}}
+        onStaffLogin={() => {}}
+      />
+    );
+
+    expect(screen.queryByText("ON")).toBeNull();
   });
 });
 
