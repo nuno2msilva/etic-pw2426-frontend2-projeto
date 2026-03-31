@@ -480,11 +480,12 @@ export async function updateSettings(
 // ==========================================================================
 
 /** POST /api/tables/:tableId/heartbeat — Send customer presence heartbeat */
-export async function sendPresenceHeartbeat(tableId: string): Promise<void> {
+export async function sendPresenceHeartbeat(tableId: string, signal?: AbortSignal): Promise<void> {
   await fetch(`${API_BASE}/api/tables/${tableId}/heartbeat`, {
     method: "POST",
     credentials: "include",
-  }).catch(() => {}); // Best-effort, don't throw
+    signal,
+  }).catch(() => {}); // Best-effort — also silently swallows AbortError
 }
 
 /** DELETE /api/tables/:tableId/heartbeat — Clear customer presence on leave */

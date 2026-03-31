@@ -232,21 +232,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [customerSession]);
 
   // Send DB-backed heartbeat to server so presence works on Vercel serverless.
+  // AbortController ensures any in-flight heartbeat fetch is cancelled when the effect
+  // cleans up (logout/leave), preventing a race where a pending POST overwrites the clear.
   useEffect(() => {
     if (!customerSession?.tableId || isViewingTableSelection) return;
 
     const tableId = customerSession.tableId;
+    const controller = new AbortController();
 
     // Send immediately
-    void sendPresenceHeartbeat(tableId);
+    void sendPresenceHeartbeat(tableId, controller.signal);
 
     // Then every 30 seconds
     const timer = setInterval(() => {
       if (typeof document !== 'undefined' && document.hidden) return;
-      void sendPresenceHeartbeat(tableId);
+      void sendPresenceHeartbeat(tableId, controller.signal);
     }, CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS);
 
     return () => {
+      controller.abort(); // cancel any in-flight heartbeat before clearPresenceHeartbeat fires
       clearInterval(timer);
     };
   }, [customerSession?.tableId, isViewingTableSelection]);
