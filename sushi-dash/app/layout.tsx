@@ -57,6 +57,14 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Preload CRT font so it's ready when CRTScreen hydrates — avoids the late-discovered font in the dependency chain */}
+        <link
+          rel="preload"
+          href="/fonts/samsung-crt-tv.ttf"
+          as="font"
+          type="font/ttf"
+          crossOrigin="anonymous"
+        />
         <UmamiIntegration
           trackingId={process.env.NEXT_PUBLIC_UMAMI_ID || ''}
           endpoint={process.env.NEXT_PUBLIC_UMAMI_ENDPOINT}

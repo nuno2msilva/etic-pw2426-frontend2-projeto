@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
 import { usePageTracking } from "@/features/shared/hooks/usePageTracking";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/features/shared/lib/config";
+import CRTScreen from "@/features/shared/components/CRTScreen";
 
 const QueryRuntimeProvider = dynamic(() => import("@/features/shared/context/QueryRuntimeProvider"));
 
@@ -18,7 +19,6 @@ const Sonner = dynamic(() => import("@/components/ui/sonner").then((mod) => mod.
 const WebVitalsReporter = dynamic(() => import("@/features/shared/components/WebVitalsReporter"), {
   ssr: false,
 });
-const CRTScreen = dynamic(() => import("@/features/shared/components/CRTScreen"));
 const LiveUpdatesClient = dynamic(() => import("@/features/shared/components/LiveUpdatesClient"), {
   ssr: false,
 });
