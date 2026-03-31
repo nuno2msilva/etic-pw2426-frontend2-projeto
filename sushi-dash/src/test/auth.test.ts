@@ -27,6 +27,7 @@ const originalFetch = global.fetch;
 
 beforeEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
   // Mock fetch — verifyKitchen/ManagerPassword call the backend after local check
   global.fetch = jest.fn(() =>
     Promise.resolve({ ok: true, json: () => Promise.resolve({}) } as Response)
@@ -117,6 +118,8 @@ describe("Does session storage actually remember who you are?", () => {
 
     expect(loaded).not.toBeNull();
     expect(loaded!.role).toBe("kitchen");
+    expect(sessionStorage.getItem("sushi-dash-staff-session")).toContain('"role":"kitchen"');
+    expect(localStorage.getItem("sushi-dash-staff-session")).toBeNull();
   });
 
   it("actually clears the session when told to forget", () => {

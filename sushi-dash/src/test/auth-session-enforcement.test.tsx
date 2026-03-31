@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
 import { saveAuthSession, getAuthSession, type AuthSession } from "@/features/shared/lib/auth";
@@ -10,6 +10,17 @@ function AuthStateProbe() {
     <div>
       <div>{staffSession ? `staff:${staffSession.role}` : "staff:none"}</div>
       <div>{customerSession ? `customer:${customerSession.tableId}` : "customer:none"}</div>
+    </div>
+  );
+}
+
+function CustomerLeaveProbe() {
+  const { customerSession, goToTableSelection } = useAuth();
+
+  return (
+    <div>
+      <div>{customerSession ? `customer:${customerSession.tableId}` : "customer:none"}</div>
+      <button type="button" onClick={goToTableSelection}>Leave table</button>
     </div>
   );
 }
@@ -33,6 +44,7 @@ describe("Auth session enforcement", () => {
 
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     jest.clearAllMocks();
   });
 
@@ -64,6 +76,39 @@ describe("Auth session enforcement", () => {
     });
 
     expect(getAuthSession("staff")?.role).toBe("manager");
+    expect(sessionStorage.getItem("sushi-dash-staff-session")).toContain('"role":"manager"');
+  });
+
+  it("persists staff session in sessionStorage across provider remounts (route-change simulation)", async () => {
+    const staff: AuthSession = {
+      role: "manager",
+      permission: "manager",
+      userId: 10,
+      authenticatedAt: Date.now(),
+    };
+    saveAuthSession(staff);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authenticated: true,
+        sessions: [{ role: "manager", authenticated: true }],
+      }),
+    } as Response);
+
+    const first = renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByText("staff:manager")).toBeInTheDocument();
+    });
+    first.unmount();
+
+    const second = renderWithProviders();
+    await waitFor(() => {
+      expect(screen.getByText("staff:manager")).toBeInTheDocument();
+    });
+
+    expect(sessionStorage.getItem("sushi-dash-staff-session")).toContain('"role":"manager"');
+    second.unmount();
   });
 
   it("logs staff out when session endpoint no longer reports active staff session (e.g. after password reset)", async () => {
@@ -173,5 +218,47 @@ describe("Auth session enforcement", () => {
     });
 
     expect(getAuthSession("customer")).toBeNull();
+  });
+
+  it("logs customer out when explicitly leaving table selection for accurate presence", async () => {
+    const customer: AuthSession = {
+      role: "customer",
+      tableId: "7",
+      authenticatedAt: Date.now(),
+    };
+    saveAuthSession(customer);
+
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        authenticated: true,
+        sessions: [{ role: "customer", tableId: 7, authenticated: true }],
+      }),
+    } as Response);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CustomerLeaveProbe />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("customer:7")).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "Leave table" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("customer:none")).toBeInTheDocument();
+    });
+
+    expect(getAuthSession("customer")).toBeNull();
+    expect(sessionStorage.getItem("sushi-dash-customer-session")).toBeNull();
   });
 });

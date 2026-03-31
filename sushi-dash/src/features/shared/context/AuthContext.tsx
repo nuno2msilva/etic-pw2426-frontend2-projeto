@@ -69,7 +69,7 @@ interface AuthContextType {
   authenticatedTableId: string | null;
   /** Whether customer is currently viewing table selection (closes SSE without logout) */
   isViewingTableSelection: boolean;
-  /** Signal that customer is leaving the table (going to table selection). Closes SSE connection, preserves session. */
+  /** Signal that customer is leaving the table (going to table selection). Logs out customer for accurate presence. */
   goToTableSelection: () => void;
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   goToTable: () => void;
@@ -78,6 +78,22 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const CUSTOMER_LAST_SEEN_AT_KEY = 'sushi-dash-customer-last-seen-at';
+
+function getCustomerLastSeenAt(): number {
+  if (typeof window === 'undefined') return NaN;
+  const raw = window.sessionStorage.getItem(CUSTOMER_LAST_SEEN_AT_KEY);
+  return raw ? Number(raw) : NaN;
+}
+
+function setCustomerLastSeenAt(value: number): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(value));
+}
+
+function clearCustomerLastSeenAt(): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
+}
 
 type SessionSnapshot = {
   authenticated?: boolean;
@@ -141,8 +157,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const userIsLoggedOffFromCustomerSession = useCallback(() => {
     clearAuthSession('customer');
-    localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
+    clearCustomerLastSeenAt();
     setCustomerSession(null);
+    setIsViewingTableSelection(true);
   }, []);
 
   // Initialize auth system on mount — restore both sessions
@@ -151,15 +168,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const existingCustomer = getAuthSession('customer');
       const existingStaff = getAuthSession('staff');
       if (existingCustomer) {
-        const lastSeenRaw = localStorage.getItem(CUSTOMER_LAST_SEEN_AT_KEY);
-        const lastSeenAt = lastSeenRaw ? Number(lastSeenRaw) : NaN;
+        const lastSeenAt = getCustomerLastSeenAt();
         const hasRecentPresence = Number.isNaN(lastSeenAt)
           ? true
           : Date.now() - lastSeenAt <= CUSTOMER_SESSION_GRACE_PERIOD_MS;
 
         if (hasRecentPresence) {
           setCustomerSession(existingCustomer);
-          localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
+          setCustomerLastSeenAt(Date.now());
         } else {
           clearAuthSession('customer');
           sendLogoutRequest('customer');
@@ -191,7 +207,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!customerSession) return;
 
     const markCustomerPresence = () => {
-      localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
+      setCustomerLastSeenAt(Date.now());
     };
 
     const onVisibilityChange = () => {
@@ -328,7 +344,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       saveAuthSession(newSession);
       setCustomerSession(newSession);
-      localStorage.setItem(CUSTOMER_LAST_SEEN_AT_KEY, String(Date.now()));
+      setCustomerLastSeenAt(Date.now());
+      setIsViewingTableSelection(false);
       invalidateAllCaches();
       return true;
     }
@@ -426,8 +443,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(async () => {
     clearAuthSession('customer');
-    localStorage.removeItem(CUSTOMER_LAST_SEEN_AT_KEY);
+    clearCustomerLastSeenAt();
     setCustomerSession(null);
+    setIsViewingTableSelection(true);
     await sendLogoutRequest('customer');
     invalidateAllCaches();
   }, [invalidateAllCaches, sendLogoutRequest]);
@@ -439,10 +457,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateAllCaches();
   }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
 
-  /** Signal that customer is leaving the table. Closes SSE without logout (preserves session for 5-min grace). */
+  /** Signal that customer is leaving the table. Explicitly logs out customer for accurate presence indicators. */
   const goToTableSelection = useCallback(() => {
     setIsViewingTableSelection(true);
-  }, []);
+    clearAuthSession('customer');
+    clearCustomerLastSeenAt();
+    setCustomerSession(null);
+    void sendLogoutRequest('customer', true);
+    invalidateAllCaches();
+  }, [invalidateAllCaches, sendLogoutRequest]);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   const goToTable = useCallback(() => {

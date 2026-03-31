@@ -18,6 +18,36 @@ const STORAGE_KEYS = {
 export const DEFAULT_KITCHEN_PASSWORD = 'kitchen123';
 export const DEFAULT_MANAGER_PASSWORD = 'manager123';
 
+function readSessionStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  return window.sessionStorage.getItem(key);
+}
+
+function writeSessionStorage(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(key, value);
+}
+
+function removeSessionStorage(key: string): void {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(key);
+}
+
+function readLocalStorage(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(key);
+}
+
+function writeLocalStorage(key: string, value: string): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(key, value);
+}
+
+function removeLocalStorage(key: string): void {
+  if (typeof window === 'undefined') return;
+  window.localStorage.removeItem(key);
+}
+
 async function sha256(input: string): Promise<string> {
   if (globalThis.crypto?.subtle) {
     const encoder = new TextEncoder();
@@ -302,9 +332,10 @@ export function hasStaffPermission(
 // Save auth session — stored per role category (customer vs staff)
 export function saveAuthSession(session: AuthSession): void {
   const key = session.role === 'customer' ? STORAGE_KEYS.CUSTOMER_SESSION : STORAGE_KEYS.STAFF_SESSION;
-  localStorage.setItem(key, JSON.stringify(session));
-  // Also write to legacy key for backwards compat
-  localStorage.setItem(STORAGE_KEYS.AUTH_SESSION, JSON.stringify(session));
+  const serialized = JSON.stringify(session);
+  // Session-scoped persistence: survives route changes/reloads in same tab.
+  writeSessionStorage(key, serialized);
+  writeSessionStorage(STORAGE_KEYS.AUTH_SESSION, serialized);
 }
 
 // Get current auth session (from localStorage, mirrors httpOnly JWT state)
@@ -312,14 +343,22 @@ export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null 
   const EIGHT_HOURS = 8 * 60 * 60 * 1000;
 
   function read(key: string): AuthSession | null {
-    const stored = localStorage.getItem(key);
+    const fromSession = readSessionStorage(key);
+    const fromLocal = readLocalStorage(key);
+    const stored = fromSession ?? fromLocal;
     if (!stored) return null;
     try {
       const session = JSON.parse(stored) as AuthSession;
       // Check if session expired
       if (Date.now() - session.authenticatedAt > EIGHT_HOURS) {
-        localStorage.removeItem(key);
+        removeSessionStorage(key);
+        removeLocalStorage(key);
         return null;
+      }
+      // Migrate legacy localStorage session to sessionStorage on first read.
+      if (!fromSession && fromLocal) {
+        writeSessionStorage(key, fromLocal);
+        removeLocalStorage(key);
       }
       return session;
     } catch {
@@ -339,14 +378,17 @@ export function getAuthSession(role?: 'customer' | 'staff'): AuthSession | null 
 // Clear auth session
 export function clearAuthSession(role?: 'customer' | 'staff'): void {
   if (!role || role === 'customer') {
-    localStorage.removeItem(STORAGE_KEYS.CUSTOMER_SESSION);
+    removeSessionStorage(STORAGE_KEYS.CUSTOMER_SESSION);
+    removeLocalStorage(STORAGE_KEYS.CUSTOMER_SESSION);
   }
   if (!role || role === 'staff') {
-    localStorage.removeItem(STORAGE_KEYS.STAFF_SESSION);
+    removeSessionStorage(STORAGE_KEYS.STAFF_SESSION);
+    removeLocalStorage(STORAGE_KEYS.STAFF_SESSION);
   }
   // Always clean legacy key when clearing all
   if (!role) {
-    localStorage.removeItem(STORAGE_KEYS.AUTH_SESSION);
+    removeSessionStorage(STORAGE_KEYS.AUTH_SESSION);
+    removeLocalStorage(STORAGE_KEYS.AUTH_SESSION);
   }
 }
 

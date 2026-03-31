@@ -82,11 +82,10 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(result).toBeNull();
     });
 
-    it("should preserve session cookie during table selection (no logout)", () => {
-      // goToTableSelection does NOT call logout()
-      // Only closes SSE connection via isViewingTableSelection flag
-      // This allows graceful reconnection within 5-min grace period
-      expect(CUSTOMER_SESSION_GRACE_PERIOD_MS).toBe(5 * 60 * 1000);
+    it("should force immediate customer logout on explicit leave for accurate presence", () => {
+      // goToTableSelection explicitly logs out customer intent (logo/back to table selection)
+      // Presence disconnect happens immediately, avoiding stale ON badges.
+      expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
   });
 
@@ -157,7 +156,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
 
     it("should have heartbeat interval shorter than grace period", () => {
-      // Customer presence heartbeat (localStorage timestamp update)
+      // Customer presence heartbeat (sessionStorage timestamp update)
       // runs every 30 seconds, which is well within the 5-min grace period
       // This ensures accurate grace period detection
       expect(CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS).toBeLessThan(
