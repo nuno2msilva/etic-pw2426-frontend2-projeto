@@ -7,7 +7,7 @@ A full-stack, real-time sushi restaurant ordering system with role-based authent
 
 ---
 
-## ✨ Key Features
+## ✨ Key Features 
 
 ### Customer Experience
 - **Browse 145+ Sushi Items** — Full menu with categories (Nigiri, Rolls, Sashimi, Hot Dishes, Sides, Noodles, Drinks, Desserts)
