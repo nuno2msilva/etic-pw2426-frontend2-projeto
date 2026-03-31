@@ -4,7 +4,8 @@ import { API_BASE } from "@/features/shared/lib/config";
 import { presenceKey } from "@/features/shared/hooks/useServerEvents";
 import { PRESENCE_POLLING_INTERVAL_MS } from "@/features/shared/lib/timeouts";
 
-const PRESENCE_OFF_GRACE_MS = PRESENCE_POLLING_INTERVAL_MS * 4;
+// Keep a short debounce for transient transport blips, but clear stale ON state quickly.
+const PRESENCE_OFF_GRACE_MS = 5_000;
 
 export function stabilizePresenceSnapshot(
   incoming: Record<number, number> | undefined,
