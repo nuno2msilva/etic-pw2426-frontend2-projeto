@@ -18,16 +18,13 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // Turbopack is the default and only bundler in Next.js 16+
-  // No webpack fallback - ensures modern ES output without polyfills
+  // Turbopack (dev + production — Next.js 16 uses Turbopack by default).
+  // Note: resolveAlias only intercepts module-specifier imports, not relative imports
+  // inside Next.js's own source. The polyfill-module is imported relatively from
+  // next/dist/client/app-globals.js so it cannot be aliased out this way.
   turbopack: {
     resolveAlias: {
       "@": "./src",
-      // Skip Next.js's unconditional polyfill bundle — our browserslist targets
-      // Chrome 105+, Safari 15.4+, Firefox 104+, Edge 105+ which natively support
-      // all of: Array.at, Array.flat/flatMap, Object.fromEntries, Object.hasOwn,
-      // String.trimStart/trimEnd. The 13.7 KiB chunk is pure dead weight.
-      "next/dist/build/polyfills/polyfill-module.js": "./src/lib/noop.ts",
     },
   },
 
