@@ -3,6 +3,7 @@
 import type { Metadata } from "next";
 import "@/index.css";
 import { Providers } from "./providers";
+import { UmamiIntegration } from "@/features/shared/components/UmamiIntegration";
 
 export const metadata: Metadata = {
   title: "Sushi Dash — All-You-Can-Eat Sushi Ordering System",
@@ -55,7 +56,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head />
+      <head>
+        <UmamiIntegration
+          trackingId={process.env.NEXT_PUBLIC_UMAMI_ID || ''}
+          endpoint={process.env.NEXT_PUBLIC_UMAMI_ENDPOINT}
+        />
+      </head>
       <body className="perf-max">
         <Providers>{children}</Providers>
       </body>

@@ -460,7 +460,23 @@ npm run db:seed
 
 4. Click **Deploy**.
 
-#### 5. Configure CORS
+#### 5. Configure Analytics (Optional)
+
+Sushi Dash includes **Umami analytics** for privacy-focused user tracking. To enable it in production:
+
+1. Sign up at https://app.umami.is (free cloud option) or self-host
+2. Create a new website and copy your **Tracking ID**
+3. In your Vercel frontend project, add environment variables:
+   | Variable | Value |
+   |----------|-------|
+   | `NEXT_PUBLIC_UMAMI_ID` | Your tracking ID from Umami |
+   | `NEXT_PUBLIC_UMAMI_ENDPOINT` | `https://analytics.umami.is` (or your self-hosted URL) |
+
+4. Redeploy your frontend
+
+For detailed setup instructions, see [VERCEL_DEPLOYMENT.md](sushi-dash/VERCEL_DEPLOYMENT.md).
+
+#### 6. Configure CORS
 
 In `server/src/index.ts`, ensure the CORS origin includes your frontend's Vercel URL:
 

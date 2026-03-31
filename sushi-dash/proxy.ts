@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { isPathAllowedForPermission, type StaffPermission } from "./src/lib/route-permissions";
+import { isPathAllowedForPermission, type StaffPermission } from "./src/features/shared/lib/route-permissions";
 
 function decodeJwtPayload(token: string): Record<string, unknown> | null {
   try {

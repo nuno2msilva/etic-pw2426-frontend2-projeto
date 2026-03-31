@@ -1,0 +1,163 @@
+/* Samsung CRT TV bitmap font — used for the "AV1" on-screen display overlay */
+@font-face {
+  font-family: 'Samsung CRT TV';
+  src: url('/fonts/samsung-crt-tv.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Slow rolling scanline — moves top-to-bottom like a real CRT refresh */
+@keyframes crt-scanline-roll {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+/* Secondary subtle brightness pulse — mimics vertical sync jitter */
+@keyframes crt-band-flicker {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.7; }
+}
+
+@keyframes crt-turn-on {
+  0% {
+    transform: scale(1, 0.8) translate3d(0, 0, 0);
+    filter: brightness(30);
+    opacity: 1;
+  }
+  3.5% {
+    transform: scale(1, 0.8) translate3d(0, 100%, 0);
+  }
+  3.6% {
+    transform: scale(1, 0.8) translate3d(0, -100%, 0);
+    opacity: 1;
+  }
+  9% {
+    transform: scale(1.3, 0.6) translate3d(0, 100%, 0);
+    filter: brightness(30);
+    opacity: 0;
+  }
+  11% {
+    transform: scale(1, 1) translate3d(0, 0, 0);
+    filter: contrast(0) brightness(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1, 1) translate3d(0, 0, 0);
+    filter: contrast(1) brightness(1.2) saturate(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes crt-overlay-anim {
+  0%   { visibility: hidden; }
+  20%  { visibility: hidden; }
+  21%  { visibility: visible; }
+  100% { visibility: hidden; }
+}
+
+/* Wrapper — apply .crt to a parent element to enable the effect */
+.crt {
+  position: relative;
+}
+
+/* Rolling bright band — thin sweep mimicking a real CRT electron-beam retrace */
+.crt::after {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 6%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(255, 255, 255, 0.015) 20%,
+    rgba(200, 255, 200, 0.03) 35%,
+    rgba(255, 255, 255, 0.10) 48%,
+    rgba(255, 255, 255, 0.14) 50%,
+    rgba(255, 255, 255, 0.10) 52%,
+    rgba(200, 255, 200, 0.03) 65%,
+    rgba(255, 255, 255, 0.015) 80%,
+    transparent 100%
+  );
+  z-index: 9998;
+  pointer-events: none;
+  animation:
+    crt-scanline-roll 6s linear infinite,
+    crt-band-flicker 0.12s steps(2) infinite;
+}
+
+/* Scanlines + RGB sub-pixel pattern (fixed to viewport) */
+.crt::before {
+  content: "";
+  display: block;
+  position: fixed;
+  inset: 0;
+  background:
+    linear-gradient(
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255, 0, 0, 0.06),
+      rgba(0, 255, 0, 0.02),
+      rgba(0, 0, 255, 0.06)
+    );
+  z-index: 9998;
+  background-size: 100% 2px, 3px 100%;
+  pointer-events: none;
+}
+
+/* Soften scanlines in light mode so they don't clash */
+:root:not(.dark) .crt::before {
+  opacity: 0.3;
+}
+
+/* Turn-on boot animation for screen content */
+.crt > .crt-screen {
+  animation: crt-turn-on 1.2s linear;
+  animation-fill-mode: forwards;
+}
+
+/* "AV1" overlay label — Samsung CRT on-screen display style */
+.crt > .crt-overlay {
+  color: #00ff00;
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  font-size: 60px;
+  font-family: 'Samsung CRT TV', monospace;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 9999;
+  animation: crt-overlay-anim 5s linear;
+  animation-fill-mode: forwards;
+  -webkit-font-smoothing: none;
+  -moz-osx-font-smoothing: unset;
+  image-rendering: pixelated;
+}
+
+/* Respect system-level reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .crt::after {
+    animation: none;
+    opacity: 0;
+  }
+
+  .crt::before {
+    opacity: 0.15;
+  }
+
+  .crt > .crt-screen {
+    animation: none;
+    opacity: 1;
+  }
+
+  .crt > .crt-overlay {
+    animation: none;
+    visibility: hidden;
+  }
+}

@@ -4,6 +4,7 @@ export { default as QueryRuntimeProvider } from './context/QueryRuntimeProvider'
 
 export { useServerEvents } from './hooks/useServerEvents';
 export { useTablePresence } from './hooks/useTablePresence';
+export { usePageTracking } from './hooks/usePageTracking';
 export { useMenuQuery, useAddMenuItem, useRemoveMenuItem, useUpdateMenuItem, useToggleItemAvailability, useCategoriesQuery, useAddCategory, useDeleteCategory, useTablesQuery, useAddTable, useUpdateTable, useRemoveTable, useOrdersQuery, usePlaceOrder, useUpdateOrder, useCancelOrder, useDeleteOrder, useSettingsQuery, useUpdateSettings, queryKeys } from './hooks/useApiQueries';
 
 export { default as AppHeader } from './components/AppHeader';
@@ -13,6 +14,7 @@ export { default as LiveUpdatesClient } from './components/LiveUpdatesClient';
 export { default as WebVitalsReporter } from './components/WebVitalsReporter';
 export { default as WithAppProvider } from './components/WithAppProvider';
 export { default as NotFound } from './components/NotFound';
+export { UmamiIntegration } from './components/UmamiIntegration';
 
 export * from './lib/config';
 export { notifySuccess, notifyError } from './lib/notify';
@@ -27,5 +29,15 @@ export {
   STAFF_SESSION_VALIDATION_INTERVAL_MS,
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
 } from './lib/timeouts';
+
+export {
+  trackEvent,
+  trackPageView,
+  customerEvents,
+  staffEvents,
+  kitchenEvents,
+  adminEvents,
+  systemEvents,
+} from './lib/analytics';
 
 export type * from './types/models';

@@ -7,6 +7,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
+import { usePageTracking } from "@/features/shared/hooks/usePageTracking";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/features/shared/lib/config";
 
 const QueryRuntimeProvider = dynamic(() => import("@/features/shared/context/QueryRuntimeProvider"));
@@ -89,6 +90,10 @@ function ProvidersShell({ children }: { children: React.ReactNode }) {
 function ProviderContent({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
   const pathname = usePathname();
   const { authenticatedTableId, staffSession } = useAuth();
+  
+  // Track all page views automatically
+  usePageTracking();
+  
   const hasSession = Boolean(authenticatedTableId || staffSession);
   const useLightHeader = pathname === "/" && !hasSession;
   const shouldMountLiveUpdates = hasSession;
