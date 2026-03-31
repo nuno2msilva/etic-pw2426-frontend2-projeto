@@ -25,49 +25,49 @@ import {
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
 } from "@/features/shared/lib/timeouts";
 
-describe("Presence Lifecycle: Table Leave & Reconnection", () => {
-  describe("Timeout Constants Configuration", () => {
-    it("should export grace period constant (5 minutes)", () => {
+describe("Does the whole presence lifecycle actually work end-to-end?", () => {
+  describe("Are all the timing constants set to sane values?", () => {
+    it("grace period is 5 minutes — enough to reload but not squat", () => {
       expect(CUSTOMER_SESSION_GRACE_PERIOD_MS).toBe(5 * 60 * 1000);
     });
 
-    it("should export heartbeat interval constant (30 seconds)", () => {
+    it("heartbeat pings every 30 seconds to prove you're still alive", () => {
       expect(CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS).toBe(30 * 1000);
     });
 
-    it("should export SSE idle timeout constant (30 minutes)", () => {
+    it("idle SSE connections get cut after 30 minutes of silence", () => {
       expect(SSE_IDLE_TIMEOUT_MS).toBe(30 * 60 * 1000);
       expect(getIdleTimeoutMs()).toBe(30 * 60 * 1000);
     });
 
-    it("should export keep-alive interval constant (15 seconds for Vercel)", () => {
+    it("keep-alive pings every 15 seconds so Vercel doesn't kill the connection", () => {
       expect(SSE_KEEP_ALIVE_INTERVAL_MS).toBe(15 * 1000);
       expect(getKeepAliveIntervalMs()).toBe(15 * 1000);
     });
 
-    it("should export SSE reconnect delay constant (1 second initial, exponential backoff)", () => {
+    it("SSE reconnects after 1 second with exponential backoff", () => {
       expect(SSE_RECONNECT_DELAY_MS).toBe(1 * 1000);
     });
 
-    it("should export max exponential backoff cap (30 seconds)", () => {
+    it("backoff caps at 30 seconds so you don't wait forever", () => {
       expect(SSE_MAX_RECONNECT_DELAY_MS).toBe(30 * 1000);
     });
 
-    it("should export presence polling interval (8 seconds for lighter mobile runtime)", () => {
+    it("presence polls every 8 seconds — light enough for mobile batteries", () => {
       expect(PRESENCE_POLLING_INTERVAL_MS).toBe(8 * 1000);
     });
 
-    it("should export staff session validation interval (10 seconds)", () => {
+    it("staff sessions get validated every 10 seconds", () => {
       expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(10 * 1000);
     });
 
-    it("should export customer session validation interval (5 seconds)", () => {
+    it("customer sessions get checked every 5 seconds — PIN changes are urgent", () => {
       expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
   });
 
-  describe("Table Leave Signal (goToTableSelection)", () => {
-    it("should clear presence when customer navigates to table selection", () => {
+  describe("What happens when a customer leaves the table?", () => {
+    it("clears presence when customer goes back to table selection", () => {
       // Simulates calling goToTableSelection() in AuthContext
       // which sets isViewingTableSelection = true
       // This causes LiveUpdates hook to pass null as tableId to SSE
@@ -75,22 +75,22 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(result).toBeNull();
     });
 
-    it("should not track presence when viewing table selection with valid auth", () => {
+    it("doesn't track presence even with valid auth if they're browsing tables", () => {
       // Even with valid authenticated table, if no tableId is requested (SSE disconnected),
       // presence should not be tracked
       const result = resolveTrackedTableId(null, 1);
       expect(result).toBeNull();
     });
 
-    it("should force immediate customer logout on explicit leave for accurate presence", () => {
+    it("logs customers out immediately on explicit leave for snappy badge updates", () => {
       // goToTableSelection explicitly logs out customer intent (logo/back to table selection)
       // Presence disconnect happens immediately, avoiding stale ON badges.
       expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
   });
 
-  describe("Table Join Signal (goToTable)", () => {
-    it("should re-establish presence when customer selects a table", () => {
+  describe("What happens when a customer picks a table?", () => {
+    it("lights up presence as soon as they sit down", () => {
       // Simulates calling goToTable() in AuthContext
       // which sets isViewingTableSelection = false
       // This re-enables SSE with proper tableId
@@ -98,14 +98,14 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(result).toBe(1);
     });
 
-    it("should track presence for authenticated table", () => {
+    it("tracks presence for any authenticated table", () => {
       // With both requestedTableId and authenticatedTableId valid,
       // presence should be tracked
       const result = resolveTrackedTableId(5, 5);
       expect(result).toBe(5);
     });
 
-    it("should use authenticated table id as source of truth", () => {
+    it("always trusts the server's authenticated table ID over the client's", () => {
       // Server always trusts its own authenticated table id
       // This prevents spoofing presence for other tables
       const result = resolveTrackedTableId(1, 2);
@@ -113,8 +113,8 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
   });
 
-  describe("Idle Timeout: Order-Based Disconnection", () => {
-    it("should track last order timestamp to prevent idle timeout", () => {
+  describe("What if a customer just stops ordering for ages?", () => {
+    it("bumps the last-order timestamp to keep the connection from idling out", () => {
       // updateLastOrderTimeForTable updates the lastOrderTime field
       // in ConnectionMeta for all connections to that table
       // This resets the 30-minute idle counter
@@ -123,21 +123,21 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       }).not.toThrow();
     });
 
-    it("should not throw when updating non-existent table", () => {
+    it("handles updating a table that has no connections without drama", () => {
       // Gracefully handle edge case where table has no connections
       expect(() => {
         updateLastOrderTimeForTable(999);
       }).not.toThrow();
     });
 
-    it("should have 30-minute idle timeout for order-less connections", () => {
+    it("cuts the cord after 30 minutes of zero orders", () => {
       // If a customer stays connected without placing orders,
       // the connection is cleaned up after 30 minutes
       expect(SSE_IDLE_TIMEOUT_MS).toBe(30 * 60 * 1000);
       expect(getIdleTimeoutMs()).toBe(30 * 60 * 1000);
     });
 
-    it("should reset idle timeout on each new order", () => {
+    it("every new order resets the 30-minute countdown", () => {
       // Every time a customer places an order, updateLastOrderTimeForTable
       // updates the timestamp, effectively resetting the 30-min counter
       // This allows idle but active customers to stay connected indefinitely
@@ -146,8 +146,8 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
   });
 
-  describe("Grace Period: Session Restoration After Accidental Close", () => {
-    it("should preserve session for 5 minutes after unintended disconnect", () => {
+  describe("What if the customer accidentally closes the tab?", () => {
+    it("keeps the session alive for 5 minutes so they can come back", () => {
       // When customer closes browser tab (beforeunload handler closes SSE),
       // session cookie remains valid for 5 minutes
       // This allows re-entry without re-entering PIN
@@ -155,7 +155,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(gracePeriod).toBe(5 * 60 * 1000);
     });
 
-    it("should have heartbeat interval shorter than grace period", () => {
+    it("heartbeats are way more frequent than the grace period — no missed windows", () => {
       // Customer presence heartbeat (sessionStorage timestamp update)
       // runs every 30 seconds, which is well within the 5-min grace period
       // This ensures accurate grace period detection
@@ -164,7 +164,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       );
     });
 
-    it("should allow restoration within grace period", () => {
+    it("fits multiple heartbeats inside the grace window for reliable detection", () => {
       // Between closing the tab and the 5-minute grace period expiring,
       // customer can reload page and auto-restore without PIN
       const gracePeriod = CUSTOMER_SESSION_GRACE_PERIOD_MS;
@@ -173,15 +173,15 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(beatsPerGracePeriod).toBeGreaterThan(1);
     });
 
-    it("should expire session after grace period", () => {
+    it("after 5 minutes of silence — you need a new PIN, sorry", () => {
       // After 5 minutes of no activity, session is cleared
       // Customer must re-enter PIN to access table again
       expect(CUSTOMER_SESSION_GRACE_PERIOD_MS).toBe(5 * 60 * 1000);
     });
   });
 
-  describe("Beforeunload: Graceful Disconnection", () => {
-    it("should close SSE on browser unload without logout", () => {
+  describe("Does beforeunload cleanly close the SSE without logging out?", () => {
+    it("closes the event stream but keeps the cookie alive", () => {
       // beforeunload event listener closes the EventSource explicitly
       // This triggers req.on('close') on server, which calls cleanupConnection()
       // Server detects presence has zero connections and clears the ON badge
@@ -190,7 +190,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(gracePeriod).toBeGreaterThan(0);
     });
 
-    it("should allow reconnection within grace period after unload close", () => {
+    it("reconnects way before the grace period expires if they reload", () => {
       // SSE closed via beforeunload → presence cleared on server
       // Customer reloads within 5 min → auto-restore session → reconnect SSE
       // No PIN entry needed
@@ -199,7 +199,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(reconnectDelay).toBeLessThan(gracePeriod);
     });
 
-    it("should have SSE reconnect backoff shorter than grace period", () => {
+    it("SSE backoff is tiny compared to the grace period — no risk of lockout", () => {
       // If SSE temporarily drops, it reconnects after 2 seconds
       // This is much faster than the 5-minute grace period
       expect(SSE_RECONNECT_DELAY_MS).toBeLessThan(
@@ -208,18 +208,18 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
   });
 
-  describe("Session Validation Polling", () => {
-    it("should validate staff session every 10 seconds", () => {
+  describe("Does session polling catch changes before they go stale?", () => {
+    it("checks staff sessions every 10 seconds to detect admin kicks", () => {
       // Detects if admin logs out the staff user or changes permissions
       expect(STAFF_SESSION_VALIDATION_INTERVAL_MS).toBe(10 * 1000);
     });
 
-    it("should validate customer session every 5 seconds", () => {
+    it("checks customer sessions every 5 seconds to catch PIN randomizations", () => {
       // Detects if manager randomizes PIN (ejecting customer)
       expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBe(5 * 1000);
     });
 
-    it("should validate customer session faster than staff", () => {
+    it("customers get checked faster because PIN changes are more urgent", () => {
       // PIN randomization is more urgent than staff logout
       expect(CUSTOMER_SESSION_VALIDATION_INTERVAL_MS).toBeLessThan(
         STAFF_SESSION_VALIDATION_INTERVAL_MS,
@@ -227,7 +227,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
   });
 
-  describe("End-to-End Workflow: Customer Journey", () => {
+  describe("Full customer journey scenarios", () => {
     it("scenario 1: normal table ordering session", () => {
       // 1. Customer enters PIN → goToTable() called → isViewingTableSelection = false
       const tableInPresence = resolveTrackedTableId(1, 1);
@@ -332,16 +332,16 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
     });
   });
 
-  describe("Timeout Constants Synchronization", () => {
-    it("should have SSE idle timeout matching constant", () => {
+  describe("Do all the timing constants play well together?", () => {
+    it("SSE idle timeout matches the exported constant", () => {
       expect(SSE_IDLE_TIMEOUT_MS).toBe(getIdleTimeoutMs());
     });
 
-    it("should have keep-alive interval matching constant", () => {
+    it("keep-alive interval matches the exported constant", () => {
       expect(SSE_KEEP_ALIVE_INTERVAL_MS).toBe(getKeepAliveIntervalMs());
     });
 
-    it("should validate grace period is longer than validation intervals", () => {
+    it("grace period outlasts both validation intervals — otherwise it's pointless", () => {
       expect(CUSTOMER_SESSION_GRACE_PERIOD_MS).toBeGreaterThan(
         CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
       );
@@ -350,7 +350,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       );
     });
 
-    it("should validate heartbeat is reasonable relative to grace period", () => {
+    it("heartbeat is frequent but not spammy — goldilocks zone", () => {
       // Heartbeat should be frequent enough to detect grace period
       expect(CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS).toBeLessThan(
         CUSTOMER_SESSION_GRACE_PERIOD_MS,
@@ -359,7 +359,7 @@ describe("Presence Lifecycle: Table Leave & Reconnection", () => {
       expect(CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS).toBeGreaterThan(1000);
     });
 
-    it("should ensure idle timeout is much longer than validation", () => {
+    it("idle timeout dwarfs validation intervals so active customers aren't kicked", () => {
       // 30 min idle timeout >> 2 sec validation interval
       // This ensures we don't prematurely kick active customers
       expect(SSE_IDLE_TIMEOUT_MS).toBeGreaterThan(

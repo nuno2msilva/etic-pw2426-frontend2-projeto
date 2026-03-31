@@ -8,6 +8,7 @@ import {
   STAFF_SESSION_VALIDATION_INTERVAL_MS,
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
 } from '@/features/shared/lib/timeouts';
+import { sendPresenceHeartbeat, clearPresenceHeartbeat } from '@/features/shared/lib/api';
 import {
   AuthSession,
   AuthRole,
@@ -230,6 +231,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, [customerSession]);
 
+  // Send DB-backed heartbeat to server so presence works on Vercel serverless.
+  useEffect(() => {
+    if (!customerSession?.tableId || isViewingTableSelection) return;
+
+    const tableId = customerSession.tableId;
+
+    // Send immediately
+    void sendPresenceHeartbeat(tableId);
+
+    // Then every 30 seconds
+    const timer = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      void sendPresenceHeartbeat(tableId);
+    }, CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, [customerSession?.tableId, isViewingTableSelection]);
+
   // Periodically validate staff session server-side so admin actions (e.g. password reset)
   // can force immediate logout on connected clients.
   useEffect(() => {
@@ -442,13 +463,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(async () => {
+    const tableId = customerSession?.tableId;
     clearAuthSession('customer');
     clearCustomerLastSeenAt();
     setCustomerSession(null);
     setIsViewingTableSelection(true);
+    if (tableId) void clearPresenceHeartbeat(tableId);
     await sendLogoutRequest('customer');
     invalidateAllCaches();
-  }, [invalidateAllCaches, sendLogoutRequest]);
+  }, [customerSession?.tableId, invalidateAllCaches, sendLogoutRequest]);
 
   /** Logout staff session */
   const logoutStaff = useCallback(async () => {
@@ -459,13 +482,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   /** Signal that customer is leaving the table. Explicitly logs out customer for accurate presence indicators. */
   const goToTableSelection = useCallback(() => {
+    const tableId = customerSession?.tableId;
     setIsViewingTableSelection(true);
     clearAuthSession('customer');
     clearCustomerLastSeenAt();
     setCustomerSession(null);
+    if (tableId) void clearPresenceHeartbeat(tableId);
     void sendLogoutRequest('customer', true);
     invalidateAllCaches();
-  }, [invalidateAllCaches, sendLogoutRequest]);
+  }, [customerSession?.tableId, invalidateAllCaches, sendLogoutRequest]);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   const goToTable = useCallback(() => {

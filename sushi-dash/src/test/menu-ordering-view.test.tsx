@@ -47,7 +47,7 @@ function createFlow(overrides: Partial<OrderingFlow> = {}): OrderingFlow {
   };
 }
 
-describe("MenuOrderingView mobile/accessibility/success-failure behavior", () => {
+describe("Does the ordering view handle phones, limits, and accessibility?", () => {
   const table: Table = { id: "1", label: "Table 1" } as Table;
 
   beforeEach(() => {
@@ -69,14 +69,14 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     });
   });
 
-  it("access: exposes an explicit orders button label", () => {
+  it("has an accessible label on the orders button for screen readers", () => {
     render(<MenuOrderingView table={table} flow={createFlow()} />);
 
     expect(screen.getByLabelText("View order progress")).toBeInTheDocument();
     expect(screen.getByText("Orders")).toBeInTheDocument();
   });
 
-  it("success: opens order progress modal state when pending-orders button is clicked", () => {
+  it("opens the order progress modal when you tap the orders button", () => {
     const setShowProgress = jest.fn();
     render(
       <MenuOrderingView
@@ -89,7 +89,7 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     expect(setShowProgress).toHaveBeenCalledWith(true);
   });
 
-  it("failure/limit state: highlights queue counter when table reached active-order cap", () => {
+  it("turns the queue counter red when you've hit the active-order limit", () => {
     render(
       <MenuOrderingView
         table={table}
@@ -120,7 +120,7 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     expect(screen.getByText("⚠️")).toBeInTheDocument();
   });
 
-  it("mobile layout: keeps dedicated scroll container for categories/items", () => {
+  it("gives categories and items their own scrollable zone on mobile", () => {
     const { container } = render(<MenuOrderingView table={table} flow={createFlow()} />);
 
     const scrollRegion = container.querySelector(".mobile-scroll-area");
@@ -129,7 +129,7 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     expect(scrollRegion?.className).toContain("flex-1");
   });
 
-  it("cart area reserves bottom space and keeps cart controls visible", () => {
+  it("keeps the cart controls pinned at the bottom where your thumb can reach", () => {
     render(
       <MenuOrderingView
         table={table}
@@ -143,7 +143,7 @@ describe("MenuOrderingView mobile/accessibility/success-failure behavior", () =>
     expect(screen.getByLabelText("Clear cart")).toBeInTheDocument();
   });
 
-  it("guard/failure behavior: hides review button when cart is empty", () => {
+  it("hides the review button when the cart is empty — nothing to review", () => {
     render(<MenuOrderingView table={table} flow={createFlow({ cartSummary: "", totalItems: 0 })} />);
 
     expect(screen.queryByLabelText("Review order")).toBeNull();

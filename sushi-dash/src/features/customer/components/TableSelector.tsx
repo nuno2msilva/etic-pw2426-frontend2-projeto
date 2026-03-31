@@ -76,7 +76,7 @@ const TableSelector = ({
                   onClick={() => onSelectTable(table)}
                   className={cn(
                     cardVariants({ variant: "item" }),
-                    "p-6 text-center relative transition-colors transition-shadow duration-200",
+                    "p-6 text-center relative transition-all duration-200",
                     "hover:border-primary hover:shadow-sm",
                   )}
                 >

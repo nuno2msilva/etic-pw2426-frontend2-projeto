@@ -83,7 +83,7 @@ function mockAuthState(staffSession: AuthSession | null) {
   });
 }
 
-describe("Authorization behavior - route guards and shortcuts", () => {
+describe("Do route guards actually protect pages from unauthorized access?", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     mockPathname = "/";
@@ -111,7 +111,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     });
   });
 
-  it("manager sees kitchen and manager shortcuts, but not admin", async () => {
+  it("manager sees shortcuts to kitchen and manager — but not admin", async () => {
     mockAuthState(makeStaffSession("manager"));
 
     render(<AppHeader />);
@@ -121,7 +121,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(screen.queryByRole("link", { name: "Admin" })).toBeNull();
   });
 
-  it("admin does not see kitchen or manager shortcuts", async () => {
+  it("admin only sees their own panel — no kitchen or manager shortcuts", async () => {
     mockAuthState(makeStaffSession("admin"));
 
     render(<AppHeader />);
@@ -131,7 +131,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(await screen.findByRole("link", { name: "Admin" })).toBeInTheDocument();
   });
 
-  it("admin manually opening /kitchen is redirected away", async () => {
+  it("what if admin types /kitchen in the URL bar? redirected away", async () => {
     mockPathname = "/kitchen";
     mockAuthState(makeStaffSession("admin"));
 
@@ -148,7 +148,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("admin manually opening /manager is redirected away", async () => {
+  it("what if admin types /manager in the URL bar? also redirected", async () => {
     mockPathname = "/manager";
     mockAuthState(makeStaffSession("admin"));
 
@@ -165,7 +165,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("manager manually opening /kitchen is allowed", () => {
+  it("manager typing /kitchen in the URL bar? that's fine, they're allowed", () => {
     mockPathname = "/kitchen";
     mockAuthState(makeStaffSession("manager"));
 
@@ -176,7 +176,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("manager can access kitchen even when legacy session misses explicit permission", () => {
+  it("manager with a legacy session missing the permission field still gets through", () => {
     mockPathname = "/kitchen";
     mockAuthState(makeManagerSessionWithoutPermission());
 
@@ -187,7 +187,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(mockReplace).not.toHaveBeenCalled();
   });
 
-  it("header still shows kitchen shortcut for manager with missing permission", async () => {
+  it("header still shows the kitchen shortcut for legacy manager sessions", async () => {
     mockAuthState(makeManagerSessionWithoutPermission());
 
     render(<AppHeader />);
@@ -195,7 +195,7 @@ describe("Authorization behavior - route guards and shortcuts", () => {
     expect(await screen.findByRole("link", { name: "Kitchen" })).toBeInTheDocument();
   });
 
-  it("manager role with stale admin permission metadata can still access kitchen", () => {
+  it("stale admin permission metadata on a manager role doesn't block kitchen access", () => {
     mockPathname = "/kitchen";
     mockAuthState(makeManagerSessionWithStaleAdminPermission());
 

@@ -58,8 +58,23 @@ app.use("/api/settings", settingsRoutes);
 app.get("/api/events", sseHandler);      // SSE real-time stream
 
 // Presence polling endpoint (Vercel optimization: fallback if SSE drops)
-app.get("/api/events/presence", (_req, res) => {
-  res.json({ presence: getPresence() });
+// Uses same DB-backed merge as /api/tables/presence
+app.get("/api/events/presence", async (_req, res) => {
+  const memoryPresence = getPresence();
+  try {
+    const cutoff = new Date(Date.now() - 2 * 60 * 1000);
+    const activeTables = await prisma.tableConfig.findMany({
+      where: { isActive: true, customerPresenceAt: { gte: cutoff } },
+      select: { id: true },
+    });
+    const merged: Record<number, number> = { ...memoryPresence };
+    for (const t of activeTables) {
+      if (!merged[t.id] || merged[t.id] < 1) merged[t.id] = 1;
+    }
+    res.json({ presence: merged });
+  } catch {
+    res.json({ presence: memoryPresence });
+  }
 });
 
 // ─── Health check ────────────────────────────────────────────

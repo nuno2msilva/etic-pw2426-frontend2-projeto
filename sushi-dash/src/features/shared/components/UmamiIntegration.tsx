@@ -47,13 +47,13 @@ export function UmamiIntegration({
 declare global {
   interface Window {
     umami?: {
-      track: (event: string, properties?: Record<string, any>) => void;
+      track: (event: string, properties?: Record<string, string | number | boolean>) => void;
       trackView: (
         url?: string,
         referrer?: string,
-        properties?: Record<string, any>
+        properties?: Record<string, string | number | boolean>
       ) => void;
-      api: (endpoint: string, body: any) => Promise<any>;
+      api: (endpoint: string, body: unknown) => Promise<unknown>;
     };
   }
 }

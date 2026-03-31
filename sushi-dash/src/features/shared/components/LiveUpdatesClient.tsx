@@ -17,7 +17,10 @@ export default function LiveUpdatesClient() {
   const presenceTableId = resolvePresenceTableId(authenticatedTableId, Boolean(staffSession));
   const isAuthenticated = Boolean(authenticatedTableId || staffSession);
 
-  const shouldPollPresence = Boolean(pathname?.startsWith("/manager"));
+  // Poll presence on home page (table selector badges) and manager page
+  const shouldPollPresence = Boolean(
+    pathname === "/" || pathname?.startsWith("/manager"),
+  );
 
   // Don't maintain SSE presence when customer is at table selection (temporarily closes connection)
   const effectiveTableId = isViewingTableSelection ? null : presenceTableId;

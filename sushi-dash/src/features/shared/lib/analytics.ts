@@ -14,6 +14,11 @@ interface EventProperties {
   [key: string]: string | number | boolean;
 }
 
+interface UmamiTracker {
+  track: (event: string, properties?: EventProperties) => void;
+  trackView?: (url: string, referrer?: string, properties?: EventProperties) => void;
+}
+
 /**
  * Track a custom event with Umami
  * @param event - Event name (e.g., 'order_placed', 'table_login')
@@ -31,8 +36,7 @@ export function trackEvent(event: string, properties?: EventProperties): void {
     return; // Silent fail in dev
   }
 
-  // Access the global umami object (injected by the script)
-  const umami = (window as any).umami;
+  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
   if (!umami?.track) {
     return; // Silent fail in dev
   }
@@ -51,7 +55,7 @@ export function trackPageView(
   // Only track in production
   if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
 
-  const umami = (window as any).umami;
+  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
   if (!umami?.trackView) {
     console.warn('[Analytics] Umami trackView not available');
     return;

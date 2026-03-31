@@ -15,6 +15,19 @@ import { disconnectCustomerConnectionsByJti } from "../events";
 
 const router = Router();
 
+/** Clear DB-backed customer presence for a table */
+async function clearDbPresence(tableId: number | undefined | null): Promise<void> {
+  if (typeof tableId !== "number" || Number.isNaN(tableId)) return;
+  try {
+    await prisma.tableConfig.updateMany({
+      where: { id: tableId, isActive: true },
+      data: { customerPresenceAt: null },
+    });
+  } catch {
+    // Best-effort — don't block logout
+  }
+}
+
 // ── Customer login (per-table PIN) ────────────────────────────
 router.post("/login/table/:tableId", async (req, res) => {
   try {
@@ -43,6 +56,13 @@ router.post("/login/table/:tableId", async (req, res) => {
 
     // Include pinVersion so session is invalidated when manager randomizes PIN
     issueToken(res, { role: "customer", tableId, pinVersion: table.pinVersion });
+
+    // Set initial DB-backed presence so Vercel serverless can detect it immediately
+    await prisma.tableConfig.update({
+      where: { id: tableId },
+      data: { customerPresenceAt: new Date() },
+    }).catch(() => {}); // Best-effort
+
     res.json({ success: true, role: "customer", tableId });
   } catch (err) {
     console.error("Customer login error:", err);
@@ -117,13 +137,18 @@ router.post("/login/staff", async (req, res) => {
 });
 
 // ── Logout ────────────────────────────────────────────────────
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
   // If a role is specified, only clear that cookie
   const { role } = req.body as { role?: string };
 
   // Hard-stop lingering customer SSE presence for this exact authenticated token.
   if (req.customerAuth?.jti) {
     disconnectCustomerConnectionsByJti(req.customerAuth.jti);
+  }
+
+  // Clear DB-backed presence when customer logs out
+  if (!role || role === "customer") {
+    await clearDbPresence(req.customerAuth?.tableId);
   }
 
   if (role === "customer") {

@@ -47,7 +47,7 @@ function renderProbe(tableId: string, onEjected: () => void) {
   );
 }
 
-describe("Server events customer ejection", () => {
+describe("Does changing a table PIN actually kick the customer out?", () => {
   const originalEventSource = global.EventSource;
   const globalWithEventSource = global as typeof globalThis & { EventSource: typeof EventSource };
 
@@ -60,7 +60,7 @@ describe("Server events customer ejection", () => {
     globalWithEventSource.EventSource = originalEventSource;
   });
 
-  it("ejects customer when pin changes for the same table", async () => {
+  it("ejects the customer when the PIN changes on their table", async () => {
     const onEjected = jest.fn();
     renderProbe("12", onEjected);
 
@@ -72,7 +72,7 @@ describe("Server events customer ejection", () => {
     });
   });
 
-  it("does not eject customer when another table pin changes", async () => {
+  it("leaves the customer alone when a different table's PIN changes", async () => {
     const onEjected = jest.fn();
     renderProbe("12", onEjected);
 

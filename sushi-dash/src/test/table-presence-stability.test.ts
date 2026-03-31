@@ -1,7 +1,7 @@
 import { stabilizePresenceSnapshot } from "@/features/shared/hooks/useTablePresence";
 
-describe("table presence stability", () => {
-  it("keeps table ON during short empty snapshots", () => {
+describe("Does the presence indicator stay steady or flicker like a broken bulb?", () => {
+  it("keeps the table lit during brief empty-snapshot blips", () => {
     const lastSeenAt = new Map<number, number>();
     const now = 1_000;
 
@@ -12,7 +12,7 @@ describe("table presence stability", () => {
     expect(shortDrop[3]).toBe(1);
   });
 
-  it("turns table OFF after grace window expires", () => {
+  it("finally dims the table after the grace window runs out", () => {
     const lastSeenAt = new Map<number, number>();
     const now = 5_000;
 
@@ -23,7 +23,7 @@ describe("table presence stability", () => {
     expect(expired[5]).toBeUndefined();
   });
 
-  it("refreshes last-seen when table remains active", () => {
+  it("resets the clock every time the table reports activity", () => {
     const lastSeenAt = new Map<number, number>();
 
     const first = stabilizePresenceSnapshot({ 8: 1 }, {}, lastSeenAt, 10_000, 12_000);

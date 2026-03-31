@@ -8,12 +8,12 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import CRTScreen from '@/features/shared/components/CRTScreen';
 
-describe('CRT Effect', () => {
+describe('Does the CRT effect actually look like a retro TV?', () => {
   beforeEach(() => {
     window.sessionStorage.clear();
   });
 
-  it('should render CRT container when enabled', () => {
+  it('wraps everything in a CRT container when you flip the switch on', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -24,7 +24,7 @@ describe('CRT Effect', () => {
     expect(crtElement).toBeInTheDocument();
   });
 
-  it('should render crt-screen element', () => {
+  it('creates the actual screen element inside the CRT shell', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -35,7 +35,7 @@ describe('CRT Effect', () => {
     expect(crtScreen).toBeInTheDocument();
   });
 
-  it('should render crt-overlay with AV1 label', () => {
+  it('shows the AV1 overlay label like a real VHS player', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -47,7 +47,7 @@ describe('CRT Effect', () => {
     expect(crtOverlay).toHaveTextContent('AV1');
   });
 
-  it('should render pseudo-elements (::before and ::after)', () => {
+  it('has the scanline pseudo-elements baked into the CSS class', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -61,7 +61,7 @@ describe('CRT Effect', () => {
     expect(crtElement?.className).toContain('crt');
   });
 
-  it('should disable CRT when enabled={false}', () => {
+  it('kills the retro vibe when you turn CRT off', () => {
     const { container } = render(
       <CRTScreen enabled={false}>
         <div>Test Content</div>
@@ -72,7 +72,7 @@ describe('CRT Effect', () => {
     expect(crtElement).not.toBeInTheDocument();
   });
 
-  it('should verify crt-screen has z-index and positioning context', () => {
+  it('gives the screen proper stacking context so nothing pokes through', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -86,7 +86,7 @@ describe('CRT Effect', () => {
     expect(crtScreen?.className).toContain('crt-screen');
   });
 
-  it('should render children inside crt-screen', () => {
+  it('actually puts your content inside the screen — not floating in the void', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div data-testid="test-child">Test Content</div>
@@ -99,7 +99,7 @@ describe('CRT Effect', () => {
     expect(crtScreen?.contains(testChild)).toBe(true);
   });
 
-  it('should pair AV1 and flicker with one-time boot class', () => {
+  it('plays the boot-up animation on first load like powering on a CRT', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
         <div>Test Content</div>
@@ -113,7 +113,7 @@ describe('CRT Effect', () => {
     expect(crtOverlay).toHaveTextContent('AV1');
   });
 
-  it('should not replay boot class after remount (route change simulation)', () => {
+  it('does not replay the boot animation when you navigate around — once is enough', () => {
     const firstRender = render(
       <CRTScreen enabled={true}>
         <div>First Mount</div>
@@ -139,8 +139,8 @@ describe('CRT Effect', () => {
   });
 });
 
-describe('CRT Animation CSS', () => {
-  it('should have crt-scanline-roll keyframes defined', () => {
+describe('Are the CRT animations properly defined in CSS?', () => {
+  it('can the scanline roll across the screen like a real tube TV', () => {
     // Verify the keyframe animation is defined globally
     const style = document.createElement('style');
     style.textContent = `
@@ -155,7 +155,7 @@ describe('CRT Animation CSS', () => {
     expect(style.sheet).toBeTruthy();
   });
 
-  it('should have crt-turn-on keyframes defined', () => {
+  it('does the power-on animation scale and brighten like flipping the switch', () => {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes crt-turn-on {
@@ -168,7 +168,7 @@ describe('CRT Animation CSS', () => {
     expect(style.sheet).toBeTruthy();
   });
 
-  it('should have crt-overlay-anim keyframes defined', () => {
+  it('does the AV1 overlay flash briefly then vanish like a channel change', () => {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes crt-overlay-anim {
@@ -183,7 +183,7 @@ describe('CRT Animation CSS', () => {
     expect(style.sheet).toBeTruthy();
   });
 
-  it('should have crt-band-flicker keyframes defined', () => {
+  it('does the band flicker pulse like interference on old analog signals', () => {
     const style = document.createElement('style');
     style.textContent = `
       @keyframes crt-band-flicker {
@@ -199,8 +199,8 @@ describe('CRT Animation CSS', () => {
   });
 });
 
-describe('UX Elements - Theme Switcher', () => {
-  it('should verify theme switcher button can be rendered in header', () => {
+describe('Can the theme switcher change the vibe?', () => {
+  it('does the header have a theme toggle button you can actually click', () => {
     // The theme switcher is in AppHeader component
     // This test ensures the button exists and can toggle theme
     const headerContainer = document.createElement('header');
@@ -212,7 +212,7 @@ describe('UX Elements - Theme Switcher', () => {
     expect(headerContainer.querySelector('button[aria-label*="Switch"]')).toBeTruthy();
   });
 
-  it('should verify theme switcher saves to localStorage', () => {
+  it('does picking dark mode actually stick in localStorage', () => {
     const localStorageMock = {
       getItem: jest.fn((key) => {
         if (key === 'sushi-dash-theme') return null;
@@ -235,8 +235,8 @@ describe('UX Elements - Theme Switcher', () => {
   });
 });
 
-describe('UX Elements - Staff Login', () => {
-  it('should verify staff login button is present on table selection', () => {
+describe('Can staff log in from the table selector?', () => {
+  it('is the staff login button sitting there waiting for a tap', () => {
     // Staff login is in TableSelector component
     const div = document.createElement('div');
     const button = document.createElement('button');
@@ -247,7 +247,7 @@ describe('UX Elements - Staff Login', () => {
     expect(div.querySelector('button')).toBeTruthy();
   });
 
-  it('should verify staff login modal can be triggered', async () => {
+  it('can tapping staff login actually open the modal', async () => {
     const { container } = render(
       <div role="button" onClick={() => {}}>
         Staff Login
@@ -259,8 +259,8 @@ describe('UX Elements - Staff Login', () => {
   });
 });
 
-describe('UX Elements - Header Navigation', () => {
-  it('should verify header contains logo and navigation', () => {
+describe('Does the header help you get around?', () => {
+  it('shows the Sushi Dash logo as a link back home', () => {
     const header = document.createElement('header');
     const logo = document.createElement('a');
     logo.href = '/';
@@ -271,7 +271,7 @@ describe('UX Elements - Header Navigation', () => {
     expect(header.querySelector('a')?.textContent).toContain('Sushi');
   });
 
-  it('should verify logout button is conditionally rendered for authenticated users', () => {
+  it('only shows the logout button when someone is actually logged in', () => {
     const div = document.createElement('div');
     const logoutButton = document.createElement('button');
     logoutButton.setAttribute('aria-label', 'Logout');
@@ -282,8 +282,8 @@ describe('UX Elements - Header Navigation', () => {
   });
 });
 
-describe('UX Elements - Table Selector', () => {
-  it('should verify table selector shows loading state', () => {
+describe('Does the table selector guide you to a seat?', () => {
+  it('shows a loading spinner while tables are being fetched', () => {
     render(
       <div>
         <p style={{ textAlign: 'center', color: '#999' }}>Loading tables...</p>
@@ -293,7 +293,7 @@ describe('UX Elements - Table Selector', () => {
     expect(screen.getByText('Loading tables...')).toBeInTheDocument();
   });
 
-  it('should verify table selector renders grid or list', () => {
+  it('lays out available tables in a clean grid', () => {
     const { container } = render(
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2" role="region" aria-label="Available tables">
         <div>Table 1</div>
@@ -305,8 +305,8 @@ describe('UX Elements - Table Selector', () => {
   });
 });
 
-describe('UX Elements - Menu & Orders', () => {
-  it('should verify menu grid/list can render items', () => {
+describe('Can you browse the menu and manage your cart?', () => {
+  it('renders menu items in a browsable grid layout', () => {
     const { container } = render(
       <div role="grid" aria-label="Menu items">
         <div role="row">
@@ -318,7 +318,7 @@ describe('UX Elements - Menu & Orders', () => {
     expect(container.querySelector('[role="grid"]')).toBeInTheDocument();
   });
 
-  it('should verify cart summary banner is accessible', () => {
+  it('announces cart changes to screen readers via aria-live', () => {
     const { container } = render(
       <div role="status" aria-live="polite">
         <p>Cart: 0 items</p>
@@ -329,8 +329,8 @@ describe('UX Elements - Menu & Orders', () => {
   });
 });
 
-describe('UX Elements - Forms & Inputs', () => {
-  it('should verify PIN pad input accepts numeric input', async () => {
+describe('Do the forms play nice with user input?', () => {
+  it('restricts the PIN pad to numbers only with a 6-digit max', async () => {
     const { container } = render(
       <input
         type="password"
@@ -346,7 +346,7 @@ describe('UX Elements - Forms & Inputs', () => {
     expect(pinInput).toHaveAttribute('maxLength', '6');
   });
 
-  it('should verify password fields are properly masked', async () => {
+  it('masks the password field so nobody peeks over your shoulder', async () => {
     const { container } = render(
       <input
         type="password"

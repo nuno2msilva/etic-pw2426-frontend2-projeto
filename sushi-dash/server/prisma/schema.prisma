@@ -62,6 +62,7 @@ model TableConfig {
   pin        String @db.VarChar(4)
   pinVersion Int    @default(1) @map("pin_version")
   isActive   Boolean @default(true) @map("is_active")
+  customerPresenceAt DateTime? @map("customer_presence_at")
 
   sessions Session[]
   orders   Order[]

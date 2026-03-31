@@ -39,7 +39,7 @@ function renderWithProviders() {
   );
 }
 
-describe("Auth session enforcement", () => {
+describe("Does the app actually enforce who's logged in and kick imposters?", () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
@@ -52,7 +52,7 @@ describe("Auth session enforcement", () => {
     global.fetch = originalFetch;
   });
 
-  it("keeps staff logged in when session endpoint confirms active staff session", async () => {
+  it("keeps staff logged in when the server confirms their session is legit", async () => {
     const staff: AuthSession = {
       role: "manager",
       permission: "manager",
@@ -79,7 +79,7 @@ describe("Auth session enforcement", () => {
     expect(sessionStorage.getItem("sushi-dash-staff-session")).toContain('"role":"manager"');
   });
 
-  it("persists staff session in sessionStorage across provider remounts (route-change simulation)", async () => {
+  it("survives a route change — staff session persists across provider remounts", async () => {
     const staff: AuthSession = {
       role: "manager",
       permission: "manager",
@@ -111,7 +111,7 @@ describe("Auth session enforcement", () => {
     second.unmount();
   });
 
-  it("logs staff out when session endpoint no longer reports active staff session (e.g. after password reset)", async () => {
+  it("boots staff out when the server says their session is gone (e.g. password reset)", async () => {
     const staff: AuthSession = {
       role: "kitchen",
       permission: "kitchen",
@@ -137,7 +137,7 @@ describe("Auth session enforcement", () => {
     expect(getAuthSession("staff")).toBeNull();
   });
 
-  it("syncs stale local staff role to the server session role", async () => {
+  it("corrects a stale local role when the server says you've been promoted or demoted", async () => {
     const staleStaff: AuthSession = {
       role: "admin",
       permission: "admin",
@@ -170,7 +170,7 @@ describe("Auth session enforcement", () => {
     expect(getAuthSession("staff")?.permission).toBe("manager");
   });
 
-  it("keeps customer logged in when session endpoint confirms active customer session", async () => {
+  it("keeps customer logged in when the server confirms their table session", async () => {
     const customer: AuthSession = {
       role: "customer",
       tableId: "1",
@@ -195,7 +195,7 @@ describe("Auth session enforcement", () => {
     expect(getAuthSession("customer")?.tableId).toBe("1");
   });
 
-  it("logs customer out when session endpoint no longer reports active customer session", async () => {
+  it("kicks the customer out when the server says their session expired", async () => {
     const customer: AuthSession = {
       role: "customer",
       tableId: "1",
@@ -220,7 +220,7 @@ describe("Auth session enforcement", () => {
     expect(getAuthSession("customer")).toBeNull();
   });
 
-  it("logs customer out when explicitly leaving table selection for accurate presence", async () => {
+  it("logs customer out immediately on explicit table leave for snappy presence", async () => {
     const customer: AuthSession = {
       role: "customer",
       tableId: "7",

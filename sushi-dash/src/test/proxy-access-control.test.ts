@@ -1,27 +1,27 @@
 import { isPathAllowedForPermission } from "@/features/shared/lib/route-permissions";
 
-describe("proxy access control", () => {
-  it("allows manager to access kitchen", () => {
+describe("Does the bouncer check badges at every door?", () => {
+  it("can a manager waltz into the kitchen? yes they can", () => {
     expect(isPathAllowedForPermission("/kitchen", "manager")).toBe(true);
   });
 
-  it("denies admin from kitchen (admin-only policy for /admin)", () => {
+  it("does admin get stopped at the kitchen door? absolutely", () => {
     expect(isPathAllowedForPermission("/kitchen", "admin")).toBe(false);
   });
 
-  it("allows kitchen to access kitchen", () => {
+  it("can kitchen staff access their own domain? obviously", () => {
     expect(isPathAllowedForPermission("/kitchen", "kitchen")).toBe(true);
   });
 
-  it("denies kitchen from manager", () => {
+  it("what if kitchen staff tries to sneak into the manager panel?", () => {
     expect(isPathAllowedForPermission("/manager", "kitchen")).toBe(false);
   });
 
-  it("allows manager to access manager", () => {
+  it("can the manager access... the manager page? groundbreaking", () => {
     expect(isPathAllowedForPermission("/manager", "manager")).toBe(true);
   });
 
-  it("denies manager from admin", () => {
+  it("what if a manager tries the admin panel? nope, rank matters", () => {
     expect(isPathAllowedForPermission("/admin", "manager")).toBe(false);
   });
 });

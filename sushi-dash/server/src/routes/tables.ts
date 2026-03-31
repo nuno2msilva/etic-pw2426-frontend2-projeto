@@ -21,9 +21,76 @@ function generatePin(): string {
   return String(Math.floor(Math.random() * 10000)).padStart(4, "0");
 }
 
+/** How recently a heartbeat must have been to count as "present" */
+const PRESENCE_STALENESS_MS = 2 * 60 * 1000; // 2 minutes
+
 // ── Current table presence snapshot (public) ────────────────
-router.get("/presence", (_req, res) => {
-  res.json({ presence: getPresence() });
+// Merges in-memory SSE presence with database-backed heartbeats
+// so the indicator works reliably on Vercel serverless.
+router.get("/presence", async (_req, res) => {
+  const memoryPresence = getPresence();
+
+  try {
+    const cutoff = new Date(Date.now() - PRESENCE_STALENESS_MS);
+    const activeTables = await prisma.tableConfig.findMany({
+      where: {
+        isActive: true,
+        customerPresenceAt: { gte: cutoff },
+      },
+      select: { id: true },
+    });
+
+    // Merge: DB-backed tables get at least 1 if they aren't already in memory
+    const merged: Record<number, number> = { ...memoryPresence };
+    for (const t of activeTables) {
+      if (!merged[t.id] || merged[t.id] < 1) {
+        merged[t.id] = 1;
+      }
+    }
+
+    res.json({ presence: merged });
+  } catch {
+    // Fallback to in-memory only if DB is unreachable
+    res.json({ presence: memoryPresence });
+  }
+});
+
+// ── Customer heartbeat (updates DB-backed presence) ──────────
+// Customers call this periodically so Vercel serverless can detect presence
+// even when SSE connections are on a different function instance.
+router.post("/:id/heartbeat", async (req, res) => {
+  const id = Number(req.params.id);
+
+  // Only allow the authenticated customer for this table
+  if (!req.customerAuth || req.customerAuth.tableId !== id) {
+    res.status(403).json({ error: "Not authorized for this table" });
+    return;
+  }
+
+  try {
+    await prisma.tableConfig.updateMany({
+      where: { id, isActive: true },
+      data: { customerPresenceAt: new Date() },
+    });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// ── Clear customer presence from a table (called on logout) ──
+router.delete("/:id/heartbeat", async (req, res) => {
+  const id = Number(req.params.id);
+
+  try {
+    await prisma.tableConfig.updateMany({
+      where: { id, isActive: true },
+      data: { customerPresenceAt: null },
+    });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // ── List all tables ──────────────────────────────────────────
@@ -143,7 +210,7 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
 
     const updated = await prisma.tableConfig.updateMany({
       where: { id, isActive: true },
-      data: { pin, pinVersion: { increment: 1 } },
+      data: { pin, pinVersion: { increment: 1 }, customerPresenceAt: null },
     });
 
     if (updated.count === 0) {
@@ -178,7 +245,7 @@ router.post("/:id/pin/randomize", requireRole("manager"), async (req, res) => {
 
     const updated = await prisma.tableConfig.update({
       where: { id },
-      data: { pin: newPin, pinVersion: { increment: 1 } },
+      data: { pin: newPin, pinVersion: { increment: 1 }, customerPresenceAt: null },
     });
 
     broadcast({ type: "pin-changed", tableId: id });

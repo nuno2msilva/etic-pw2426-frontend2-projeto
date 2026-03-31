@@ -15,13 +15,13 @@ function createMockResponse() {
   };
 }
 
-describe("Idle Timeout", () => {
-  it("should expose 30-minute idle timeout constant", () => {
+describe("What happens when a customer just... sits there doing nothing?", () => {
+  it("kicks idle connections after exactly 30 minutes", () => {
     const idleTimeoutMs = getIdleTimeoutMs();
     expect(idleTimeoutMs).toBe(30 * 60 * 1000); // 30 minutes
   });
 
-  it("should include idle timeout in connection metadata", () => {
+  it("the timeout is a real positive number, not some NaN nonsense", () => {
     // This verifies the timeout constant is properly exported
     const timeout = getIdleTimeoutMs();
     expect(typeof timeout).toBe("number");
@@ -29,7 +29,7 @@ describe("Idle Timeout", () => {
     expect(timeout).toBe(1800000); // Exactly 30 minutes in milliseconds
   });
 
-  it("should allow updating last order time for a table", () => {
+  it("can bump the last-order timestamp to keep the connection alive", () => {
     // This test verifies the function exists and can be called without error
     const tableId = 42;
     expect(() => {
@@ -37,7 +37,7 @@ describe("Idle Timeout", () => {
     }).not.toThrow();
   });
 
-  it("should gracefully handle updating non-existent tables", () => {
+  it("doesn't explode when updating a table that doesn't exist", () => {
     // Non-existent tables should not cause errors
     expect(() => {
       updateLastOrderTimeForTable(999);

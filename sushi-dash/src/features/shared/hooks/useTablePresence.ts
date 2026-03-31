@@ -18,7 +18,7 @@ export function stabilizePresenceSnapshot(
   const stabilized: Record<number, number> = {};
 
   for (const [rawId, count] of Object.entries(normalizedIncoming)) {
-    const tableId = Number(rawId);
+    const tableId = parseInt(rawId, 10);
     if (Number.isNaN(tableId) || typeof count !== "number" || count <= 0) continue;
 
     stabilized[tableId] = count;

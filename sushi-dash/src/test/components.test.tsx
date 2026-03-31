@@ -209,8 +209,8 @@ describe("Can staff log out and back in without a meltdown?", () => {
   });
 });
 
-describe("Table occupancy indicator", () => {
-  it("shows red ON badge when table has active presence", () => {
+describe("Does the table light up red when someone's sitting there?", () => {
+  it("shows a red ON badge when someone is actually at the table", () => {
     mockUseTablePresence.mockReturnValue({ data: { 1: 2 } });
 
     render(
@@ -224,7 +224,7 @@ describe("Table occupancy indicator", () => {
     expect(screen.getByText("ON")).toBeInTheDocument();
   });
 
-  it("does not show ON badge when table has no active presence", () => {
+  it("stays silent when nobody's home — no phantom badges", () => {
     mockUseTablePresence.mockReturnValue({ data: {} });
 
     render(

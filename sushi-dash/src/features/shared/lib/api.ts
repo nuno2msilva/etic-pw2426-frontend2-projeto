@@ -474,3 +474,24 @@ export async function updateSettings(
     "Failed to update settings"
   );
 }
+
+// ==========================================================================
+// TABLE PRESENCE HEARTBEAT
+// ==========================================================================
+
+/** POST /api/tables/:tableId/heartbeat — Send customer presence heartbeat */
+export async function sendPresenceHeartbeat(tableId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/tables/${tableId}/heartbeat`, {
+    method: "POST",
+    credentials: "include",
+  }).catch(() => {}); // Best-effort, don't throw
+}
+
+/** DELETE /api/tables/:tableId/heartbeat — Clear customer presence on leave */
+export async function clearPresenceHeartbeat(tableId: string): Promise<void> {
+  await fetch(`${API_BASE}/api/tables/${tableId}/heartbeat`, {
+    method: "DELETE",
+    credentials: "include",
+    keepalive: true,
+  }).catch(() => {}); // Best-effort
+}

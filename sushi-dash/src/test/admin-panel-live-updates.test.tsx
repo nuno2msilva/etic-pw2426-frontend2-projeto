@@ -9,7 +9,7 @@ jest.mock("sonner", () => ({
   },
 }));
 
-describe("Admin panel live updates", () => {
+describe("Does the admin panel stay fresh with live data?", () => {
   const originalFetch = global.fetch;
 
   beforeEach(() => {
@@ -25,7 +25,7 @@ describe("Admin panel live updates", () => {
     global.fetch = originalFetch;
   });
 
-  it("updates last login and hides password preview after polling refresh", async () => {
+  it("refreshes the last-login time and hides password previews after polling", async () => {
     const firstPayload = {
       users: [
         {

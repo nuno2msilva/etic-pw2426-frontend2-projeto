@@ -4,24 +4,24 @@ import {
   upsertClientConnection,
 } from "../../server/src/events";
 
-describe("SSE client presence switching", () => {
-  it("tracks authenticated customer table id instead of requested query table id", () => {
+describe("Does the SSE system track who's really at which table?", () => {
+  it("trusts the server's authenticated table ID over the client's request", () => {
     expect(resolveTrackedTableId(1, 2)).toBe(2);
     expect(resolveTrackedTableId(4, 9)).toBe(9);
     expect(resolveTrackedTableId(9, 1)).toBe(1);
   });
 
-  it("does not track presence when there is no authenticated customer table", () => {
+  it("stops tracking when there's no authenticated customer table", () => {
     expect(resolveTrackedTableId(2, null)).toBeNull();
     expect(resolveTrackedTableId(null, null)).toBeNull();
   });
 
-  it("does not track presence when no tableId was requested (e.g. selector after logout)", () => {
+  it("goes silent when no table was requested — like after logout", () => {
     expect(resolveTrackedTableId(null, 2)).toBeNull();
     expect(resolveTrackedTableId(null, 9)).toBeNull();
   });
 
-  it("replaces prior connection regardless of table id sequence", () => {
+  it("swaps to the new connection when a client reconnects to a different table", () => {
     const connections = new Map<string, { connection: string; tableId: number | null }>();
 
     const first = upsertClientConnection(connections, "client-a", "conn-1", 1);
@@ -41,7 +41,7 @@ describe("SSE client presence switching", () => {
     expect(connections.get("client-a")).toEqual({ connection: "conn-4", tableId: 1 });
   });
 
-  it("keeps independent state per client id", () => {
+  it("keeps each client's connection state completely isolated", () => {
     const connections = new Map<string, { connection: string; tableId: number | null }>();
 
     upsertClientConnection(connections, "client-a", "conn-a1", 2);
@@ -51,7 +51,7 @@ describe("SSE client presence switching", () => {
     expect(connections.get("client-b")).toEqual({ connection: "conn-b1", tableId: 7 });
   });
 
-  it("no-ops disconnect by jti when there are no tracked connections", () => {
+  it("doesn't crash when disconnecting a JTI that was never connected", () => {
     expect(disconnectCustomerConnectionsByJti("missing-jti")).toBe(0);
   });
 });
