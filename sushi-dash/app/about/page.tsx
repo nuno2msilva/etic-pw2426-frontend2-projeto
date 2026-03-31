@@ -296,32 +296,48 @@ const menu = useApp().menu;  // Direct access`,
     id: 13,
     title: "Animations & Transitions (CRT Effect + Dialog)",
     description: "CRT boot animation plays on page load (turn-on scan lines, AV1 label, brightness ramp). Smoothly scrolling scanlines throughout. Dialog modals fade and zoom in/out. Hover effects on buttons. Samsung CRT effect visible on every page.",
-    keyFiles: ["src/components/app/crt.css", "src/components/app/CRTScreen.tsx", "src/components/ui/dialog.tsx"],
-    codeSnippet: `/* src/components/app/crt.css — CRT animation keyframes */
-/* Moving horizontal line, continuously scrolling top-to-bottom */
+    keyFiles: ["src/features/shared/components/crt.css", "src/features/shared/components/CRTScreen.tsx", "src/index.css"],
+    codeSnippet: `/* src/index.css — Global CRT animation keyframes */
+/* Moving horizontal line, continuously scrolling top-to-bottom 8s cycle */
 @keyframes crt-scanline-roll {
   0%   { transform: translateY(-100%); }
   100% { transform: translateY(100vh); }
 }
 
-/* Boot sequence: vertical scan lines compress then expand on power-up */
+/* Flickering effect mimics old CRT vertical sync jitter */
+@keyframes crt-band-flicker {
+  0%, 100% { opacity: 1; }
+  25%      { opacity: 0.75; }
+  50%      { opacity: 0.85; }
+  75%      { opacity: 0.78; }
+}
+
+/* Boot sequence: 4s compression & brightness fade then full display */
 @keyframes crt-turn-on {
   0% {
     transform: scale(1, 0.8) translate3d(0, 0, 0);
     filter: brightness(30);
     opacity: 1;
   }
-  /* ...scan lines travel down... */
+  11% {
+    transform: scale(1, 1) translate3d(0, 0, 0);
+    filter: contrast(0) brightness(0);
+    opacity: 0;
+  }
   100% {
     transform: scale(1, 1) translate3d(0, 0, 0);
-    filter: brightness(1.2) saturate(1.3);
+    filter: contrast(1) brightness(1.2) saturate(1.3);
     opacity: 1;
   }
 }
 
-/* Applied to every page via CRTScreen wrapper */
-.crt::after { animation: crt-scanline-roll 8s linear infinite; }
-.crt-screen { animation: crt-turn-on 4s linear forwards; }`,
+/* Applied via CRTScreen (enabled by default on all pages) */
+.crt::after {
+  animation: crt-scanline-roll 8s linear infinite, crt-band-flicker 0.12s steps(2) infinite;
+}
+.crt-screen {
+  animation: crt-turn-on 4s linear forwards;
+}`,
   },
   {
     id: 14,
@@ -479,7 +495,7 @@ export default function AboutPage() {
         <div className="mt-16 border-t pt-8 text-center text-muted-foreground">
           <p className="text-sm">✅ All 17 requirements fully implemented and tested</p>
           <p className="text-sm mt-2">Build: <code className="bg-muted px-2 py-1 rounded">npm run build</code></p>
-          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> (255/255 passing)</p>
+          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> (278/278 passing, 19 suites)</p>
         </div>
       </div>
     </main>

@@ -180,10 +180,10 @@ These credentials are automatically created by the database seed script. **For p
 ## � Requirements Traceability
 
 Visit **[/about](/about)** in the running app to see the complete requirements traceability matrix with:
-- 16 core project requirements fully implemented
+- 17 core project requirements fully implemented
 - Code snippets demonstrating each requirement
 - File paths showing where each requirement is implemented
-- Build and test status (255/255 tests passing, 0 TypeScript errors)
+- Build and test status (278/278 tests passing, 19 suites, 0 TypeScript errors)
 
 All requirements from [REQUIREMENTS.md](REQUIREMENTS.md) (Next.js, TypeScript, Hooks, Tailwind, Auth, SEO, API CRUD, Navigation, Responsive Design, Vercel, Testing, Context API, Animations, React Query, useMemo/useCallback/useRef, Prisma ORM) are fully implemented and documented.
 
@@ -272,8 +272,8 @@ When creating new components or pages:
 This ensures new components automatically align with existing visual rhythm across all breakpoints.
 
 ### Testing
-- **Jest** + **Testing Library** — 255 tests across 18 suites
-- API, auth, components, data integrity, order-status, presence lifecycle, idle timeout, and utility tests
+- **Jest** + **Testing Library** — 278 tests across 19 suites
+- API, auth, components, data integrity, order-status, presence lifecycle, idle timeout, CRT-UX regression tests, and utility tests
 
 ## 📂 Project Structure
 

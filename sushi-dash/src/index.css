@@ -112,6 +112,29 @@
     transition: none !important;
   }
 
+  /* Exception: Allow CRT animations in performance mode */
+  .perf-max .crt,
+  .perf-max .crt::before,
+  .perf-max .crt::after,
+  .perf-max .crt > .crt-screen,
+  .perf-max .crt > .crt-overlay {
+    animation: unset !important;
+  }
+
+  .perf-max .crt::after {
+    animation: crt-scanline-roll 8s linear infinite, crt-band-flicker 0.12s steps(2) infinite !important;
+  }
+
+  .perf-max .crt > .crt-screen {
+    animation: crt-turn-on 4s linear !important;
+    animation-fill-mode: forwards;
+  }
+
+  .perf-max .crt > .crt-overlay {
+    animation: crt-overlay-anim 5s linear !important;
+    animation-fill-mode: forwards;
+  }
+
   .perf-max .shadow,
   .perf-max .shadow-sm,
   .perf-max .shadow-md,
@@ -131,6 +154,56 @@
   h1, h2, h3 {
     font-family: var(--font-display);
   }
+}
+
+/* ── CRT Monitor Effect Keyframes ─────────────────────────────────────── */
+@keyframes crt-scanline-roll {
+  0%   { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes crt-band-flicker {
+  0%, 100% { opacity: 1; }
+  25%      { opacity: 0.75; }
+  50%      { opacity: 0.85; }
+  75%      { opacity: 0.78; }
+}
+
+@keyframes crt-turn-on {
+  0% {
+    transform: scale(1, 0.8) translate3d(0, 0, 0);
+    filter: brightness(30);
+    opacity: 1;
+  }
+  3.5% {
+    transform: scale(1, 0.8) translate3d(0, 100%, 0);
+  }
+  3.6% {
+    transform: scale(1, 0.8) translate3d(0, -100%, 0);
+    opacity: 1;
+  }
+  9% {
+    transform: scale(1.3, 0.6) translate3d(0, 100%, 0);
+    filter: brightness(30);
+    opacity: 0;
+  }
+  11% {
+    transform: scale(1, 1) translate3d(0, 0, 0);
+    filter: contrast(0) brightness(0);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1, 1) translate3d(0, 0, 0);
+    filter: contrast(1) brightness(1.2) saturate(1.3);
+    opacity: 1;
+  }
+}
+
+@keyframes crt-overlay-anim {
+  0%   { visibility: hidden; }
+  20%  { visibility: hidden; }
+  21%  { visibility: visible; }
+  100% { visibility: hidden; }
 }
 
 @layer utilities {
