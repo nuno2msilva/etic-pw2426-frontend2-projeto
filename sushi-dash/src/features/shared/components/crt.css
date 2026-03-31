@@ -85,7 +85,7 @@
   z-index: 9998;
   pointer-events: none;
   animation:
-    crt-scanline-roll 6s linear infinite,
+    crt-scanline-roll 8s linear infinite,
     crt-band-flicker 0.12s steps(2) infinite;
 }
 
@@ -118,7 +118,7 @@
 
 /* Turn-on boot animation for screen content */
 .crt > .crt-screen {
-  animation: crt-turn-on 1.2s linear;
+  animation: crt-turn-on 4s linear;
   animation-fill-mode: forwards;
 }
 

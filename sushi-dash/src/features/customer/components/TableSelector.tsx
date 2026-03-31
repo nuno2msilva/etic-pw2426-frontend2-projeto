@@ -34,7 +34,13 @@ const TableSelector = ({
           </div>
         </div>
 
-        {showEmptyState ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center w-full flex-1">
+            <div className="text-center px-6">
+              <p className="type-body-muted">Loading tables...</p>
+            </div>
+          </div>
+        ) : showEmptyState ? (
           <div className="flex items-center justify-center w-full flex-1">
             <div className="text-center px-6">
               <span className="text-5xl block mb-4">🪑</span>
