@@ -49,8 +49,12 @@ const TABLE_PINS: Record<string, string> = {
 };
 
 // Default users with email & password (permissions = kitchen < manager < admin)
+// These are created automatically when the database is seeded (npm run db:seed)
+// Perfect for fresh deployments to kickstart the app and immediately start managing menus/tables
 const DEFAULT_USERS = [
   { email: "admin@sushidash.dev", username: "admin", password: "Admin@12345", permission: "admin" as const, passwordResetRequired: false },
+  { email: "manager@sushidash.dev", username: "manager", password: "Manager@12345", permission: "manager" as const, passwordResetRequired: false },
+  { email: "kitchen@sushidash.dev", username: "kitchen", password: "Kitchen@12345", permission: "kitchen" as const, passwordResetRequired: false },
 ];
 
 async function seed() {
@@ -124,6 +128,13 @@ async function seed() {
       where: { key: "maxActiveOrdersPerTable" },
       update: { value: DEFAULT_SETTINGS.maxActiveOrdersPerTable },
       create: { key: "maxActiveOrdersPerTable", value: DEFAULT_SETTINGS.maxActiveOrdersPerTable },
+    });
+
+    // Log default credentials reminder
+    console.log("\n📋 Default Staff Credentials:\n");
+    DEFAULT_USERS.forEach((u) => {
+      console.log(`   ${u.permission.toUpperCase()}: ${u.email}`);
+      console.log(`   Password: ${u.password}\n`);
     });
 
     console.log("✅ Seed complete!");

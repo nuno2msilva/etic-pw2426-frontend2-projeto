@@ -1,10 +1,14 @@
 /**
  * Umami Analytics Integration
  * Tracks user behavior: orders, sessions, admin actions, kitchen events
+ * Only enabled in production (Vercel/hosted environments)
  */
 
 const UMAMI_TRACKING_ID = process.env.NEXT_PUBLIC_UMAMI_ID || '';
 const UMAMI_ENDPOINT = process.env.NEXT_PUBLIC_UMAMI_ENDPOINT || 'https://analytics.umami.is';
+
+// Only enable analytics in production (Vercel) to avoid local dev noise
+const IS_PRODUCTION = process.env.NODE_ENV === 'production' && typeof window !== 'undefined';
 
 interface EventProperties {
   [key: string]: string | number | boolean;
@@ -16,21 +20,21 @@ interface EventProperties {
  * @param properties - Optional event properties
  */
 export function trackEvent(event: string, properties?: EventProperties): void {
+  // Only track in production - skip analytics noise in local development
+  if (!IS_PRODUCTION) return;
+
   if (!UMAMI_TRACKING_ID) {
-    console.warn('[Analytics] Umami tracking ID not configured');
-    return;
+    return; // Silent fail in dev
   }
 
   if (typeof window === 'undefined') {
-    console.warn('[Analytics] Cannot track event outside of browser context');
-    return;
+    return; // Silent fail in dev
   }
 
   // Access the global umami object (injected by the script)
   const umami = (window as any).umami;
   if (!umami?.track) {
-    console.warn('[Analytics] Umami script not loaded');
-    return;
+    return; // Silent fail in dev
   }
 
   umami.track(event, properties);
@@ -44,7 +48,8 @@ export function trackPageView(
   referrer?: string,
   properties?: EventProperties
 ): void {
-  if (!UMAMI_TRACKING_ID || typeof window === 'undefined') return;
+  // Only track in production
+  if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
 
   const umami = (window as any).umami;
   if (!umami?.trackView) {

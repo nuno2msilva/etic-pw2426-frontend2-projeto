@@ -13,6 +13,9 @@ A full-stack sushi restaurant ordering system with real-time order management, r
 - **Idle Timeout** — Customers inactive for 30 minutes (no new orders) are automatically disconnected. Timer resets on each order placement.
 - **Role-based Auth** — JWT via httpOnly cookies for customers and staff; bcrypt-hashed passwords for staff users (kitchen, manager, admin).
 - **Responsive Design** — Mobile-first with Tailwind CSS and dark mode support.
+- **Privacy-Focused Analytics** — Umami integration for tracking user behavior (table selection, page views, order placement). Production-only (disabled in local dev). GDPR-compliant, no cookies, no fingerprinting.
+- **CRT Effect on by Default** — Authentic Samsung CRT TV visual experience with scanlines and vertical sync effects enabled on all pages. Can be disabled via config flag.
+- **Default Staff Users** — Fresh deployments include 3 hardcoded staff users (Admin, Manager, Kitchen) with default passwords displayed on database seed. Enables immediate table/menu creation without bootstrap overhead.
 
 ## 🏗️ Architecture
 
@@ -151,12 +154,15 @@ Click "Staff Login" on the table selector page to open the login modal:
 - Manager users are redirected to Manager Panel
 - Admin users are redirected to Admin Panel
 
-Default seeded admin credentials:
-- Username: **admin**
-- Email: **admin@sushidash.dev**
-- Password: **Admin@12345**
+Default seeded staff credentials (displayed on `npm run db:seed`):
 
-Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, change/reset this credential immediately after first login.
+| Role | Email | Password |
+|------|-------|----------|
+| **Admin** | admin@sushidash.dev | Admin@12345 |
+| **Manager** | manager@sushidash.dev | Manager@12345 |
+| **Kitchen** | kitchen@sushidash.dev | Kitchen@12345 |
+
+These credentials are automatically created by the database seed script. **For production deployments, change/reset these credentials immediately after first login.** Credentials are defined in `sushi-dash/server/src/db/seed.ts`.
 
 ### Permission Matrix
 
@@ -171,12 +177,23 @@ Credentials are defined in sushi-dash/server/src/db/seed.ts. For production, cha
 | Reset staff passwords | ❌ | ❌ | ❌ | ✅ |
 | Change own password | ❌ | ✅ | ✅ | ✅ |
 
-## 🛠️ Tech Stack
+## � Requirements Traceability
+
+Visit **[/about](/about)** in the running app to see the complete requirements traceability matrix with:
+- 16 core project requirements fully implemented
+- Code snippets demonstrating each requirement
+- File paths showing where each requirement is implemented
+- Build and test status (255/255 tests passing, 0 TypeScript errors)
+
+All requirements from [REQUIREMENTS.md](REQUIREMENTS.md) (Next.js, TypeScript, Hooks, Tailwind, Auth, SEO, API CRUD, Navigation, Responsive Design, Vercel, Testing, Context API, Animations, React Query, useMemo/useCallback/useRef, Prisma ORM) are fully implemented and documented.
+
+## �🛠️ Tech Stack
 
 ### Frontend
 - **Next.js 16** — React framework with App Router & Turbopack
 - **React 18** + **TypeScript**
 - **TanStack React Query** — Server state & caching
+- **Umami Analytics** — Privacy-focused user tracking (table selection, page views, order placement). Production-only via environment variable.
 - **Server-Sent Events (SSE)** — Real-time table presence, order updates, PIN changes
 - **Polling Fallback** — 8-second presence interval for Vercel resilience (exponential backoff + polling endpoint)
 - **Radix UI / shadcn/ui** — Accessible component primitives

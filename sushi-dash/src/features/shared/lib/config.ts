@@ -4,7 +4,7 @@
 export const API_BASE: string = process.env.NEXT_PUBLIC_API_URL || "";
 
 /** Toggle CRT/VCR visual effect globally. Set to false to disable it. */
-export const ENABLE_CRT_EFFECT: boolean = false;
+export const ENABLE_CRT_EFFECT: boolean = true;
 
 /**
  * Web-vitals reporter adds extra client work and network activity.

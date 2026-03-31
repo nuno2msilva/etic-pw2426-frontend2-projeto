@@ -107,13 +107,13 @@ function ProviderContent({ children, showToaster }: { children: React.ReactNode;
         <CRTScreen enabled>
           <div className="h-dvh flex flex-col overflow-hidden">
             {useLightHeader ? <LightHeader /> : <AppHeader />}
-            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+            <div className="flex-1 min-h-0 overflow-auto">{children}</div>
           </div>
         </CRTScreen>
       ) : (
         <div className="h-dvh flex flex-col overflow-hidden">
           {useLightHeader ? <LightHeader /> : <AppHeader />}
-          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+          <div className="flex-1 min-h-0 overflow-auto">{children}</div>
         </div>
       )}
     </>

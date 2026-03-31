@@ -118,6 +118,10 @@
 
 /* Turn-on boot animation for screen content */
 .crt > .crt-screen {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   animation: crt-turn-on 1.2s linear;
   animation-fill-mode: forwards;
 }

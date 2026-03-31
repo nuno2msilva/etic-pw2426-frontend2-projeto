@@ -10,6 +10,7 @@ import { notifySuccess } from "@/features/shared/lib/notify";
 import { UI_TEXT } from "@/features/shared/lib/ui-text";
 
 import { useAuth } from "@/features/shared/context/AuthContext";
+import { customerEvents } from "@/features/shared";
 import TableSelector from "@/features/customer/components/TableSelector";
 import type { Table } from "@/features/shared/types/models";
 
@@ -150,6 +151,9 @@ const CustomerPage = () => {
   // ── Table selection handlers ──────────────────────────────────────────────
 
   const handleSelectTable = (table: Table) => {
+    // Track table selection for analytics
+    customerEvents.tableSelected(table.id);
+    
     if (isCustomerAuthenticated && customerSession?.tableId === table.id) {
       setSelectedTable(table);
       goToTable(); // Signal that customer is now at a table
