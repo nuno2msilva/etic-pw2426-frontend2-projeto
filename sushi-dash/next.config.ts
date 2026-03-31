@@ -23,6 +23,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     resolveAlias: {
       "@": "./src",
+      // Skip Next.js's unconditional polyfill bundle — our browserslist targets
+      // Chrome 105+, Safari 15.4+, Firefox 104+, Edge 105+ which natively support
+      // all of: Array.at, Array.flat/flatMap, Object.fromEntries, Object.hasOwn,
+      // String.trimStart/trimEnd. The 13.7 KiB chunk is pure dead weight.
+      "next/dist/build/polyfills/polyfill-module.js": "./src/lib/noop.ts",
     },
   },
 
