@@ -126,11 +126,21 @@
   }
 
   .perf-max .crt > .crt-screen {
+    animation: unset !important;
+  }
+
+  /* Boot animations only on initial mount */
+  .perf-max .crt > .crt-screen.crt-boot {
     animation: crt-turn-on 4s linear !important;
     animation-fill-mode: forwards;
   }
 
   .perf-max .crt > .crt-overlay {
+    animation: unset !important;
+  }
+
+  /* Boot animation for AV1 overlay only on initial mount */
+  .perf-max .crt > .crt-overlay.crt-boot {
     animation: crt-overlay-anim 5s linear !important;
     animation-fill-mode: forwards;
   }
