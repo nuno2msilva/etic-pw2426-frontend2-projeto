@@ -35,6 +35,13 @@ export function resolvePresenceTableId(
   return hasStaffSession ? null : authenticatedTableId;
 }
 
+export function resolveHomeHeaderMode(
+  authenticatedTableId: string | null,
+  hasStaffSession: boolean,
+): "app" | "light" {
+  return authenticatedTableId || hasStaffSession ? "app" : "light";
+}
+
 export function Providers({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
@@ -43,19 +50,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
   if (pathname === "/") {
     return (
       <AuthProvider>
-        {ENABLE_CRT_EFFECT ? (
-          <CRTScreen enabled>
-            <div className="h-dvh flex flex-col overflow-hidden">
-              <LightHeader />
-              <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-            </div>
-          </CRTScreen>
-        ) : (
-          <div className="h-dvh flex flex-col overflow-hidden">
-            <LightHeader />
-            <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
-          </div>
-        )}
+        <HomeRouteShell>{children}</HomeRouteShell>
       </AuthProvider>
     );
   }
@@ -66,6 +61,30 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <ProvidersShell>{children}</ProvidersShell>
       </AuthProvider>
     </QueryRuntimeProvider>
+  );
+}
+
+function HomeRouteShell({ children }: { children: React.ReactNode }) {
+  const { authenticatedTableId, staffSession } = useAuth();
+  const homeHeaderMode = resolveHomeHeaderMode(authenticatedTableId, Boolean(staffSession));
+  const header = homeHeaderMode === "app" ? <AppHeader /> : <LightHeader />;
+
+  if (ENABLE_CRT_EFFECT) {
+    return (
+      <CRTScreen enabled>
+        <div className="h-dvh flex flex-col overflow-hidden">
+          {header}
+          <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+        </div>
+      </CRTScreen>
+    );
+  }
+
+  return (
+    <div className="h-dvh flex flex-col overflow-hidden">
+      {header}
+      <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    </div>
   );
 }
 
