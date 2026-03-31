@@ -9,6 +9,10 @@ import userEvent from '@testing-library/user-event';
 import CRTScreen from '@/features/shared/components/CRTScreen';
 
 describe('CRT Effect', () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+  });
+
   it('should render CRT container when enabled', () => {
     const { container } = render(
       <CRTScreen enabled={true}>
@@ -93,6 +97,45 @@ describe('CRT Effect', () => {
     const crtScreen = container.querySelector('.crt-screen');
 
     expect(crtScreen?.contains(testChild)).toBe(true);
+  });
+
+  it('should pair AV1 and flicker with one-time boot class', () => {
+    const { container } = render(
+      <CRTScreen enabled={true}>
+        <div>Test Content</div>
+      </CRTScreen>
+    );
+
+    const crtRoot = container.querySelector('.crt');
+    const crtOverlay = container.querySelector('.crt-overlay');
+
+    expect(crtRoot).toHaveClass('crt-boot');
+    expect(crtOverlay).toHaveTextContent('AV1');
+  });
+
+  it('should not replay boot class after remount (route change simulation)', () => {
+    const firstRender = render(
+      <CRTScreen enabled={true}>
+        <div>First Mount</div>
+      </CRTScreen>
+    );
+
+    const firstRoot = firstRender.container.querySelector('.crt');
+    expect(firstRoot).toHaveClass('crt-boot');
+
+    firstRender.unmount();
+
+    const secondRender = render(
+      <CRTScreen enabled={true}>
+        <div>Second Mount</div>
+      </CRTScreen>
+    );
+
+    const secondRoot = secondRender.container.querySelector('.crt');
+    const secondOverlay = secondRender.container.querySelector('.crt-overlay');
+
+    expect(secondRoot).not.toHaveClass('crt-boot');
+    expect(secondOverlay).toHaveTextContent('AV1');
   });
 });
 

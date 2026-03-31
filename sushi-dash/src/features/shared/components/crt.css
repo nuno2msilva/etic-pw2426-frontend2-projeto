@@ -86,10 +86,15 @@
   );
   z-index: 9998;
   pointer-events: none;
+  animation: crt-scanline-roll 8s linear infinite;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(150, 255, 150, 0.2);
+}
+
+/* Boot-only flicker: paired with AV1 and initial turn-on. */
+.crt.crt-boot::after {
   animation:
     crt-scanline-roll 8s linear infinite,
     crt-band-flicker 0.12s steps(2) infinite;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.3), inset 0 0 10px rgba(150, 255, 150, 0.2);
 }
 
 /* Scanlines + RGB sub-pixel pattern (fixed to viewport) */
@@ -121,6 +126,10 @@
 
 /* Turn-on boot animation for screen content */
 .crt > .crt-screen {
+  animation: none;
+}
+
+.crt.crt-boot > .crt-screen {
   animation: crt-turn-on 4s linear;
   animation-fill-mode: forwards;
 }
@@ -136,11 +145,15 @@
   visibility: hidden;
   pointer-events: none;
   z-index: 9999;
-  animation: crt-overlay-anim 5s linear;
-  animation-fill-mode: forwards;
+  animation: none;
   -webkit-font-smoothing: none;
   -moz-osx-font-smoothing: unset;
   image-rendering: pixelated;
+}
+
+.crt.crt-boot > .crt-overlay {
+  animation: crt-overlay-anim 5s linear;
+  animation-fill-mode: forwards;
 }
 
 /* Respect system-level reduced-motion preference */
