@@ -33,10 +33,7 @@ export function UmamiIntegration({
       data-website-id={trackingId}
       data-exclude-domains={excludeDomains.join(',')}
       data-auto-track="true"
-      strategy="lazyOnload"
-      onLoad={() => {
-        console.log('[Umami] Analytics script loaded successfully');
-      }}
+      strategy="afterInteractive"
     />
   );
 }

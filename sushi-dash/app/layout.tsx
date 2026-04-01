@@ -65,13 +65,14 @@ export default function RootLayout({
           type="font/ttf"
           crossOrigin="anonymous"
         />
+      </head>
+      <body className="perf-max">
+        <Providers>{children}</Providers>
+        {/* Script components must live in body, not head — Next.js drops them silently otherwise */}
         <UmamiIntegration
           trackingId={process.env.NEXT_PUBLIC_UMAMI_ID || ''}
           endpoint={process.env.NEXT_PUBLIC_UMAMI_ENDPOINT}
         />
-      </head>
-      <body className="perf-max">
-        <Providers>{children}</Providers>
       </body>
     </html>
   );
