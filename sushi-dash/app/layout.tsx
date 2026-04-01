@@ -64,10 +64,12 @@ export default function RootLayout({
           type="font/ttf"
           crossOrigin="anonymous"
         />
+        {/* Umami analytics — served through /stats/ proxy to bypass ad blockers */}
         <script
           defer
-          src="https://cloud.umami.is/script.js"
+          src="/stats/script.js"
           data-website-id="d52a567a-a024-46f1-b966-465fd284d9a2"
+          data-host-url="/stats"
         />
       </head>
       <body className="perf-max">

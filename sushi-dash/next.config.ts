@@ -26,11 +26,24 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Dev: proxy /api/* to the standalone Express server on :3001
-  // Production (Vercel): pages/api/[...path].ts handles /api/* natively
+  // Proxy Umami analytics through our own domain to bypass ad blockers.
+  // Script: /stats/script.js → cloud.umami.is/script.js
+  // API:    /stats/api/send  → api-gateway.umami.dev/api/send
   async rewrites() {
-    if (process.env.NODE_ENV === "production") return [];
+    const umamiProxy = [
+      {
+        source: "/stats/script.js",
+        destination: "https://cloud.umami.is/script.js",
+      },
+      {
+        source: "/stats/api/send",
+        destination: "https://api-gateway.umami.dev/api/send",
+      },
+    ];
+
+    if (process.env.NODE_ENV === "production") return umamiProxy;
     return [
+      ...umamiProxy,
       {
         source: "/api/:path((?!v1/).*)",
         destination: "http://localhost:3001/api/:path*",

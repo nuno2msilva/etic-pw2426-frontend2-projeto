@@ -601,22 +601,29 @@ Visit: https://pagespeed.web.dev/?url=https://sushi-dash.vercel.app/
   {
     id: 18,
     title: "Analytics (Umami — Privacy-First Event Tracking)",
-    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The tracking script is injected as a plain \`<script defer>\` tag directly in \`<head>\` in \`app/layout.tsx\` — no Next.js Script wrapper, no lazy loading complexity, just the snippet Umami's docs prescribe. Umami's built-in SPA mode automatically patches \`history.pushState\` so every client-side navigation (including \`/table/1\`, \`/kitchen\`, \`/manager\`) is tracked without any manual page-view code. Custom event helpers in \`analytics.ts\` cover the full user journey: table selection, PIN entry, order placement, order cancellation, and staff login/logout. The script tag is conditionally rendered only when \`NEXT_PUBLIC_UMAMI_ID\` is set, so local development generates no noise unless the env var is explicitly configured. Event properties use typed interfaces (no 'any') and all \`track()\` calls are silent no-ops if \`window.umami\` is not yet defined.",
+    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The tracking script is served through a first-party proxy (`/stats/script.js` → `cloud.umami.is`) configured via Next.js rewrites in `next.config.ts`, which bypasses ad blockers that block third-party analytics domains. The `data-host-url=\"/stats\"` attribute routes tracking data through `/stats/api/send` → `api-gateway.umami.dev`, keeping all requests on the same origin. Umami's built-in SPA mode automatically patches `history.pushState` so every client-side navigation (including `/table/1`, `/kitchen`, `/manager`) is tracked without any manual page-view code. Custom event helpers in `analytics.ts` cover the full user journey: table selection, PIN entry, order placement, order cancellation, and staff login/logout. Event properties use typed interfaces (no 'any') and all `track()` calls are silent no-ops if `window.umami` is not yet defined.",
     keyFiles: [
       "src/features/shared/lib/analytics.ts",
       "app/layout.tsx",
+      "next.config.ts",
     ],
-    codeSnippet: `// app/layout.tsx — plain <script defer> in <head>, no Next.js wrapper needed
-{process.env.NEXT_PUBLIC_UMAMI_ID && (
-  <script
-    defer
-    src={(process.env.NEXT_PUBLIC_UMAMI_ENDPOINT
-      ?? 'https://cloud.umami.is') + '/script.js'}
-    data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
-  />
-)}
-// defer = non-blocking. Umami auto-patches history.pushState so every
-// client-side navigation (/table/1, /kitchen, /manager) is tracked.
+    codeSnippet: `// app/layout.tsx — plain <script defer> in <head>, proxied through own domain
+<script
+  defer
+  src="/stats/script.js"
+  data-website-id="d52a567a-a024-46f1-b966-465fd284d9a2"
+  data-host-url="/stats"
+/>
+
+// next.config.ts — proxy rewrites bypass ad blockers
+async rewrites() {
+  return [
+    { source: "/stats/script.js",
+      destination: "https://cloud.umami.is/script.js" },
+    { source: "/stats/api/send",
+      destination: "https://api-gateway.umami.dev/api/send" },
+  ];
+}
 
 // src/features/shared/lib/analytics.ts — typed custom event helpers
 export const customerEvents = {
