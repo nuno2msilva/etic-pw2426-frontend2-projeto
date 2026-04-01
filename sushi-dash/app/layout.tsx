@@ -65,12 +65,14 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
         {/* Umami analytics — served through /stats/ proxy to bypass ad blockers */}
-        <script
-          defer
-          src="/stats/script.js"
-          data-website-id="d52a567a-a024-46f1-b966-465fd284d9a2"
-          data-host-url="/stats"
-        />
+        {process.env.NEXT_PUBLIC_UMAMI_ID && (
+          <script
+            defer
+            src="/stats/script.js"
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
+            data-host-url="/stats"
+          />
+        )}
       </head>
       <body className="perf-max">
         <Providers>{children}</Providers>

@@ -387,7 +387,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   {
     id: 11,
     title: "Unit Testing (Jest + React Testing Library)",
-    description: "287 tests across 19 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, UI component rendering, API client error handling, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
+    description: "305 tests across 19 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, UI component rendering, API client error handling, analytics event tracking, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
     keyFiles: ["jest.config.cjs", "src/test/authorization-behavior.test.tsx", "src/test/components.test.tsx", "src/test/presence-lifecycle.test.ts"],
     codeSnippet: `// src/test/table-presence-stability.test.ts
 describe("Does the presence indicator stay steady or flicker like a broken bulb?", () => {
@@ -407,7 +407,7 @@ describe("Does the presence indicator stay steady or flicker like a broken bulb?
 });
 
 // Run all tests:
-// npm test           → 287/287 passing, 19 suites
+// npm test           → 305/305 passing, 19 suites
 // make test-verbose  → prints every test title`,
   },
   {
@@ -608,12 +608,14 @@ Visit: https://pagespeed.web.dev/?url=https://sushi-dash.vercel.app/
       "next.config.ts",
     ],
     codeSnippet: `// app/layout.tsx — plain <script defer> in <head>, proxied through own domain
-<script
-  defer
-  src="/stats/script.js"
-  data-website-id="d52a567a-a024-46f1-b966-465fd284d9a2"
-  data-host-url="/stats"
-/>
+{process.env.NEXT_PUBLIC_UMAMI_ID && (
+  <script
+    defer
+    src="/stats/script.js"
+    data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
+    data-host-url="/stats"
+  />
+)}
 
 // next.config.ts — proxy rewrites bypass ad blockers
 async rewrites() {
@@ -703,7 +705,7 @@ export default function AboutPage() {
         <div className="mt-16 border-t pt-8 text-center text-muted-foreground">
           <p className="text-sm">✅ All 18 requirements fully implemented and tested</p>
           <p className="text-sm mt-2">Build: <code className="bg-muted px-2 py-1 rounded">npm run build</code></p>
-          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 287/287 passing, 19 suites</p>
+          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 305/305 passing, 19 suites</p>
           <p className="text-sm mt-2">Lighthouse Desktop: <strong>100 / 100 / 95+ / 100</strong> (Performance / Accessibility / Best Practices / SEO)</p>
         </div>
       </div>

@@ -4,13 +4,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { API_BASE } from "@/features/shared/lib/config";
 import { notifySuccess } from "@/features/shared/lib/notify";
 import { UI_TEXT } from "@/features/shared/lib/ui-text";
 
 import { useAuth } from "@/features/shared/context/AuthContext";
-import { customerEvents } from "@/features/shared";
 import TableSelector from "@/features/customer/components/TableSelector";
 import type { Table } from "@/features/shared/types/models";
 
@@ -20,15 +19,11 @@ const PinPad = dynamic(() => import("@/features/customer/components/PinPad").the
 const StaffLoginModal = dynamic(() => import("@/features/staff/components/StaffLoginModal"), {
   ssr: false,
 });
-const DeferredCustomerMenu = dynamic(() => import("@/features/customer/components/DeferredCustomerMenu"), {
-  ssr: false,
-});
-
-type Step = "table" | "menu";
 
 const CustomerPage = () => {
   const searchParams = useSearchParams();
   const selectParam = searchParams?.get("select");
+  const router = useRouter();
 
   // Skip auto-restore when user explicitly navigated here (e.g. logo click)
   const skipAutoRestore = useRef(selectParam === "true");
@@ -41,11 +36,11 @@ const CustomerPage = () => {
   const isCustomerAuthenticated = customerSession !== null;
 
   // ── Page-specific state ───────────────────────────────────────────────────
-  const [step, setStep] = useState<Step>("table");
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [pendingTable, setPendingTable] = useState<Table | null>(null);
   const [showPinPad, setShowPinPad] = useState(false);
   const [showStaffLogin, setShowStaffLogin] = useState(false);
+  // Track whether we're navigating to the table route (prevents flickering)
+  const [isNavigating, setIsNavigating] = useState(false);
 
   const fetchTables = async () => {
     setIsLoadingTables(true);
@@ -73,37 +68,16 @@ const CustomerPage = () => {
     void fetchTables();
   }, []);
 
-  // Derive the live table from the tables array so SSE name changes propagate
-  const liveTable = selectedTable
-    ? tables.find((t) => t.id === selectedTable.id) ?? selectedTable
-    : null;
-
   // ── Session effects ───────────────────────────────────────────────────────
 
-  // Logo click: reset to table selection when ?select=true appears in the URL
+  // Logo click: clean up the ?select param
   useEffect(() => {
-    if (selectParam === "true" && step !== "table") {
-      // Signal that customer is leaving the table (closes SSE without logout)
-      goToTableSelection();
-      setStep("table");
-      setSelectedTable(null);
-      skipAutoRestore.current = true;
-    }
-
     if (selectParam === "true" && typeof window !== "undefined") {
       const url = new URL(window.location.href);
       url.searchParams.delete("select");
       window.history.replaceState({}, "", url.pathname + url.search);
     }
-  }, [selectParam]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // React to session being cleared (e.g. PIN changed by manager via SSE)
-  useEffect(() => {
-    if (isInitialized && !isCustomerAuthenticated && step !== "table") {
-      setStep("table");
-      setSelectedTable(null);
-    }
-  }, [isInitialized, isCustomerAuthenticated, step]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectParam]);
 
   // Restore session on mount — verify with backend before auto-restoring
   useEffect(() => {
@@ -130,12 +104,9 @@ const CustomerPage = () => {
                 String(data.tableId) === customerSession.tableId;
 
             if (customerValid) {
-              const table = tables.find((t) => t.id === customerSession.tableId);
-              if (table) {
-                setSelectedTable(table);
-                goToTable(); // Signal that customer is now at a table
-                setStep("menu");
-              }
+              goToTable();
+              setIsNavigating(true);
+              router.push(`/table/${customerSession.tableId}`);
             } else {
               void logout();
             }
@@ -151,13 +122,10 @@ const CustomerPage = () => {
   // ── Table selection handlers ──────────────────────────────────────────────
 
   const handleSelectTable = (table: Table) => {
-    // Track table selection for analytics
-    customerEvents.tableSelected(table.id);
-    
     if (isCustomerAuthenticated && customerSession?.tableId === table.id) {
-      setSelectedTable(table);
-      goToTable(); // Signal that customer is now at a table
-      setStep("menu");
+      goToTable();
+      setIsNavigating(true);
+      router.push(`/table/${table.id}`);
       return;
     }
     setPendingTable(table);
@@ -168,12 +136,12 @@ const CustomerPage = () => {
     if (!pendingTable) return false;
     const success = await loginAsCustomer(pendingTable.id, pin);
     if (success) {
-      setSelectedTable(pendingTable);
       setPendingTable(null);
       setShowPinPad(false);
-      goToTable(); // Signal that customer is now at a table
-      setStep("menu");
+      goToTable();
+      setIsNavigating(true);
       void notifySuccess(UI_TEXT.tableWelcomeFor(pendingTable.label));
+      router.push(`/table/${pendingTable.id}`);
     }
     return success;
   };
@@ -182,8 +150,8 @@ const CustomerPage = () => {
 
   return (
     <>
-      {/* Step 1: Table Selection */}
-      {step === "table" && (
+      {/* Table Selection */}
+      {!isNavigating && (
         <TableSelector
           tables={tables}
           isLoading={isLoadingTables}
@@ -194,11 +162,6 @@ const CustomerPage = () => {
           onSelectTable={handleSelectTable}
           onStaffLogin={() => setShowStaffLogin(true)}
         />
-      )}
-
-      {/* Step 2: Menu + Cart — reuses the shared MenuOrderingView */}
-      {step === "menu" && liveTable && (
-        <DeferredCustomerMenu table={liveTable} />
       )}
 
       {/* Modals */}

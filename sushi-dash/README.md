@@ -21,7 +21,7 @@ Visit **[`/about`](https://sushi-dash.vercel.app/about)** — the dedicated requ
 **Quick verification commands** (from `sushi-dash/`):
 
 ```bash
-make test-verbose   # Prints all 287 test titles — readable, no boilerplate
+make test-verbose   # Prints all 305 test titles — readable, no boilerplate
 make build          # Production build — confirm no errors
 ```
 
@@ -71,9 +71,9 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 ### Technical Highlights
 - **Type Safety** — 100% TypeScript (ES2020), zero implicit `any`
-- **287 Passing Tests** — 19 test suites covering auth, orders, presence, UI elements
+- **305 Passing Tests** — 19 test suites covering auth, orders, presence, analytics, UI elements
 - **CRT TV Effect** — Authentic Samsung CRT animation on all pages (boot sequence, scanlines, flicker)
-- **Privacy Analytics** — Umami-powered tracking, GDPR-compliant, production-only
+- **Privacy Analytics** — Umami-powered tracking, GDPR-compliant, first-party proxy
 - **Dark Mode** — Licensed theme with light/dark switcher on home page
 - **Lighthouse 100 Desktop** — 100 Performance, 95+ Accessibility, 95+ Best Practices, 100 SEO on Vercel production build
 - **Zero Render-Blocking CSS** — Inlined at build time, CRT font preloaded, skeleton grid matches real layout (CLS 0.002)
@@ -228,7 +228,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 | Command | Description |
 |---------|-------------|
-| `make test` | Run Jest test suite (287/287 passing) |
+| `make test` | Run Jest test suite (305/305 passing) |
 | `make test-watch` | Run tests in watch mode (auto-rerun on file change) |
 | `make test-verbose` | Show every single test case (good for grading/demos) |
 | `make test-coverage` | Generate coverage report |
@@ -416,7 +416,7 @@ sushi-dash/
 │   ├── pages/
 │   │   └── api/
 │   │       └── [...path].ts        # Proxy all /api requests to Express backend
-│   ├── test/                       # Jest test suites (287 tests, 19 files)
+│   ├── test/                       # Jest test suites (305 tests, 19 files)
 │   │   ├── crt-ux-elements.test.tsx      # 23 tests: CRT animations, UX elements
 │   │   ├── authorization-behavior.test.tsx
 │   │   ├── components.test.tsx
@@ -426,7 +426,6 @@ sushi-dash/
 │   │   ├── order-status.test.ts
 │   │   ├── utils.test.ts
 │   │   ├── presence-lifecycle.test.ts
-│   │   ├── idle-timeout.test.ts
 │   │   ├── server-events-*.test.ts (5 files)
 │   │   ├── menu-ordering-view.test.tsx
 │   │   ├── staff-mobile-layout.test.tsx
@@ -492,7 +491,7 @@ sushi-dash/
 
 ## 🧪 Testing
 
-### Test Coverage (287/287 Passing)
+### Test Coverage (305/305 Passing)
 
 Run the full suite from `sushi-dash/`:
 
@@ -503,7 +502,7 @@ make test-verbose   # Print every single test (good for grading)
 make test-coverage  # Generate coverage report
 ```
 
-### Test Files (19 Suites, 95 Test Cases)
+### Test Files (19 Suites)
 
 | File | Tests | Purpose |
 |------|-------|---------|
@@ -516,7 +515,6 @@ make test-coverage  # Generate coverage report
 | **order-status.test.ts** | 7 | Order state machine (queued → preparing → ready → delivered) |
 | **utils.test.ts** | 6 | Helper functions (formatting, calculations) |
 | **presence-lifecycle.test.ts** | 45 | Table presence polling, SSE lifecycle, grace period, idle timeout, end-to-end scenarios |
-| **idle-timeout.test.ts** | 4 | 30-minute idle detection, automatic cleanup |
 | **server-events-*.test.ts** | 3 files | SSE presence switching, client ejection on PIN change |
 | **table-presence-stability.test.ts** | 3 | Grace window logic, last-seen timestamp refresh |
 | **providers-presence.test.ts** | 6 | Header mode resolution, presence table ID selection |
@@ -525,6 +523,7 @@ make test-coverage  # Generate coverage report
 | **staff-mobile-layout.test.tsx** | 4 | Responsive layout classes for kitchen/manager/admin |
 | **auth-session-enforcement.test.tsx** | 8 | Session polling, staff sync, customer ejection on PIN change |
 | **admin-panel-live-updates.test.tsx** | 1 | Admin panel polling refresh |
+| **analytics.test.ts** | 22 | Umami event helpers: customer, staff, kitchen, admin events, retry logic |
 
 ### Example Test: CRT Animation Verification
 
@@ -635,7 +634,7 @@ Applied via `CRTScreen` component:
 
 ## 📊 Requirements Traceability
 
-**All 17 project requirements are fully implemented.** Visit `/about` in the running app for:
+**All 18 project requirements are fully implemented.** Visit `/about` in the running app for:
 - Code snippets demonstrating each requirement
 - File paths showing where each is implemented
 - Live links to Vercel deployment
@@ -652,13 +651,14 @@ Applied via `CRTScreen` component:
 8. ✅ **Navigation (Next.js Router & Dynamic Routes)**
 9. ✅ **Responsive Design (Mobile-First Tailwind)**
 10. ✅ **Vercel Deployment (Serverless, CI/CD)**
-11. ✅ **Unit Testing (Jest + React Testing Library)** — 287/287 passing
+11. ✅ **Unit Testing (Jest + React Testing Library)** — 305/305 passing
 12. ✅ **Context API (AuthContext, AppContext)**
 13. ✅ **Animations & Transitions (CRT Effect + Dialog)**
 14. ✅ **React Query (@tanstack/react-query)**
 15. ✅ **useMemo, useCallback & useRef (Optimization)**
 16. ✅ **Prisma ORM & PostgreSQL**
 17. ✅ **Lighthouse Performance Verification**
+18. ✅ **Analytics (Umami — Privacy-First Event Tracking)**
 
 ---
 
@@ -673,7 +673,7 @@ Applied via `CRTScreen` component:
 | **TypeScript** | 5.8.3 | Type safety (ES2020 target, zero implicit `any`) |
 | **Tailwind CSS** | 3.4.17 | Utility-first styling, dark mode, responsive |
 | **React Query** | 5.83.0 | Server state, caching, mutations, deduping |
-| **Umami Analytics** | Latest | Privacy-focused tracking, GDPR-compliant, production-only |
+| **Umami Analytics** | Latest | Privacy-focused tracking, GDPR-compliant, first-party proxy |
 | **Radix UI** / **shadcn/ui** | Latest | Accessible component primitives (dialog, button, tabs, etc) |
 | **Sonner** | 1.7.4 | Toast notifications |
 | **Lucide React** | 0.462.0 | Icon library |
@@ -731,7 +731,7 @@ NEXT_PUBLIC_ENABLE_WEB_VITALS=false  # Disable Core Web Vitals reporter in prod
 1. Push to `main` → GitHub webhook triggers Vercel
 2. Vercel runs: `prisma generate && npm run build`
 3. Installs: `npm install && cd server && npm install`
-4. Tests: `npm test` (287/287 passing)
+4. Tests: `npm test` (305/305 passing)
 5. Deploys: **11 static routes** + **API routes** to Vercel Edge Network
 6. Preview: Automatic preview URL created for pull requests
 
@@ -781,7 +781,7 @@ lighthouse https://sushi-dash.vercel.app/ --view
 2. **Create feature branch**: `git checkout -b feature/my-feature`
 3. **Make changes** — Always run tests before pushing:
    ```bash
-   make test         # Verify all 287 tests pass
+   make test         # Verify all 305 tests pass
    make lint         # Check code style
    make build        # Verify production build
    ```

@@ -44,6 +44,24 @@ export function trackEvent(event: string, properties?: EventProperties): void {
 }
 
 /**
+ * Track a virtual page view. Used when client-side state changes
+ * simulate navigation without a real URL change (e.g. entering a table
+ * from the home page — the URL stays "/" but we want Umami to see "/table/1").
+ */
+export function trackVirtualPageView(path: string): void {
+  if (typeof window === 'undefined') return;
+
+  const umami = getUmami();
+  if (umami?.track) {
+    umami.track({ url: path, referrer: document.referrer });
+  } else {
+    setTimeout(() => {
+      getUmami()?.track({ url: path, referrer: document.referrer });
+    }, 2000);
+  }
+}
+
+/**
  * Customer ordering events
  */
 export const customerEvents = {
