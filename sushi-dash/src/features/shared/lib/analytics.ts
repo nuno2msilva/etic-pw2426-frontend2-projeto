@@ -21,41 +21,63 @@ interface UmamiTracker {
   ) => void;
 }
 
+type QueuedItem =
+  | { kind: 'event'; name: string; properties?: EventProperties }
+  | { kind: 'pageview'; url: string; referrer: string };
+
+// Queue for events fired before the Umami script has finished loading.
+// Flushed in UmamiIntegration onLoad callback.
+const pendingQueue: QueuedItem[] = [];
+
 /**
- * Track a custom event with Umami
- * @param event - Event name (e.g., 'order_placed', 'table_login')
- * @param properties - Optional event properties
+ * Flush all queued events/pageviews once window.umami is ready.
+ * Called from UmamiIntegration's onLoad prop.
+ */
+export function flushAnalyticsQueue(): void {
+  if (typeof window === 'undefined') return;
+  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
+  if (!umami?.track) return;
+  let item: QueuedItem | undefined;
+  while ((item = pendingQueue.shift()) !== undefined) {
+    if (item.kind === 'event') {
+      umami.track(item.name, item.properties);
+    } else {
+      umami.track({ url: item.url, referrer: item.referrer });
+    }
+  }
+}
+
+/**
+ * Track a custom event with Umami.
+ * If Umami hasn't loaded yet, the event is queued and flushed on onLoad.
  */
 export function trackEvent(event: string, properties?: EventProperties): void {
-  // Only track in production - skip analytics noise in local development
-  if (!IS_PRODUCTION) return;
-
-  if (!UMAMI_TRACKING_ID) {
-    return; // Silent fail in dev
-  }
-
-  if (typeof window === 'undefined') {
-    return; // Silent fail in dev
-  }
+  if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
 
   const umami = (window as unknown as { umami?: UmamiTracker }).umami;
   if (!umami?.track) {
-    return; // Silent fail in dev
+    // Umami script hasn't loaded yet — queue for flush on onLoad
+    pendingQueue.push({ kind: 'event', name: event, properties });
+    return;
   }
 
   umami.track(event, properties);
 }
 
 /**
- * Track a pageview — uses Umami v2's object form of track()
+ * Track a pageview — uses Umami v2's object form of track().
+ * If Umami hasn't loaded yet, the pageview is queued.
  */
 export function trackPageView(url: string, referrer?: string): void {
   if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
 
   const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.track) return;
+  if (!umami?.track) {
+    pendingQueue.push({ kind: 'pageview', url, referrer: referrer ?? document.referrer });
+    return;
+  }
 
-  umami.track({ url, referrer: referrer || document.referrer });
+  umami.track({ url, referrer: referrer ?? document.referrer });
 }
 
 /**

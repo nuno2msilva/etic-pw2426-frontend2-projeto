@@ -1,10 +1,14 @@
 'use client';
 
 import Script from 'next/script';
+import { flushAnalyticsQueue } from '../lib/analytics';
 
 /**
- * UmamiIntegration — Injects Umami analytics script into the page
- * This component should be placed in the root layout
+ * UmamiIntegration — Injects Umami analytics script into the page.
+ * Place in root layout inside <body>.
+ * - auto-track is disabled: we manually track page views via usePageTracking
+ *   so routes like /table/1 are always captured without double-counting.
+ * - onLoad flushes any events that fired before the script finished downloading.
  */
 
 export interface UmamiIntegrationProps {
@@ -13,27 +17,21 @@ export interface UmamiIntegrationProps {
   excludeDomains?: string[];
 }
 
-/**
- * Client-side component that injects the Umami tracking script
- * Add this to your root layout.tsx
- */
 export function UmamiIntegration({
   trackingId,
   endpoint = 'https://analytics.umami.is',
   excludeDomains = [],
 }: UmamiIntegrationProps) {
-  if (!trackingId) {
-    console.warn('[Umami] No tracking ID provided - analytics disabled');
-    return null;
-  }
+  if (!trackingId) return null;
 
   return (
     <Script
       src={`${endpoint}/script.js`}
       data-website-id={trackingId}
+      data-auto-track="false"
       data-exclude-domains={excludeDomains.join(',')}
-      data-auto-track="true"
       strategy="afterInteractive"
+      onLoad={flushAnalyticsQueue}
     />
   );
 }
