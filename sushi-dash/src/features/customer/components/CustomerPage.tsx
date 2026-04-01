@@ -81,41 +81,40 @@ const CustomerPage = () => {
 
   // Restore session on mount — verify with backend before auto-restoring
   useEffect(() => {
+    if (!isInitialized || !isCustomerAuthenticated || !customerSession?.tableId) return;
     if (skipAutoRestore.current) {
       skipAutoRestore.current = false;
       return;
     }
-    if (isInitialized && isCustomerAuthenticated && customerSession?.tableId) {
-      fetch(`${API_BASE}/api/auth/session`, { credentials: "include" })
-        .then((res) => (res.ok ? res.json() : Promise.reject()))
-        .then(
-          (data: {
-            authenticated: boolean;
-            role?: string;
-            tableId?: number;
-            sessions?: { role: string; tableId?: number | null; authenticated: boolean }[];
-          }) => {
-            const customerValid = data.sessions
-              ? data.sessions.some(
-                  (s) => s.role === "customer" && String(s.tableId) === customerSession.tableId,
-                )
-              : data.authenticated &&
-                data.role === "customer" &&
-                String(data.tableId) === customerSession.tableId;
+    fetch(`${API_BASE}/api/auth/session`, { credentials: "include" })
+      .then((res) => (res.ok ? res.json() : Promise.reject()))
+      .then(
+        (data: {
+          authenticated: boolean;
+          role?: string;
+          tableId?: number;
+          sessions?: { role: string; tableId?: number | null; authenticated: boolean }[];
+        }) => {
+          const customerValid = data.sessions
+            ? data.sessions.some(
+                (s) => s.role === "customer" && String(s.tableId) === customerSession.tableId,
+              )
+            : data.authenticated &&
+              data.role === "customer" &&
+              String(data.tableId) === customerSession.tableId;
 
-            if (customerValid) {
-              goToTable();
-              setIsNavigating(true);
-              router.push(`/table/${customerSession.tableId}`);
-            } else {
-              void logout();
-            }
-          },
-        )
-        .catch(() => {
-          void logout();
-        });
-    }
+          if (customerValid) {
+            goToTable();
+            setIsNavigating(true);
+            router.push(`/table/${customerSession.tableId}`);
+          } else {
+            void logout();
+          }
+        },
+      )
+      .catch(() => {
+        void logout();
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isInitialized]);
 
