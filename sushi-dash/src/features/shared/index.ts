@@ -4,7 +4,6 @@ export { default as QueryRuntimeProvider } from './context/QueryRuntimeProvider'
 
 export { useServerEvents } from './hooks/useServerEvents';
 export { useTablePresence } from './hooks/useTablePresence';
-export { usePageTracking } from './hooks/usePageTracking';
 export { useMenuQuery, useAddMenuItem, useRemoveMenuItem, useUpdateMenuItem, useToggleItemAvailability, useCategoriesQuery, useAddCategory, useDeleteCategory, useTablesQuery, useAddTable, useUpdateTable, useRemoveTable, useOrdersQuery, usePlaceOrder, useUpdateOrder, useCancelOrder, useDeleteOrder, useSettingsQuery, useUpdateSettings, queryKeys } from './hooks/useApiQueries';
 
 export { default as AppHeader } from './components/AppHeader';

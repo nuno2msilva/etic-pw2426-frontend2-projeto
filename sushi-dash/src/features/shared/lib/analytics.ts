@@ -2,82 +2,50 @@
  * Umami Analytics Integration
  * Tracks user behavior: orders, sessions, admin actions, kitchen events
  * Only enabled in production (Vercel/hosted environments)
+ *
+ * Page views are handled automatically by Umami's built-in SPA hook
+ * (patches history.pushState — works with Next.js App Router out of the box).
+ * This file only handles custom events.
  */
 
-const UMAMI_TRACKING_ID = process.env.NEXT_PUBLIC_UMAMI_ID || '';
-const UMAMI_ENDPOINT = process.env.NEXT_PUBLIC_UMAMI_ENDPOINT || 'https://analytics.umami.is';
+// Replaced at build time by Next.js. 'production' on Vercel, 'development' locally.
+const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
-// Only enable analytics in production (Vercel) to avoid local dev noise
-const IS_PRODUCTION = process.env.NODE_ENV === 'production' && typeof window !== 'undefined';
-
-interface EventProperties {
+export interface EventProperties {
   [key: string]: string | number | boolean;
 }
 
 interface UmamiTracker {
   track: (
-    eventOrPayload: string | { url?: string; referrer?: string; title?: string },
+    eventOrPayload: string | { url?: string; referrer?: string },
     properties?: EventProperties
   ) => void;
 }
 
-type QueuedItem =
-  | { kind: 'event'; name: string; properties?: EventProperties }
-  | { kind: 'pageview'; url: string; referrer: string };
-
-// Queue for events fired before the Umami script has finished loading.
-// Flushed in UmamiIntegration onLoad callback.
-const pendingQueue: QueuedItem[] = [];
-
-/**
- * Flush all queued events/pageviews once window.umami is ready.
- * Called from UmamiIntegration's onLoad prop.
- */
-export function flushAnalyticsQueue(): void {
-  if (typeof window === 'undefined') return;
-  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.track) return;
-  let item: QueuedItem | undefined;
-  while ((item = pendingQueue.shift()) !== undefined) {
-    if (item.kind === 'event') {
-      umami.track(item.name, item.properties);
-    } else {
-      umami.track({ url: item.url, referrer: item.referrer });
-    }
-  }
+function getUmami(): UmamiTracker | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return (window as unknown as { umami?: UmamiTracker }).umami;
 }
 
 /**
  * Track a custom event with Umami.
- * If Umami hasn't loaded yet, the event is queued and flushed on onLoad.
+ * If Umami hasn't finished executing yet (first ~500ms), retries once after 2s.
+ * All custom events fire after user interaction (PIN entry, button clicks) so
+ * the retry window is never needed in practice — it's just a safety net.
  */
 export function trackEvent(event: string, properties?: EventProperties): void {
-  if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
+  if (!IS_PRODUCTION) return;
+  if (typeof window === 'undefined') return;
 
-  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.track) {
-    // Umami script hasn't loaded yet — queue for flush on onLoad
-    pendingQueue.push({ kind: 'event', name: event, properties });
-    return;
+  const umami = getUmami();
+  if (umami?.track) {
+    umami.track(event, properties);
+  } else {
+    // Umami script hasn't executed yet — retry once after it loads
+    setTimeout(() => {
+      getUmami()?.track(event, properties);
+    }, 2000);
   }
-
-  umami.track(event, properties);
-}
-
-/**
- * Track a pageview — uses Umami v2's object form of track().
- * If Umami hasn't loaded yet, the pageview is queued.
- */
-export function trackPageView(url: string, referrer?: string): void {
-  if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
-
-  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.track) {
-    pendingQueue.push({ kind: 'pageview', url, referrer: referrer ?? document.referrer });
-    return;
-  }
-
-  umami.track({ url, referrer: referrer ?? document.referrer });
 }
 
 /**
@@ -236,4 +204,4 @@ export const systemEvents = {
   graceperiodUsed: () => trackEvent('grace_period_used'),
 };
 
-export default { trackEvent, trackPageView, customerEvents, staffEvents, kitchenEvents, adminEvents, systemEvents };
+export default { trackEvent, customerEvents, staffEvents, kitchenEvents, adminEvents, systemEvents };

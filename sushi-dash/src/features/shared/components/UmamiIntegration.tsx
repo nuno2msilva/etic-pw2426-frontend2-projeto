@@ -1,14 +1,17 @@
 'use client';
 
 import Script from 'next/script';
-import { flushAnalyticsQueue } from '../lib/analytics';
 
 /**
  * UmamiIntegration — Injects Umami analytics script into the page.
- * Place in root layout inside <body>.
- * - auto-track is disabled: we manually track page views via usePageTracking
- *   so routes like /table/1 are always captured without double-counting.
- * - onLoad flushes any events that fired before the script finished downloading.
+ * Place inside <body> in root layout (never inside <head>).
+ *
+ * auto-track is ENABLED (default): Umami patches history.pushState so every
+ * Next.js App Router client-side navigation is tracked automatically — including
+ * /table/1, /kitchen, /manager, etc. — with no manual page-view code.
+ *
+ * Custom events (pin_entered, order_placed, etc.) are sent via window.umami.track()
+ * from analytics.ts.
  */
 
 export interface UmamiIntegrationProps {
@@ -28,27 +31,21 @@ export function UmamiIntegration({
     <Script
       src={`${endpoint}/script.js`}
       data-website-id={trackingId}
-      data-auto-track="false"
-      data-exclude-domains={excludeDomains.join(',')}
+      {...(excludeDomains.length > 0
+        ? { 'data-exclude-domains': excludeDomains.join(',') }
+        : {})}
       strategy="afterInteractive"
-      onLoad={flushAnalyticsQueue}
     />
   );
 }
 
-/**
- * Declare the global umami object for TypeScript
- */
 declare global {
   interface Window {
     umami?: {
-      track: (event: string, properties?: Record<string, string | number | boolean>) => void;
-      trackView: (
-        url?: string,
-        referrer?: string,
+      track: (
+        eventOrPayload: string | { url?: string; referrer?: string },
         properties?: Record<string, string | number | boolean>
       ) => void;
-      api: (endpoint: string, body: unknown) => Promise<unknown>;
     };
   }
 }

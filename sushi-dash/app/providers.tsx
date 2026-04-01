@@ -7,7 +7,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthProvider, useAuth } from "@/features/shared/context/AuthContext";
-import { usePageTracking } from "@/features/shared/hooks/usePageTracking";
 import { ENABLE_CRT_EFFECT, ENABLE_WEB_VITALS_REPORTER } from "@/features/shared/lib/config";
 import CRTScreen from "@/features/shared/components/CRTScreen";
 
@@ -80,9 +79,6 @@ function ProvidersShell({ children }: { children: React.ReactNode }) {
 function ProviderContent({ children, showToaster }: { children: React.ReactNode; showToaster: boolean }) {
   const pathname = usePathname();
   const { authenticatedTableId, staffSession } = useAuth();
-  
-  // Track all page views automatically
-  usePageTracking();
   
   const hasSession = Boolean(authenticatedTableId || staffSession);
   const homeHeaderMode = resolveHomeHeaderMode(authenticatedTableId, Boolean(staffSession));
