@@ -3,7 +3,6 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   experimental: {
     inlineCss: true,
-    browsersListForSwc: true,
     optimizePackageImports: [
       "lucide-react",
       "sonner",

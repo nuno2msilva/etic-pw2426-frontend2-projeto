@@ -31,7 +31,6 @@ export {
 
 export {
   trackEvent,
-  trackPageView,
   customerEvents,
   staffEvents,
   kitchenEvents,
