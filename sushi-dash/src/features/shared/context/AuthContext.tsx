@@ -361,6 +361,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [isInitialized, customerSession?.tableId, fetchSessionSnapshot, invalidateAllCaches, userIsLoggedOffFromCustomerSession]);
 
   const loginAsCustomer = useCallback(async (tableId: string, pin: string): Promise<boolean> => {
+    // If switching tables, clear presence for the old table first
+    const oldTableId = customerSession?.tableId;
+    if (oldTableId && oldTableId !== tableId) {
+      void clearPresenceHeartbeat(oldTableId);
+    }
     const success = await loginTableWithPin(tableId, pin);
     customerEvents.pinEntered(tableId, success);
     if (success) {
@@ -379,7 +384,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return true;
     }
     return false;
-  }, [invalidateAllCaches]);
+  }, [customerSession?.tableId, invalidateAllCaches]);
 
   const loginAsStaffUser = useCallback(async (
     identifier: string,

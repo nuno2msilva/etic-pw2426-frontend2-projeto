@@ -19,6 +19,7 @@ const AppHeader = () => {
     staffSession,
     logout,
     logoutStaff,
+    goToTableSelection,
   } = useAuth();
 
   const [isDark, setIsDark] = useState(false);
@@ -57,13 +58,23 @@ const AppHeader = () => {
   };
 
   const showLogout = !!staffSession || !!customerSession;
-  const logoHref = customerSession && !staffSession ? "/?select=true" : "/";
+  const isCustomerOnly = !!customerSession && !staffSession;
+  const logoHref = isCustomerOnly ? "/?select=true" : "/";
+
+  /** When a customer clicks the logo, clear their table presence before navigating. */
+  const handleLogoClick = (e: React.MouseEvent) => {
+    if (isCustomerOnly) {
+      e.preventDefault();
+      goToTableSelection();
+      router.replace("/?select=true");
+    }
+  };
 
   return (
     <>
       <header className="sticky top-0 z-50 border-b bg-card/95">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href={logoHref} className="flex items-center gap-2">
+          <Link href={logoHref} onClick={handleLogoClick} className="flex items-center gap-2">
             <span className="text-2xl">🍣</span>
             <span className="type-title">
               Sushi <span className="text-primary">Dash</span>
