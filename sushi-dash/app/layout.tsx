@@ -64,14 +64,11 @@ export default function RootLayout({
           type="font/ttf"
           crossOrigin="anonymous"
         />
-        {process.env.NEXT_PUBLIC_UMAMI_ID && (
-          // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
-          <script
-            defer
-            src={`${process.env.NEXT_PUBLIC_UMAMI_ENDPOINT ?? "https://cloud.umami.is"}/script.js`}
-            data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
-          />
-        )}
+        <script
+          defer
+          src="https://cloud.umami.is/script.js"
+          data-website-id="d52a567a-a024-46f1-b966-465fd284d9a2"
+        />
       </head>
       <body className="perf-max">
         <Providers>{children}</Providers>
