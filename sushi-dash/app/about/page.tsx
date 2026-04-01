@@ -601,7 +601,7 @@ Visit: https://pagespeed.web.dev/?url=https://sushi-dash.vercel.app/
   {
     id: 18,
     title: "Analytics (Umami — Privacy-First Event Tracking)",
-    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The tracking script is injected as a plain \`<script defer>\` tag directly in \`<head>\` in \`app/layout.tsx\` — no Next.js Script wrapper, no lazy loading complexity, just the snippet Umami's docs prescribe. Umami's built-in SPA mode automatically patches \`history.pushState\` so every client-side navigation (including \`/table/1\`, \`/kitchen\`, \`/manager\`) is tracked without any manual page-view code. Custom event helpers in \`analytics.ts\` cover the full user journey: table selection, PIN entry, order placement, order cancellation, and staff login/logout. All tracking is gated behind a production-only check (\`NODE_ENV === 'production'\`) so local development and test runs generate no noise in the analytics dashboard. Event properties use typed interfaces (no 'any') and all \`track()\` calls are silent no-ops if \`window.umami\` is not yet defined.",
+    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The tracking script is injected as a plain \`<script defer>\` tag directly in \`<head>\` in \`app/layout.tsx\` — no Next.js Script wrapper, no lazy loading complexity, just the snippet Umami's docs prescribe. Umami's built-in SPA mode automatically patches \`history.pushState\` so every client-side navigation (including \`/table/1\`, \`/kitchen\`, \`/manager\`) is tracked without any manual page-view code. Custom event helpers in \`analytics.ts\` cover the full user journey: table selection, PIN entry, order placement, order cancellation, and staff login/logout. The script tag is conditionally rendered only when \`NEXT_PUBLIC_UMAMI_ID\` is set, so local development generates no noise unless the env var is explicitly configured. Event properties use typed interfaces (no 'any') and all \`track()\` calls are silent no-ops if \`window.umami\` is not yet defined.",
     keyFiles: [
       "src/features/shared/lib/analytics.ts",
       "app/layout.tsx",
@@ -634,10 +634,9 @@ export const customerEvents = {
     trackEvent('order_cancelled', { table_id: tableId }),
 };
 
-// trackEvent — production-only, typed, retries once after 2s if script
+// trackEvent — typed, retries once after 2s if script
 // hasn't executed yet (safety net — in practice Umami loads before any tap)
 export function trackEvent(event: string, properties?: EventProperties): void {
-  if (!IS_PRODUCTION) return;
   if (typeof window === 'undefined') return;
   const umami = getUmami();
   if (umami?.track) {
