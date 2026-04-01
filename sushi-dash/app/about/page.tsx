@@ -387,7 +387,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   {
     id: 11,
     title: "Unit Testing (Jest + React Testing Library)",
-    description: "305 tests across 19 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, UI component rendering, API client error handling, analytics event tracking, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
+    description: "373 tests across 22 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, UI component rendering, API client error handling, analytics event tracking, SEO metadata, navigation routing, context-derived state, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
     keyFiles: ["jest.config.cjs", "src/test/authorization-behavior.test.tsx", "src/test/components.test.tsx", "src/test/presence-lifecycle.test.ts"],
     codeSnippet: `// src/test/table-presence-stability.test.ts
 describe("Does the presence indicator stay steady or flicker like a broken bulb?", () => {
@@ -407,8 +407,13 @@ describe("Does the presence indicator stay steady or flicker like a broken bulb?
 });
 
 // Run all tests:
-// npm test           → 305/305 passing, 19 suites
-// make test-verbose  → prints every test title`,
+// npm test           → 373/373 passing, 22 suites
+// make test-verbose  → prints every test title
+
+// New suites added for untested areas:
+// seo-metadata.test.tsx         — 14 tests (JSON-LD, Open Graph, metadata lifecycle)
+// navigation-routing.test.tsx   — 20 tests (useRouter, useParams, AppHeader nav)
+// context-derived-state.test.ts — 34 tests (Context guards, React Query keys, useMemo/useRef)`,
   },
   {
     id: 12,
@@ -571,7 +576,7 @@ const orders = await prisma.order.findMany({
   {
     id: 17,
     title: "Lighthouse Performance Verification",
-    description: "The production build deployed on Vercel scores 100 across all four desktop Lighthouse categories. The result is reproducible via Chrome DevTools (F12 → Lighthouse) or PageSpeed Insights. The 88-92 mobile performance score is the practical ceiling for this class of React SPA — simulated 4× CPU throttle on mobile means React DOM hydration alone saturates the Total Blocking Time budget, and the test network profile (Fast 3G) caps image bandwidth. Concrete optimisations that moved the needle: CSS inlining at build time eliminated the render-blocking stylesheet (FCP −340 ms), the SSR Suspense skeleton matched the real layout precisely (CLS 0.276 → 0.002), the CRT web font is preloaded in the document <head> (no FOUT), optimizePackageImports for Radix UI and TanStack cut initial JS parse time, and browsersListForSwc targets modern syntax which produces smaller output than ES5 transpilation.",
+    description: "The production build deployed on Vercel scores 100 across all four desktop Lighthouse categories. The result is reproducible via Chrome DevTools (F12 → Lighthouse) or PageSpeed Insights. The 88-92 mobile performance score is the practical ceiling for this class of React SPA — simulated 4× CPU throttle on mobile means React DOM hydration alone saturates the Total Blocking Time budget, and the test network profile (Fast 3G) caps image bandwidth. Concrete optimisations that moved the needle: CSS inlining at build time eliminated the render-blocking stylesheet (FCP −340 ms), the SSR Suspense skeleton matched the real layout precisely (CLS 0.276 → 0.002), the CRT web font is preloaded in the document <head> (no FOUT), optimizePackageImports for Radix UI and TanStack cut initial JS parse time, and Next.js 16's default Turbopack compiler targets modern syntax which produces smaller output than ES5 transpilation.",
     keyFiles: ["next.config.ts", "app/layout.tsx", "src/features/customer/components/TableSelector.tsx"],
     codeSnippet: `## Run Lighthouse Audit:
 
@@ -594,7 +599,6 @@ Visit: https://pagespeed.web.dev/?url=https://sushi-dash.vercel.app/
 ✓ CRT font preloaded in <head> (no waterfall delay)
 ✓ CSS inlined at build time (inlineCss: true) — eliminates render-blocking CSS
 ✓ Table skeleton grid matches real layout — CLS 0.276 → 0.002
-✓ browsersListForSwc: true — modern targets, smaller syntax output
 ✓ optimizePackageImports for Radix UI + TanStack tree-shaking
 ✓ Home page SSR skeleton as Suspense fallback — LCP 610ms → 170ms`,
   },
@@ -705,7 +709,7 @@ export default function AboutPage() {
         <div className="mt-16 border-t pt-8 text-center text-muted-foreground">
           <p className="text-sm">✅ All 18 requirements fully implemented and tested</p>
           <p className="text-sm mt-2">Build: <code className="bg-muted px-2 py-1 rounded">npm run build</code></p>
-          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 305/305 passing, 19 suites</p>
+          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 373/373 passing, 22 suites</p>
           <p className="text-sm mt-2">Lighthouse Desktop: <strong>100 / 100 / 95+ / 100</strong> (Performance / Accessibility / Best Practices / SEO)</p>
         </div>
       </div>

@@ -21,7 +21,7 @@ Visit **[`/about`](https://sushi-dash.vercel.app/about)** — the dedicated requ
 **Quick verification commands** (from `sushi-dash/`):
 
 ```bash
-make test-verbose   # Prints all 305 test titles — readable, no boilerplate
+make test-verbose   # Prints all 373 test titles — readable, no boilerplate
 make build          # Production build — confirm no errors
 ```
 
@@ -71,7 +71,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 ### Technical Highlights
 - **Type Safety** — 100% TypeScript (ES2020), zero implicit `any`
-- **305 Passing Tests** — 19 test suites covering auth, orders, presence, analytics, UI elements
+- **373 Passing Tests** — 22 test suites covering auth, orders, presence, analytics, SEO, navigation, context, UI elements
 - **CRT TV Effect** — Authentic Samsung CRT animation on all pages (boot sequence, scanlines, flicker)
 - **Privacy Analytics** — Umami-powered tracking, GDPR-compliant, first-party proxy
 - **Dark Mode** — Licensed theme with light/dark switcher on home page
@@ -228,7 +228,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 | Command | Description |
 |---------|-------------|
-| `make test` | Run Jest test suite (305/305 passing) |
+| `make test` | Run Jest test suite (373/373 passing) |
 | `make test-watch` | Run tests in watch mode (auto-rerun on file change) |
 | `make test-verbose` | Show every single test case (good for grading/demos) |
 | `make test-coverage` | Generate coverage report |
@@ -416,7 +416,7 @@ sushi-dash/
 │   ├── pages/
 │   │   └── api/
 │   │       └── [...path].ts        # Proxy all /api requests to Express backend
-│   ├── test/                       # Jest test suites (305 tests, 19 files)
+│   ├── test/                       # Jest test suites (373 tests, 22 files)
 │   │   ├── crt-ux-elements.test.tsx      # 23 tests: CRT animations, UX elements
 │   │   ├── authorization-behavior.test.tsx
 │   │   ├── components.test.tsx
@@ -491,7 +491,7 @@ sushi-dash/
 
 ## 🧪 Testing
 
-### Test Coverage (305/305 Passing)
+### Test Coverage (373/373 Passing)
 
 Run the full suite from `sushi-dash/`:
 
@@ -502,7 +502,7 @@ make test-verbose   # Print every single test (good for grading)
 make test-coverage  # Generate coverage report
 ```
 
-### Test Files (19 Suites)
+### Test Files (22 Suites)
 
 | File | Tests | Purpose |
 |------|-------|---------|
@@ -524,6 +524,9 @@ make test-coverage  # Generate coverage report
 | **auth-session-enforcement.test.tsx** | 8 | Session polling, staff sync, customer ejection on PIN change |
 | **admin-panel-live-updates.test.tsx** | 1 | Admin panel polling refresh |
 | **analytics.test.ts** | 22 | Umami event helpers: customer, staff, kitchen, admin events, retry logic |
+| **seo-metadata.test.tsx** | 14 | SEOHead title/description updates, JSON-LD Restaurant schema validation |
+| **navigation-routing.test.tsx** | 20 | next/link rendering, useRouter/usePathname/useParams/useSearchParams, AppHeader nav, dark mode toggle |
+| **context-derived-state.test.ts** | 34 | Query key structure, context hook guards, useMemo derived values, useCallback order helpers |
 
 ### Example Test: CRT Animation Verification
 
@@ -651,7 +654,7 @@ Applied via `CRTScreen` component:
 8. ✅ **Navigation (Next.js Router & Dynamic Routes)**
 9. ✅ **Responsive Design (Mobile-First Tailwind)**
 10. ✅ **Vercel Deployment (Serverless, CI/CD)**
-11. ✅ **Unit Testing (Jest + React Testing Library)** — 305/305 passing
+11. ✅ **Unit Testing (Jest + React Testing Library)** — 373/373 passing
 12. ✅ **Context API (AuthContext, AppContext)**
 13. ✅ **Animations & Transitions (CRT Effect + Dialog)**
 14. ✅ **React Query (@tanstack/react-query)**
@@ -731,7 +734,7 @@ NEXT_PUBLIC_ENABLE_WEB_VITALS=false  # Disable Core Web Vitals reporter in prod
 1. Push to `main` → GitHub webhook triggers Vercel
 2. Vercel runs: `prisma generate && npm run build`
 3. Installs: `npm install && cd server && npm install`
-4. Tests: `npm test` (305/305 passing)
+4. Tests: `npm test` (373/373 passing)
 5. Deploys: **11 static routes** + **API routes** to Vercel Edge Network
 6. Preview: Automatic preview URL created for pull requests
 
@@ -781,7 +784,7 @@ lighthouse https://sushi-dash.vercel.app/ --view
 2. **Create feature branch**: `git checkout -b feature/my-feature`
 3. **Make changes** — Always run tests before pushing:
    ```bash
-   make test         # Verify all 305 tests pass
+   make test         # Verify all 373 tests pass
    make lint         # Check code style
    make build        # Verify production build
    ```

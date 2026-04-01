@@ -58,6 +58,7 @@ export function useTablePresence() {
     refetchInterval: PRESENCE_POLLING_INTERVAL_MS,
     refetchIntervalInBackground: true,
     retry: 1,
+    structuralSharing: false,
   });
 
   const stabilizedData = useMemo(() => {

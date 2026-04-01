@@ -453,7 +453,7 @@ module.exports = {
 };
 ```
 
-**Test results: 6 suites, 162 tests — all passing ✅**
+**Test results: 22 suites, 373 tests — all passing ✅**
 
 | Suite | File | Tests |
 |-------|------|-------|
@@ -463,6 +463,22 @@ module.exports = {
 | Data | [data.test.ts](sushi-dash/src/test/data.test.ts) | 13 |
 | Order Status | [order-status.test.ts](sushi-dash/src/test/order-status.test.ts) | 8 |
 | Utils | [utils.test.ts](sushi-dash/src/test/utils.test.ts) | 6 |
+| CRT UX Elements | [crt-ux-elements.test.tsx](sushi-dash/src/test/crt-ux-elements.test.tsx) | 14 |
+| Presence Lifecycle | [presence-lifecycle.test.ts](sushi-dash/src/test/presence-lifecycle.test.ts) | 45 |
+| Analytics | [analytics.test.ts](sushi-dash/src/test/analytics.test.ts) | 22 |
+| SEO Metadata | [seo-metadata.test.tsx](sushi-dash/src/test/seo-metadata.test.tsx) | 14 |
+| Navigation Routing | [navigation-routing.test.tsx](sushi-dash/src/test/navigation-routing.test.tsx) | 20 |
+| Context & Derived State | [context-derived-state.test.ts](sushi-dash/src/test/context-derived-state.test.ts) | 34 |
+| Authorization Behavior | [authorization-behavior.test.tsx](sushi-dash/src/test/authorization-behavior.test.tsx) | 12 |
+| Auth Session Enforcement | [auth-session-enforcement.test.tsx](sushi-dash/src/test/auth-session-enforcement.test.tsx) | 8 |
+| Menu Ordering View | [menu-ordering-view.test.tsx](sushi-dash/src/test/menu-ordering-view.test.tsx) | 7 |
+| Staff Mobile Layout | [staff-mobile-layout.test.tsx](sushi-dash/src/test/staff-mobile-layout.test.tsx) | 4 |
+| Proxy Access Control | [proxy-access-control.test.ts](sushi-dash/src/test/proxy-access-control.test.ts) | 6 |
+| Providers Presence | [providers-presence.test.ts](sushi-dash/src/test/providers-presence.test.ts) | 6 |
+| Table Presence Stability | [table-presence-stability.test.ts](sushi-dash/src/test/table-presence-stability.test.ts) | 3 |
+| Server Events Presence | [server-events-presence-switch.test.ts](sushi-dash/src/test/server-events-presence-switch.test.ts) | 8 |
+| Server Events Ejection | [server-events-ejection.test.tsx](sushi-dash/src/test/server-events-ejection.test.tsx) | 7 |
+| Admin Panel Live Updates | [admin-panel-live-updates.test.tsx](sushi-dash/src/test/admin-panel-live-updates.test.tsx) | 1 |
 
 **Example test** — [components.test.tsx](sushi-dash/src/test/components.test.tsx):
 
