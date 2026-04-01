@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import * as api from "@/features/shared/lib/api";
 import type { MenuItem, Table, OrderStatus, Order, OrderSettings } from "@/features/shared/types/models";
+import { customerEvents } from "@/features/shared/lib/analytics";
 
 // ---------------------------------------------------------------------------
 // Query Keys — centralised to keep cache invalidation consistent
@@ -239,6 +240,9 @@ export function useCancelOrder() {
       if (context?.previousOrders) {
         queryClient.setQueryData(queryKeys.orders, context.previousOrders);
       }
+    },
+    onSuccess: (_data, orderId) => {
+      customerEvents.orderCancelled(orderId);
     },
     // Always refetch after error or success to sync with server
     onSettled: () => {

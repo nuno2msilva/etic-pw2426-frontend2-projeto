@@ -9,6 +9,7 @@ import {
   CUSTOMER_SESSION_VALIDATION_INTERVAL_MS,
 } from '@/features/shared/lib/timeouts';
 import { sendPresenceHeartbeat, clearPresenceHeartbeat } from '@/features/shared/lib/api';
+import { customerEvents, staffEvents } from '@/features/shared/lib/analytics';
 import {
   AuthSession,
   AuthRole,
@@ -361,6 +362,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginAsCustomer = useCallback(async (tableId: string, pin: string): Promise<boolean> => {
     const success = await loginTableWithPin(tableId, pin);
+    customerEvents.pinEntered(tableId, success);
     if (success) {
       const newSession: AuthSession = {
         role: 'customer',
@@ -372,6 +374,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCustomerLastSeenAt(Date.now());
       setIsViewingTableSelection(false);
       invalidateAllCaches();
+      customerEvents.tableSelected(tableId);
+      customerEvents.sessionStarted(tableId);
       return true;
     }
     return false;
@@ -412,6 +416,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Reset session-level dismissal on each login (will show reminder again)
           setPasswordChangeReminderDismissedThisSession(false);
         invalidateAllCaches();
+        staffEvents.loginSucceeded(normalizedRole);
         return {
           success: true,
           role: normalizedRole,
@@ -419,6 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           skipPasswordResetReminder: result.skipPasswordResetReminder ?? false,
         };
       }
+      staffEvents.loginAttempted(identifier, false);
       return { success: false, error: result.error ?? 'Login failed' };
     } catch (err) {
       return { success: false, error: getErrorMessage(err, 'Login failed') };
@@ -468,33 +474,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /** Logout customer session — used by SSE ejection */
   const logout = useCallback(async () => {
     const tableId = customerSession?.tableId;
+    const sessionDuration = customerSession?.authenticatedAt
+      ? Math.round((Date.now() - customerSession.authenticatedAt) / 1000)
+      : 0;
     clearAuthSession('customer');
     clearCustomerLastSeenAt();
     setCustomerSession(null);
     setIsViewingTableSelection(true);
-    if (tableId) void clearPresenceHeartbeat(tableId);
+    if (tableId) {
+      void clearPresenceHeartbeat(tableId);
+      customerEvents.sessionEnded(tableId, sessionDuration);
+    }
     await sendLogoutRequest('customer');
     invalidateAllCaches();
-  }, [customerSession?.tableId, invalidateAllCaches, sendLogoutRequest]);
+  }, [customerSession?.tableId, customerSession?.authenticatedAt, invalidateAllCaches, sendLogoutRequest]);
 
   /** Logout staff session */
   const logoutStaff = useCallback(async () => {
+    const role = staffSession?.role ?? 'manager';
+    const sessionDuration = staffSession?.authenticatedAt
+      ? Math.round((Date.now() - staffSession.authenticatedAt) / 1000)
+      : 0;
+    staffEvents.loggedOut(role, sessionDuration);
     userIsLoggedOffFromStaffSession();
-    await sendLogoutRequest(staffSession?.role ?? 'manager');
+    await sendLogoutRequest(role);
     invalidateAllCaches();
-  }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, userIsLoggedOffFromStaffSession]);
+  }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, staffSession?.authenticatedAt, userIsLoggedOffFromStaffSession]);
 
   /** Signal that customer is leaving the table. Explicitly logs out customer for accurate presence indicators. */
   const goToTableSelection = useCallback(() => {
     const tableId = customerSession?.tableId;
+    const sessionDuration = customerSession?.authenticatedAt
+      ? Math.round((Date.now() - customerSession.authenticatedAt) / 1000)
+      : 0;
     setIsViewingTableSelection(true);
     clearAuthSession('customer');
     clearCustomerLastSeenAt();
     setCustomerSession(null);
-    if (tableId) void clearPresenceHeartbeat(tableId);
+    if (tableId) {
+      void clearPresenceHeartbeat(tableId);
+      customerEvents.sessionEnded(tableId, sessionDuration);
+    }
     void sendLogoutRequest('customer', true);
     invalidateAllCaches();
-  }, [customerSession?.tableId, invalidateAllCaches, sendLogoutRequest]);
+  }, [customerSession?.tableId, customerSession?.authenticatedAt, invalidateAllCaches, sendLogoutRequest]);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   const goToTable = useCallback(() => {

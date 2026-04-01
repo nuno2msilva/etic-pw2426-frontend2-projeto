@@ -1,9 +1,10 @@
 // useOrderingFlow — shared cart state, derived values, and order handlers used by both CustomerPage and TablePage.
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/features/customer/context/AppContext";
 import type { MenuItem, Table, Order } from "@/features/shared/types/models";
+import { customerEvents } from "@/features/shared/lib/analytics";
 
 export interface OrderingFlow {
   // State
@@ -44,6 +45,7 @@ export function useOrderingFlow(table: Table | null | undefined): OrderingFlow {
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
   const [showConfirm, setShowConfirm] = useState(false);
   const [showProgress, setShowProgress] = useState(false);
+  const sessionStartRef = useRef<number>(Date.now());
 
   // Derived values
 
@@ -172,6 +174,8 @@ export function useOrderingFlow(table: Table | null | undefined): OrderingFlow {
 
     const result = placeOrder(items, table);
     if (result.success) {
+      const sessionDuration = Math.round((Date.now() - sessionStartRef.current) / 1000);
+      customerEvents.orderPlaced(table.id, totalItems, 0, sessionDuration);
       setCart({});
       setShowConfirm(false);
       toast.success("Order sent to the kitchen! 🍣");
