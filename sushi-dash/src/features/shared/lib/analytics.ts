@@ -15,8 +15,10 @@ interface EventProperties {
 }
 
 interface UmamiTracker {
-  track: (event: string, properties?: EventProperties) => void;
-  trackView?: (url: string, referrer?: string, properties?: EventProperties) => void;
+  track: (
+    eventOrPayload: string | { url?: string; referrer?: string; title?: string },
+    properties?: EventProperties
+  ) => void;
 }
 
 /**
@@ -45,23 +47,15 @@ export function trackEvent(event: string, properties?: EventProperties): void {
 }
 
 /**
- * Track a pageview with optional custom properties
+ * Track a pageview — uses Umami v2's object form of track()
  */
-export function trackPageView(
-  url: string,
-  referrer?: string,
-  properties?: EventProperties
-): void {
-  // Only track in production
+export function trackPageView(url: string, referrer?: string): void {
   if (!IS_PRODUCTION || !UMAMI_TRACKING_ID || typeof window === 'undefined') return;
 
   const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.trackView) {
-    console.warn('[Analytics] Umami trackView not available');
-    return;
-  }
+  if (!umami?.track) return;
 
-  umami.trackView(url, referrer, properties);
+  umami.track({ url, referrer: referrer || document.referrer });
 }
 
 /**

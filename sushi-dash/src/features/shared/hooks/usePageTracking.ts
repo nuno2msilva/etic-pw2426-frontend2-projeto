@@ -27,18 +27,7 @@ export function usePageTracking() {
       const pageName = getPageName(pathname);
 
       // Track the pageview with Umami
-      trackPageView(
-        pathname,
-        document.referrer,
-        {
-          page_name: pageName,
-          page_path: pathname,
-          hostname: typeof window !== 'undefined' ? window.location.hostname : 'unknown',
-        }
-      );
-
-      // Also log to console for debugging (remove in production if needed)
-      console.log(`[Analytics] Page view: ${pageName} (${pathname})`);
+      trackPageView(pathname, document.referrer);
     }
   }, [pathname]);
 }
