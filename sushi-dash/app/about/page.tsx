@@ -601,29 +601,32 @@ Visit: https://pagespeed.web.dev/?url=https://sushi-dash.vercel.app/
   {
     id: 18,
     title: "Analytics (Umami — Privacy-First Event Tracking)",
-    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The UmamiIntegration component injects the tracking script via Next.js Script with strategy='lazyOnload' so it never blocks the critical rendering path. Custom event helpers in analytics.ts cover the full user journey: table selection, PIN entry, cart updates, order placement, order cancellation, and staff login/logout. All tracking is gated behind a production-only check (NODE_ENV === 'production') so local development and test runs generate no noise in the analytics dashboard. Event properties use typed interfaces (no 'any') and all track calls are silent no-ops if the script fails to load.",
+    description: "Page views and key user interactions are tracked with Umami, an open-source, cookie-free analytics platform that is fully GDPR-compliant. The tracking script is injected as a plain \`<script defer>\` tag directly in \`<head>\` in \`app/layout.tsx\` — no Next.js Script wrapper, no lazy loading complexity, just the snippet Umami's docs prescribe. Umami's built-in SPA mode automatically patches \`history.pushState\` so every client-side navigation (including \`/table/1\`, \`/kitchen\`, \`/manager\`) is tracked without any manual page-view code. Custom event helpers in \`analytics.ts\` cover the full user journey: table selection, PIN entry, order placement, order cancellation, and staff login/logout. All tracking is gated behind a production-only check (\`NODE_ENV === 'production'\`) so local development and test runs generate no noise in the analytics dashboard. Event properties use typed interfaces (no 'any') and all \`track()\` calls are silent no-ops if \`window.umami\` is not yet defined.",
     keyFiles: [
-      "src/features/shared/components/UmamiIntegration.tsx",
       "src/features/shared/lib/analytics.ts",
       "app/layout.tsx",
     ],
-    codeSnippet: `// app/layout.tsx — Umami injected once at the root, lazyOnload
-<UmamiIntegration
-  trackingId={process.env.NEXT_PUBLIC_UMAMI_ID || ''}
-  endpoint={process.env.NEXT_PUBLIC_UMAMI_ENDPOINT}
-/>
-// strategy="lazyOnload" means it loads after everything else — zero LCP impact
+    codeSnippet: `// app/layout.tsx — plain <script defer> in <head>, no Next.js wrapper needed
+{process.env.NEXT_PUBLIC_UMAMI_ID && (
+  <script
+    defer
+    src={(process.env.NEXT_PUBLIC_UMAMI_ENDPOINT
+      ?? 'https://cloud.umami.is') + '/script.js'}
+    data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
+  />
+)}
+// defer = non-blocking. Umami auto-patches history.pushState so every
+// client-side navigation (/table/1, /kitchen, /manager) is tracked.
 
-// src/features/shared/lib/analytics.ts — typed event helpers
+// src/features/shared/lib/analytics.ts — typed custom event helpers
 export const customerEvents = {
   tableSelected: (tableId: string) =>
     trackEvent('table_selected', { table_id: tableId }),
 
-  orderPlaced: (tableId: string, itemCount: number, totalPrice: number, duration: number) =>
+  orderPlaced: (tableId: string, itemCount: number, duration: number) =>
     trackEvent('order_placed', {
       table_id: tableId,
       item_count: itemCount,
-      total_price: totalPrice,
       session_duration_seconds: duration,
     }),
 
@@ -631,12 +634,17 @@ export const customerEvents = {
     trackEvent('order_cancelled', { table_id: tableId }),
 };
 
-// Underlying trackEvent — production-only, typed, silent fail
+// trackEvent — production-only, typed, retries once after 2s if script
+// hasn't executed yet (safety net — in practice Umami loads before any tap)
 export function trackEvent(event: string, properties?: EventProperties): void {
-  if (!IS_PRODUCTION) return; // no noise in dev or tests
-  const umami = (window as unknown as { umami?: UmamiTracker }).umami;
-  if (!umami?.track) return; // silent fail if script didn't load
-  umami.track(event, properties);
+  if (!IS_PRODUCTION) return;
+  if (typeof window === 'undefined') return;
+  const umami = getUmami();
+  if (umami?.track) {
+    umami.track(event, properties);
+  } else {
+    setTimeout(() => getUmami()?.track(event, properties), 2000);
+  }
 }`,
   },
 ];

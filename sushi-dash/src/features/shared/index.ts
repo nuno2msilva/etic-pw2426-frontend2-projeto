@@ -13,7 +13,6 @@ export { default as LiveUpdatesClient } from './components/LiveUpdatesClient';
 export { default as WebVitalsReporter } from './components/WebVitalsReporter';
 export { default as WithAppProvider } from './components/WithAppProvider';
 export { default as NotFound } from './components/NotFound';
-export { UmamiIntegration } from './components/UmamiIntegration';
 
 export * from './lib/config';
 export { notifySuccess, notifyError } from './lib/notify';

@@ -3,7 +3,6 @@
 import type { Metadata } from "next";
 import "@/index.css";
 import { Providers } from "./providers";
-import { UmamiIntegration } from "@/features/shared/components/UmamiIntegration";
 
 export const metadata: Metadata = {
   title: "Sushi Dash — All-You-Can-Eat Sushi Ordering System",
@@ -65,14 +64,17 @@ export default function RootLayout({
           type="font/ttf"
           crossOrigin="anonymous"
         />
+        {process.env.NEXT_PUBLIC_UMAMI_ID && (
+          // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document
+          <script
+            defer
+            src={`${process.env.NEXT_PUBLIC_UMAMI_ENDPOINT ?? "https://cloud.umami.is"}/script.js`}
+            data-website-id={process.env.NEXT_PUBLIC_UMAMI_ID}
+          />
+        )}
       </head>
       <body className="perf-max">
         <Providers>{children}</Providers>
-        {/* Script components must live in body, not head — Next.js drops them silently otherwise */}
-        <UmamiIntegration
-          trackingId={process.env.NEXT_PUBLIC_UMAMI_ID || ''}
-          endpoint={process.env.NEXT_PUBLIC_UMAMI_ENDPOINT}
-        />
       </body>
     </html>
   );

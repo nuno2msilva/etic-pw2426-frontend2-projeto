@@ -349,7 +349,6 @@ sushi-dash/
 │   │   ├── shared/
 │   │   │   ├── components/
 │   │   │   │   ├── AppHeader.tsx
-│   │   │   │   ├── UmamiIntegration.tsx
 │   │   │   │   ├── WebVitalsReporter.tsx
 │   │   │   │   ├── CRTScreen.tsx
 │   │   │   │   ├── LiveUpdatesClient.tsx
@@ -720,8 +719,8 @@ DATABASE_URL=postgresql://...  # PostgreSQL connection string
 JWT_SECRET=<32+ char random key>  # Signing key for JWT tokens
 
 # Analytics
-NEXT_PUBLIC_UMAMI_ID=<tracking-id>  # Umami analytics tracking ID
-NEXT_PUBLIC_UMAMI_ENDPOINT=<endpoint>  # Umami server endpoint
+NEXT_PUBLIC_UMAMI_ID=<tracking-id>        # Umami website ID (from your Umami dashboard)
+NEXT_PUBLIC_UMAMI_ENDPOINT=<endpoint>     # Optional: self-hosted Umami URL (defaults to https://cloud.umami.is)
 
 # Feature Flags
 NEXT_PUBLIC_ENABLE_WEB_VITALS=false  # Disable Core Web Vitals reporter in prod
