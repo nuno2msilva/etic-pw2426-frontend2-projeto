@@ -1,15 +1,11 @@
 /**
  * Umami Analytics Integration
  * Tracks user behavior: orders, sessions, admin actions, kitchen events
- * Only enabled in production (Vercel/hosted environments)
  *
  * Page views are handled automatically by Umami's built-in SPA hook
  * (patches history.pushState — works with Next.js App Router out of the box).
  * This file only handles custom events.
  */
-
-// Replaced at build time by Next.js. 'production' on Vercel, 'development' locally.
-const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 export interface EventProperties {
   [key: string]: string | number | boolean;
@@ -34,7 +30,6 @@ function getUmami(): UmamiTracker | undefined {
  * the retry window is never needed in practice — it's just a safety net.
  */
 export function trackEvent(event: string, properties?: EventProperties): void {
-  if (!IS_PRODUCTION) return;
   if (typeof window === 'undefined') return;
 
   const umami = getUmami();
