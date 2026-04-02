@@ -63,13 +63,15 @@ app.get("/api/events/presence", async (_req, res) => {
   const memoryPresence = getPresence();
   try {
     const cutoff = new Date(Date.now() - 2 * 60 * 1000);
-    const activeTables = await prisma.tableConfig.findMany({
-      where: { isActive: true, customerPresenceAt: { gte: cutoff } },
-      select: { id: true },
+    const activeRows = await prisma.customerPresence.groupBy({
+      by: ["tableId"],
+      where: { lastHeartbeatAt: { gte: cutoff } },
+      _count: { id: true },
     });
     const merged: Record<number, number> = { ...memoryPresence };
-    for (const t of activeTables) {
-      if (!merged[t.id] || merged[t.id] < 1) merged[t.id] = 1;
+    for (const row of activeRows) {
+      const dbCount = row._count.id;
+      merged[row.tableId] = Math.max(merged[row.tableId] ?? 0, dbCount);
     }
     res.json({ presence: merged });
   } catch {

@@ -220,7 +220,7 @@ describe("Does the app actually enforce who's logged in and kick imposters?", ()
     expect(getAuthSession("customer")).toBeNull();
   });
 
-  it("logs customer out immediately on explicit table leave for snappy presence", async () => {
+  it("preserves session but clears heartbeat on table leave so customer can return without PIN", async () => {
     const customer: AuthSession = {
       role: "customer",
       tableId: "7",
@@ -254,11 +254,16 @@ describe("Does the app actually enforce who's logged in and kick imposters?", ()
 
     fireEvent.click(screen.getByRole("button", { name: "Leave table" }));
 
+    // Session is preserved — customer can return without re-entering PIN
     await waitFor(() => {
-      expect(screen.getByText("customer:none")).toBeInTheDocument();
+      expect(screen.getByText("customer:7")).toBeInTheDocument();
     });
 
-    expect(getAuthSession("customer")).toBeNull();
-    expect(sessionStorage.getItem("sushi-dash-customer-session")).toBeNull();
+    expect(getAuthSession("customer")).not.toBeNull();
+    // Heartbeat DELETE was fired to clear presence
+    expect(global.fetch).toHaveBeenCalledWith(
+      expect.stringContaining("/api/tables/7/heartbeat"),
+      expect.objectContaining({ method: "DELETE" }),
+    );
   });
 });

@@ -506,23 +506,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     invalidateAllCaches();
   }, [invalidateAllCaches, sendLogoutRequest, staffSession?.role, staffSession?.authenticatedAt, userIsLoggedOffFromStaffSession]);
 
-  /** Signal that customer is leaving the table. Explicitly logs out customer for accurate presence indicators. */
+  /** Signal that customer is browsing table selection. Clears heartbeat so
+   *  the table shows as unoccupied, but preserves the session so the customer
+   *  can return within the grace period without re-entering their PIN. */
   const goToTableSelection = useCallback(() => {
     const tableId = customerSession?.tableId;
-    const sessionDuration = customerSession?.authenticatedAt
-      ? Math.round((Date.now() - customerSession.authenticatedAt) / 1000)
-      : 0;
     setIsViewingTableSelection(true);
-    clearAuthSession('customer');
-    clearCustomerLastSeenAt();
-    setCustomerSession(null);
     if (tableId) {
       void clearPresenceHeartbeat(tableId);
-      customerEvents.sessionEnded(tableId, sessionDuration);
     }
-    void sendLogoutRequest('customer', true);
     invalidateAllCaches();
-  }, [customerSession?.tableId, customerSession?.authenticatedAt, invalidateAllCaches, sendLogoutRequest]);
+  }, [customerSession?.tableId, invalidateAllCaches]);
 
   /** Signal that customer has selected a table. Re-enables SSE presence tracking. */
   const goToTable = useCallback(() => {

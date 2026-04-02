@@ -15,13 +15,12 @@ import { disconnectCustomerConnectionsByJti } from "../events";
 
 const router = Router();
 
-/** Clear DB-backed customer presence for a table */
-async function clearDbPresence(tableId: number | undefined | null): Promise<void> {
-  if (typeof tableId !== "number" || Number.isNaN(tableId)) return;
+/** Clear DB-backed customer presence for a session (by JWT jti) */
+async function clearDbPresence(jti: string | undefined | null): Promise<void> {
+  if (!jti) return;
   try {
-    await prisma.tableConfig.updateMany({
-      where: { id: tableId, isActive: true },
-      data: { customerPresenceAt: null },
+    await prisma.customerPresence.deleteMany({
+      where: { sessionToken: jti },
     });
   } catch {
     // Best-effort — don't block logout
@@ -57,11 +56,8 @@ router.post("/login/table/:tableId", async (req, res) => {
     // Include pinVersion so session is invalidated when manager randomizes PIN
     issueToken(res, { role: "customer", tableId, pinVersion: table.pinVersion });
 
-    // Set initial DB-backed presence so Vercel serverless can detect it immediately
-    await prisma.tableConfig.update({
-      where: { id: tableId },
-      data: { customerPresenceAt: new Date() },
-    }).catch(() => {}); // Best-effort
+    // DB-backed presence row is created by the client-side heartbeat effect
+    // (fires immediately on session change), so no need to pre-create here.
 
     res.json({ success: true, role: "customer", tableId });
   } catch (err) {
@@ -148,7 +144,7 @@ router.post("/logout", async (req, res) => {
 
   // Clear DB-backed presence when customer logs out
   if (!role || role === "customer") {
-    await clearDbPresence(req.customerAuth?.tableId);
+    await clearDbPresence(req.customerAuth?.jti);
   }
 
   if (role === "customer") {

@@ -62,12 +62,27 @@ model TableConfig {
   pin        String @db.VarChar(4)
   pinVersion Int    @default(1) @map("pin_version")
   isActive   Boolean @default(true) @map("is_active")
-  customerPresenceAt DateTime? @map("customer_presence_at")
 
-  sessions Session[]
-  orders   Order[]
+  sessions   Session[]
+  orders     Order[]
+  presences  CustomerPresence[]
 
   @@map("tables_config")
+}
+
+// ── Customer Presence (per-session heartbeats) ─────────────────
+// Tracks individual customer sessions per table so multiple customers
+// at the same table don't clobber each other's presence.
+model CustomerPresence {
+  id              Int      @id @default(autoincrement())
+  tableId         Int      @map("table_id")
+  sessionToken    String   @unique @map("session_token") @db.VarChar(100)
+  lastHeartbeatAt DateTime @default(now()) @map("last_heartbeat_at")
+
+  table TableConfig @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  @@index([tableId], name: "idx_customer_presence_table")
+  @@map("customer_presence")
 }
 
 // ── Role passwords (kitchen, manager) ──────────────────────────

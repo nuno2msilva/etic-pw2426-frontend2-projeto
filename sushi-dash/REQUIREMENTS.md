@@ -453,7 +453,7 @@ module.exports = {
 };
 ```
 
-**Test results: 22 suites, 373 tests — all passing ✅**
+**Test results: 22 suites, 382 tests — all passing ✅**
 
 | Suite | File | Tests |
 |-------|------|-------|

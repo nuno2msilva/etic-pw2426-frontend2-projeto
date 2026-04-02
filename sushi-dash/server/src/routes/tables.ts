@@ -25,27 +25,26 @@ function generatePin(): string {
 const PRESENCE_STALENESS_MS = 2 * 60 * 1000; // 2 minutes
 
 // ── Current table presence snapshot (public) ────────────────
-// Merges in-memory SSE presence with database-backed heartbeats
+// Merges in-memory SSE presence with database-backed per-session heartbeats
 // so the indicator works reliably on Vercel serverless.
 router.get("/presence", async (_req, res) => {
   const memoryPresence = getPresence();
 
   try {
     const cutoff = new Date(Date.now() - PRESENCE_STALENESS_MS);
-    const activeTables = await prisma.tableConfig.findMany({
-      where: {
-        isActive: true,
-        customerPresenceAt: { gte: cutoff },
-      },
-      select: { id: true },
+
+    // Count distinct active sessions per table (not a single flag)
+    const activeRows = await prisma.customerPresence.groupBy({
+      by: ["tableId"],
+      where: { lastHeartbeatAt: { gte: cutoff } },
+      _count: { id: true },
     });
 
-    // Merge: DB-backed tables get at least 1 if they aren't already in memory
+    // Merge: take the max of in-memory SSE count and DB session count
     const merged: Record<number, number> = { ...memoryPresence };
-    for (const t of activeTables) {
-      if (!merged[t.id] || merged[t.id] < 1) {
-        merged[t.id] = 1;
-      }
+    for (const row of activeRows) {
+      const dbCount = row._count.id;
+      merged[row.tableId] = Math.max(merged[row.tableId] ?? 0, dbCount);
     }
 
     res.json({ presence: merged });
@@ -55,9 +54,9 @@ router.get("/presence", async (_req, res) => {
   }
 });
 
-// ── Customer heartbeat (updates DB-backed presence) ──────────
-// Customers call this periodically so Vercel serverless can detect presence
-// even when SSE connections are on a different function instance.
+// ── Customer heartbeat (updates DB-backed per-session presence) ──
+// Each customer session gets its own row, so multiple customers
+// at the same table don't clobber each other's presence.
 router.post("/:id/heartbeat", async (req, res) => {
   const id = Number(req.params.id);
 
@@ -67,10 +66,17 @@ router.post("/:id/heartbeat", async (req, res) => {
     return;
   }
 
+  const jti = req.customerAuth.jti;
+  if (!jti) {
+    res.status(400).json({ error: "Missing session token" });
+    return;
+  }
+
   try {
-    await prisma.tableConfig.updateMany({
-      where: { id, isActive: true },
-      data: { customerPresenceAt: new Date() },
+    await prisma.customerPresence.upsert({
+      where: { sessionToken: jti },
+      update: { lastHeartbeatAt: new Date() },
+      create: { tableId: id, sessionToken: jti, lastHeartbeatAt: new Date() },
     });
     res.json({ success: true });
   } catch {
@@ -78,15 +84,21 @@ router.post("/:id/heartbeat", async (req, res) => {
   }
 });
 
-// ── Clear customer presence from a table (called on logout) ──
+// ── Clear customer presence from a table (called on logout/leave) ──
+// Only removes the current session's row; other customers at the
+// same table keep their presence.
 router.delete("/:id/heartbeat", async (req, res) => {
   const id = Number(req.params.id);
+  const jti = req.customerAuth?.jti;
 
   try {
-    await prisma.tableConfig.updateMany({
-      where: { id, isActive: true },
-      data: { customerPresenceAt: null },
-    });
+    if (jti) {
+      // Delete only this session's presence row
+      await prisma.customerPresence.deleteMany({
+        where: { sessionToken: jti, tableId: id },
+      });
+    }
+    // If no jti (expired cookie), still return success — best-effort cleanup
     res.json({ success: true });
   } catch {
     res.status(500).json({ error: "Internal server error" });
@@ -210,13 +222,16 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
 
     const updated = await prisma.tableConfig.updateMany({
       where: { id, isActive: true },
-      data: { pin, pinVersion: { increment: 1 }, customerPresenceAt: null },
+      data: { pin, pinVersion: { increment: 1 } },
     });
 
     if (updated.count === 0) {
       res.status(404).json({ error: "Table not found" });
       return;
     }
+
+    // Evict all customer presence rows — PIN changed, sessions invalidated
+    await prisma.customerPresence.deleteMany({ where: { tableId: id } }).catch(() => {});
 
     broadcast({ type: "pin-changed", tableId: id });
     res.json({ success: true, pin });
@@ -245,8 +260,11 @@ router.post("/:id/pin/randomize", requireRole("manager"), async (req, res) => {
 
     const updated = await prisma.tableConfig.update({
       where: { id },
-      data: { pin: newPin, pinVersion: { increment: 1 }, customerPresenceAt: null },
+      data: { pin: newPin, pinVersion: { increment: 1 } },
     });
+
+    // Evict all customer presence rows — PIN randomized, sessions invalidated
+    await prisma.customerPresence.deleteMany({ where: { tableId: id } }).catch(() => {});
 
     broadcast({ type: "pin-changed", tableId: id });
     res.json({ success: true, pin: newPin, pin_version: updated.pinVersion });

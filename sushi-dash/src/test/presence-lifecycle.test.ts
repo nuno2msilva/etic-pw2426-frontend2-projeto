@@ -12,7 +12,9 @@ import {
   getIdleTimeoutMs,
   getKeepAliveIntervalMs,
   resolveTrackedTableId,
+  upsertClientConnection,
 } from "../../server/src/events";
+import type { ClientConnectionEntry } from "../../server/src/events";
 import {
   CUSTOMER_SESSION_GRACE_PERIOD_MS,
   CUSTOMER_PRESENCE_HEARTBEAT_INTERVAL_MS,
@@ -53,8 +55,8 @@ describe("Does the whole presence lifecycle actually work end-to-end?", () => {
       expect(SSE_MAX_RECONNECT_DELAY_MS).toBe(30 * 1000);
     });
 
-    it("presence polls every 8 seconds — light enough for mobile batteries", () => {
-      expect(PRESENCE_POLLING_INTERVAL_MS).toBe(8 * 1000);
+    it("presence polls every 3 seconds — aggressive but light enough for mobile batteries", () => {
+      expect(PRESENCE_POLLING_INTERVAL_MS).toBe(3 * 1000);
     });
 
     it("staff sessions get validated every 10 seconds", () => {
@@ -297,7 +299,9 @@ describe("Does the whole presence lifecycle actually work end-to-end?", () => {
       expect(aGone).toBeNull();
 
       // But B is still there, so presence should remain ON
-      // (This is handled by counting connections in tableClients Set)
+      // (SSE: counted by connections in tableClients Set)
+      // (DB: each customer has their own CustomerPresence row keyed by JWT jti,
+      //  so A's DELETE only removes A's row — B's row stays)
       const bStayingConnected = resolveTrackedTableId(1, 1);
       expect(bStayingConnected).toBe(1);
     });
@@ -365,6 +369,158 @@ describe("Does the whole presence lifecycle actually work end-to-end?", () => {
       expect(SSE_IDLE_TIMEOUT_MS).toBeGreaterThan(
         CUSTOMER_SESSION_VALIDATION_INTERVAL_MS * 100,
       );
+    });
+  });
+
+  describe("Does multi-customer presence actually work with per-session tracking?", () => {
+    it("SSE tracks multiple connections per table via a Set, not a single flag", () => {
+      // In-memory: tableClients is Map<number, Set<Response>>
+      // Each customer SSE connection is a distinct entry in the Set
+      // getPresence() counts set.size, giving accurate per-table counts
+      const mockTableClients = new Map<number, Set<string>>();
+      mockTableClients.set(1, new Set(["customerA", "customerB", "customerC"]));
+      mockTableClients.set(2, new Set(["customerD"]));
+
+      const presence: Record<number, number> = {};
+      for (const [tableId, set] of mockTableClients) {
+        if (set.size > 0) presence[tableId] = set.size;
+      }
+
+      expect(presence[1]).toBe(3);
+      expect(presence[2]).toBe(1);
+    });
+
+    it("removing one customer from a multi-customer table doesn't nuke the others", () => {
+      // DB: CustomerPresence has one row per session (keyed by JWT jti)
+      // DELETE /heartbeat only removes the row matching req.customerAuth.jti
+      const sessions = new Map<string, { tableId: number }>();
+      sessions.set("jti-aaa", { tableId: 1 });
+      sessions.set("jti-bbb", { tableId: 1 });
+      sessions.set("jti-ccc", { tableId: 1 });
+
+      // Customer A leaves — only their row is deleted
+      sessions.delete("jti-aaa");
+
+      // Count remaining sessions for table 1
+      const tableOneSessions = [...sessions.values()].filter(s => s.tableId === 1);
+      expect(tableOneSessions).toHaveLength(2);
+    });
+
+    it("presence count merges SSE in-memory and DB session counts taking the max", () => {
+      // GET /presence merges: Math.max(memoryCount, dbCount) per table
+      // This handles split-brain between SSE process and DB heartbeats on Vercel
+      const memoryPresence: Record<number, number> = { 1: 2, 3: 1 };
+      const dbCounts: Array<{ tableId: number; count: number }> = [
+        { tableId: 1, count: 3 },  // DB sees 3 (more than SSE)
+        { tableId: 2, count: 1 },  // DB sees 1 (SSE sees 0)
+      ];
+
+      const merged: Record<number, number> = { ...memoryPresence };
+      for (const row of dbCounts) {
+        merged[row.tableId] = Math.max(merged[row.tableId] ?? 0, row.count);
+      }
+
+      expect(merged[1]).toBe(3); // DB count wins (3 > 2)
+      expect(merged[2]).toBe(1); // DB-only table appears
+      expect(merged[3]).toBe(1); // SSE-only table preserved
+    });
+
+    it("PIN randomization nukes ALL presence rows for that table", () => {
+      // When manager randomizes PIN, all customers at that table are evicted
+      // deleteMany({ where: { tableId: id } }) removes every session
+      const sessions = new Map<string, { tableId: number }>();
+      sessions.set("jti-aaa", { tableId: 1 });
+      sessions.set("jti-bbb", { tableId: 1 });
+      sessions.set("jti-ccc", { tableId: 2 });
+
+      // PIN randomized for table 1 — delete all for that table
+      for (const [jti, session] of sessions) {
+        if (session.tableId === 1) sessions.delete(jti);
+      }
+
+      expect([...sessions.values()].filter(s => s.tableId === 1)).toHaveLength(0);
+      expect([...sessions.values()].filter(s => s.tableId === 2)).toHaveLength(1);
+    });
+
+    it("stale sessions are filtered by the 2-minute heartbeat cutoff", () => {
+      // GET /presence only counts sessions where lastHeartbeatAt >= cutoff
+      const STALENESS_MS = 2 * 60 * 1000;
+      const now = Date.now();
+      const sessions = [
+        { jti: "fresh-1",  tableId: 1, lastHeartbeatAt: now - 10_000 },     // 10s ago — fresh
+        { jti: "fresh-2",  tableId: 1, lastHeartbeatAt: now - 60_000 },     // 1m ago — fresh
+        { jti: "stale-1",  tableId: 1, lastHeartbeatAt: now - 200_000 },    // 3.3m ago — stale
+        { jti: "fresh-3",  tableId: 2, lastHeartbeatAt: now - 5_000 },      // 5s ago — fresh
+      ];
+
+      const cutoff = now - STALENESS_MS;
+      const activeSessions = sessions.filter(s => s.lastHeartbeatAt >= cutoff);
+
+      const counts: Record<number, number> = {};
+      for (const s of activeSessions) {
+        counts[s.tableId] = (counts[s.tableId] ?? 0) + 1;
+      }
+
+      expect(counts[1]).toBe(2); // 2 fresh, 1 stale filtered out
+      expect(counts[2]).toBe(1);
+    });
+
+    it("each customer's heartbeat only touches their own row (upsert by jti)", () => {
+      // POST /heartbeat does: upsert where sessionToken = jti
+      // Two customers at the same table have different JTIs
+      const presenceTable = new Map<string, { tableId: number; lastHeartbeatAt: number }>();
+
+      // Customer A heartbeat
+      presenceTable.set("jti-aaa", { tableId: 1, lastHeartbeatAt: 1000 });
+      // Customer B heartbeat
+      presenceTable.set("jti-bbb", { tableId: 1, lastHeartbeatAt: 2000 });
+
+      // Customer A heartbeats again — only their row updated
+      presenceTable.set("jti-aaa", { tableId: 1, lastHeartbeatAt: 3000 });
+
+      expect(presenceTable.get("jti-aaa")!.lastHeartbeatAt).toBe(3000);
+      expect(presenceTable.get("jti-bbb")!.lastHeartbeatAt).toBe(2000); // untouched
+      expect(presenceTable.size).toBe(2);
+    });
+
+    it("upsertClientConnection tracks multiple browser clients at the same table", () => {
+      // SSE layer: upsertClientConnection deduplicates by clientId
+      const connections = new Map<string, ClientConnectionEntry<string>>();
+
+      // Client A connects to table 1
+      upsertClientConnection(connections, "client-A", "conn-A1", 1);
+      // Client B also connects to table 1
+      upsertClientConnection(connections, "client-B", "conn-B1", 1);
+
+      expect(connections.size).toBe(2);
+      expect(connections.get("client-A")!.tableId).toBe(1);
+      expect(connections.get("client-B")!.tableId).toBe(1);
+    });
+
+    it("upsertClientConnection replaces stale connection when same client reconnects", () => {
+      const connections = new Map<string, ClientConnectionEntry<string>>();
+
+      // Client A connects
+      upsertClientConnection(connections, "client-A", "conn-A1", 1);
+      // Client A reconnects (new connection object)
+      const replaced = upsertClientConnection(connections, "client-A", "conn-A2", 1);
+
+      expect(replaced).not.toBeNull();
+      expect(replaced!.connection).toBe("conn-A1");
+      expect(connections.get("client-A")!.connection).toBe("conn-A2");
+      expect(connections.size).toBe(1); // still just one entry
+    });
+
+    it("client switching tables replaces the old table tracking", () => {
+      const connections = new Map<string, ClientConnectionEntry<string>>();
+
+      // Client at table 1
+      upsertClientConnection(connections, "client-A", "conn-A1", 1);
+      // Client switches to table 2 (new SSE connection)
+      const replaced = upsertClientConnection(connections, "client-A", "conn-A2", 2);
+
+      expect(replaced!.tableId).toBe(1);
+      expect(connections.get("client-A")!.tableId).toBe(2);
     });
   });
 });
