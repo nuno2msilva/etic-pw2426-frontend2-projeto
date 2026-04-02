@@ -134,7 +134,7 @@ useEffect(() => {
     description: "Tailwind is configured with a custom theme (sushi-dash brand colours, CSS variables for dark/light mode) and used for every layout decision. The MenuGrid scales from 2 columns on a 375px phone up to 6 columns on a wide desktop using responsive prefixes. Touch targets meet the 44×44px WCAG minimum. Dark mode is implemented via the class strategy — toggled by a button in the header that persists to localStorage. Custom utility classes like page-shell and mobile-scroll-area are defined in src/index.css to handle dynamic viewport height (dvh) on mobile browsers where the address bar changes the available height.",
     keyFiles: ["tailwind.config.ts", "src/features/customer/components/MenuGrid.tsx", "src/index.css"],
     codeSnippet: `// MenuGrid.tsx — responsive columns from 2 (phone) → 6 (wide desktop)
-<div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+<div className="grid grid-cols-2 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-5 gap-3">
   {items.map(item => (
     <button
       key={item.id}
@@ -318,7 +318,7 @@ const canAccessAdmin   = staffPermission === "admin";
   {
     id: 9,
     title: "Responsive Design (Mobile-First Tailwind)",
-    description: "Every screen from an iPhone SE (375px) to a 4K monitor works without horizontal scrolling or broken layouts. The MenuGrid uses 6 responsive breakpoints to reflow from 2 items per row on phones up to 6 on wide desktops, making the best use of screen real estate at every size. Staff pages use a custom page-shell class with 100dvh height to handle mobile browser chrome resize (the address bar appearing/disappearing). OrderCard and TableSelector use different grid densities on mobile vs desktop. All interactive elements meet the 44×44px touch target requirement. Dialog modals are full-screen on phones and centered on desktop.",
+description: "Every screen from an iPhone SE (375px) to a 4K monitor works without horizontal scrolling or broken layouts. The MenuGrid uses 7 responsive breakpoints to reflow from 2 items per row on phones up to 6 on wide desktops (then 5 on ultra-wide to avoid over-stretching), making the best use of screen real estate at every size. Staff pages use a custom page-shell class with 100dvh height to handle mobile browser chrome resize (the address bar appearing/disappearing). OrderCard and TableSelector use different grid densities on mobile vs desktop. All interactive elements meet the 44\u00d744px touch target requirement. Dialog modals are full-screen on phones and centered on desktop.",
     keyFiles: [
       "src/features/customer/components/MenuGrid.tsx",
       "src/features/customer/components/TableSelector.tsx",
@@ -338,8 +338,8 @@ const canAccessAdmin   = staffPermission === "admin";
 // src/index.css — Tailwind @apply directives (not plain CSS properties)
 @layer utilities {
   .page-shell {
-    @apply h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto overflow-x-hidden
-           max-w-5xl mx-auto w-full min-w-0 px-3 sm:px-4;
+    @apply h-[calc(100dvh-4rem)] sm:h-full overflow-y-auto mobile-scroll-area
+           overflow-x-hidden max-w-5xl mx-auto w-full min-w-0 px-3 sm:px-4;
   }
   .page-shell-tight {
     @apply pt-4 sm:pt-6 pb-[calc(env(safe-area-inset-bottom)+0.875rem)] sm:pb-6;
@@ -435,12 +435,14 @@ const {
 } = useAuth();
 
 // app/providers.tsx — provider nesting order matters
-<QueryRuntimeProvider>       {/* React Query cache */}
-  <AuthProvider>             {/* JWT + session state */}
-    <CRTScreen enabled>      {/* Retro effect wrapper (SSR-safe) */}
-      <AppHeader />
-      <LiveUpdatesClient />  {/* SSE connection + presence polling */}
-      {children}
+<QueryRuntimeProvider>          {/* React Query cache */}
+  <AuthProvider>                {/* JWT + session state */}
+    <Sonner />                  {/* Toast notifications (idle-loaded) */}
+    <WebVitalsReporter />       {/* Core Web Vitals (sibling, not nested) */}
+    <LiveUpdatesClient />       {/* SSE connection + presence polling */}
+    <CRTScreen enabled>         {/* Retro effect wrapper (SSR-safe) */}
+      <AppHeader />             {/* Navigation bar */}
+      {children}                {/* Page content */}
     </CRTScreen>
   </AuthProvider>
 </QueryRuntimeProvider>`,

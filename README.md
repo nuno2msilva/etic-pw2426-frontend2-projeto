@@ -3,7 +3,7 @@
 A full-stack, real-time sushi restaurant ordering system with role-based authentication, live kitchen queue management, and comprehensive admin panel. Built with Next.js 16, React 18, TypeScript, Prisma ORM, and PostgreSQL 15.
 
 **Live Demo**: [https://sushi-dash.vercel.app/](https://sushi-dash.vercel.app/)  
-**View Requirements**: Visit [`/about`](https://sushi-dash.vercel.app/about) in the running app for complete traceability of all 17 requirements with code snippets.
+**View Requirements**: Visit [`/about`](https://sushi-dash.vercel.app/about) in the running app for complete traceability of all 18 requirements with code snippets.
 
 ---
 
@@ -70,7 +70,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 - **Database Administration** — Seed data, reset tables, manage migrations
 
 ### Technical Highlights
-- **Type Safety** — 100% TypeScript (ES2020), zero implicit `any`
+- **Type Safety** — 100% TypeScript (ES2022), zero implicit `any`
 - **382 Passing Tests** — 22 test suites covering auth, orders, presence, analytics, SEO, navigation, context, UI elements
 - **CRT TV Effect** — Authentic Samsung CRT animation on all pages (boot sequence, scanlines, flicker)
 - **Privacy Analytics** — Umami-powered tracking, GDPR-compliant, first-party proxy
@@ -117,6 +117,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
                     │  (Prisma ORM)         │
                     │  ├─ users (staff)
                     │  ├─ tables (presence)
+                    │  ├─ customer_presence (heartbeats)
                     │  ├─ menu_items (145)
                     │  ├─ orders (queued/ready)
                     │  ├─ order_items (lineitems)
@@ -129,7 +130,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 1. **Customer Flow**: TableSelector → PIN validation → useAuth() stores JWT → MenuOrderingView renders
 2. **Order Placement**: addToCart() → cart state update → placeOrder() mutation → Prisma insert → SSE broadcast to kitchen
 3. **Kitchen Updates**: Express broadcasts order status change → SSE message to customer, kitchen view updates instantly
-4. **Real-Time Presence**: Table presence polled every 5s → customer leaves → `goToTableSelection()` clears auth → automatic disconnect
+4. **Real-Time Presence**: Table presence polled every 3s → customer leaves → `goToTableSelection()` clears auth → automatic disconnect
 
 ---
 
@@ -267,7 +268,7 @@ Click **"Staff"** button on table selector to open staff login modal:
 
 ⚠️ **IMPORTANT**: Change these credentials immediately after first login in production!
 
-> 📋 **Grading note**: The `/about` page lists all 17 requirements with code snippets. Staff credentials above are seeded by `make db-seed`.
+> 📋 **Grading note**: The `/about` page lists all 18 requirements with code snippets. Staff credentials above are seeded by `make db-seed`.
 
 ### Permission Matrix
 
@@ -296,79 +297,73 @@ sushi-dash/
 │   ├── page.tsx                    # / → CustomerPage (table selection)
 │   ├── not-found.tsx               # 404 page (catch-all)
 │   ├── about/
-│   │   └── page.tsx                # /about → Requirements traceability (17 items)
+│   │   └── page.tsx                # /about → Requirements traceability (18 items)
+│   ├── api/
+│   │   └── v1/                     # Next.js Route Handlers
+│   │       ├── auth/session/route.ts
+│   │       ├── health/route.ts
+│   │       ├── menu/route.ts
+│   │       └── web-vitals/route.ts
 │   ├── kitchen/
 │   │   └── page.tsx                # /kitchen → KitchenPage (order queue)
 │   ├── manager/
 │   │   └── page.tsx                # /manager → ManagerPage (menu CRUD, settings)
 │   ├── admin/
-│   │   └── page.tsx                # /admin → AdminPage (staff mgmt, system config)
+│   │   └── page.tsx                # /admin → AdminPanel (staff mgmt, system config)
+│   ├── sitemap.ts                  # Dynamic sitemap generation
 │   └── table/
 │       └── [tableId]/
 │           └── page.tsx            # /table/[id] → CustomerPage (personalized menu)
 ├── src/
-│   ├── components/                 # Shared UI components (95 files total)
-│   │   ├── app/                    # App-level compound components
-│   │   │   ├── AppHeader.tsx       # Sticky nav: logo, theme toggle, logout
-│   │   │   ├── CartSummaryBanner.tsx
-│   │   │   ├── CRTScreen.tsx       # CRT effect wrapper (all pages)
-│   │   │   ├── MenuGrid.tsx        # 145+ items in responsive grid
-│   │   │   ├── MenuManager.tsx     # Manager: add/edit/delete menu items
-│   │   │   ├── MenuOrderingView.tsx # Customer: menu + cart + checkout
-│   │   │   ├── OrderCard.tsx       # Individual order display
-│   │   │   ├── OrderConfirmation.tsx
-│   │   │   ├── OrderProgressModal.tsx
-│   │   │   ├── OrderSettingsManager.tsx
-│   │   │   ├── PinPad.tsx          # Shuffled keypad, 4-digit customer auth
-│   │   │   ├── StaffLoginForm.tsx  # Email/password for kitchen/manager/admin
-│   │   │   ├── StaffLoginModal.tsx
-│   │   │   ├── TableManager.tsx    # Manager: table management panel
-│   │   │   ├── TableQRModal.tsx
-│   │   │   ├── TableSelector.tsx   # Customer: table selection (home page)
-│   │   │   ├── CollapsibleSection.tsx
+│   ├── components/                 # UI components
+│   │   ├── app/                    # Legacy barrel (components moved to features/)
 │   │   │   ├── crt.css             # CRT animations (scanlines, boot)
-│   │   │   └── index.ts            # Component exports
+│   │   │   └── index.ts            # Re-exports from features/
 │   │   └── ui/                     # shadcn/ui primitives
 │   │       ├── alert.tsx
+│   │       ├── alert-dialog.tsx
 │   │       ├── badge.tsx
 │   │       ├── button.tsx
 │   │       ├── card.tsx
 │   │       ├── collapsible.tsx
 │   │       ├── dialog.tsx
+│   │       ├── dropdown.tsx
 │   │       ├── input.tsx
 │   │       ├── label.tsx
+│   │       ├── select.tsx
 │   │       ├── sonner.tsx          # Toast notifications
 │   │       ├── tabs.tsx
 │   │       └── tooltip.tsx
-│   ├── context/                    # Global state (React Context)
-│   │   ├── AuthContext.tsx         # Customer PIN / Staff JWT auth
-│   │   └── AppContext.tsx          # Menu, tables, orders, settings cache
+│   ├── context/                    # (Moved to features/shared/context)
 │   ├── data/
 │   │   └── seedData.ts             # 145 menu items for seeding
-│   ├── features/                   # Feature-based folder structure (95 files)
+│   ├── features/                   # Feature-based folder structure (56 files)
 │   │   ├── shared/
 │   │   │   ├── components/
 │   │   │   │   ├── AppHeader.tsx
-│   │   │   │   ├── WebVitalsReporter.tsx
 │   │   │   │   ├── CRTScreen.tsx
 │   │   │   │   ├── LiveUpdatesClient.tsx
+│   │   │   │   ├── NotFound.tsx
+│   │   │   │   ├── SEOHead.tsx
+│   │   │   │   ├── WebVitalsReporter.tsx
+│   │   │   │   ├── WithAppProvider.tsx
 │   │   │   │   └── crt.css
 │   │   │   ├── context/
 │   │   │   │   ├── AuthContext.tsx
-│   │   │   │   ├── QueryRuntimeProvider.tsx
-│   │   │   │   └── (other providers)
+│   │   │   │   └── QueryRuntimeProvider.tsx
 │   │   │   ├── hooks/
 │   │   │   │   ├── useApiQueries.ts
-│   │   │   │   ├── useOrderingFlow.ts
 │   │   │   │   ├── useServerEvents.ts
-│   │   │   │   └── usePageTracking.ts
+│   │   │   │   └── useTablePresence.ts
 │   │   │   ├── lib/
+│   │   │   │   ├── analytics.ts    # Umami event tracking (29 events)
 │   │   │   │   ├── api.ts          # Fetch wrapper (CRUD operations)
 │   │   │   │   ├── auth.ts         # Auth helpers (JWT, PIN validation)
-│   │   │   │   ├── analytics.ts    # Umami event tracking (29 events)
 │   │   │   │   ├── config.ts       # Feature flags (ENABLE_CRT_EFFECT, etc)
 │   │   │   │   ├── notify.ts
 │   │   │   │   ├── order-status.ts
+│   │   │   │   ├── route-permissions.ts
+│   │   │   │   ├── timeouts.ts
 │   │   │   │   ├── ui-text.ts
 │   │   │   │   └── utils.ts
 │   │   │   ├── types/
@@ -376,75 +371,80 @@ sushi-dash/
 │   │   │   └── index.ts            # Barrel export (customerEvents, staffEvents, etc)
 │   │   ├── customer/
 │   │   │   ├── components/
+│   │   │   │   ├── CartSummaryBanner.tsx
+│   │   │   │   ├── CollapsibleSection.tsx
+│   │   │   │   ├── CustomerMenuStep.tsx
 │   │   │   │   ├── CustomerPage.tsx
-│   │   │   │   ├── TableSelector.tsx
-│   │   │   │   ├── PinPad.tsx
+│   │   │   │   ├── DeferredCustomerMenu.tsx
+│   │   │   │   ├── MenuGrid.tsx
 │   │   │   │   ├── MenuOrderingView.tsx
-│   │   │   │   └── DeferredCustomerMenu.tsx
-│   │   │   └── hooks/
-│   │   │       └── useOrderingFlow.ts
+│   │   │   │   ├── OrderCard.tsx
+│   │   │   │   ├── OrderConfirmation.tsx
+│   │   │   │   ├── OrderProgressModal.tsx
+│   │   │   │   ├── PinPad.tsx
+│   │   │   │   ├── TablePage.tsx
+│   │   │   │   └── TableSelector.tsx
+│   │   │   ├── context/
+│   │   │   │   └── AppContext.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useOrderingFlow.ts
+│   │   │   └── index.ts
 │   │   ├── kitchen/
 │   │   │   ├── components/
-│   │   │   │   ├── KitchenPage.tsx
-│   │   │   │   ├── OrderQueue.tsx
-│   │   │   │   └── OrderStatusControl.tsx
-│   │   │   └── hooks/
-│   │   │       └── (kitchen-specific hooks)
+│   │   │   │   └── KitchenPage.tsx
+│   │   │   └── index.ts
 │   │   ├── staff/
 │   │   │   ├── components/
-│   │   │   │   ├── StaffLoginModal.tsx
+│   │   │   │   ├── PasswordChangeModal.tsx
 │   │   │   │   ├── StaffHeaderMenu.tsx
-│   │   │   │   └── StaffLayout.tsx
-│   │   │   └── middleware/
-│   │   │       └── (staff auth guards)
-│   │   ├── manager/
-│   │   │   ├── components/
-│   │   │   │   ├── ManagerPage.tsx
-│   │   │   │   ├── MenuManager.tsx
-│   │   │   │   ├── TableManager.tsx
-│   │   │   │   └── OrderSettingsManager.tsx
-│   │   │   └── hooks/
-│   │   │       └── (manager-specific hooks)
+│   │   │   │   ├── StaffLoginForm.tsx
+│   │   │   │   └── StaffLoginModal.tsx
+│   │   │   ├── hooks/
+│   │   │   │   └── useProtectedStaffRoute.ts
+│   │   │   └── index.ts
 │   │   └── admin/
 │   │       ├── components/
-│   │       │   ├── AdminPage.tsx
-│   │       │   ├── UserManagement.tsx
-│   │       │   └── SystemSettings.tsx
-│   │       └── hooks/
-│   │           └── (admin-specific hooks)
-│   ├── hooks/                      # Deprecated (use features/*/hooks)
-│   ├── pages/
-│   │   └── api/
-│   │       └── [...path].ts        # Proxy all /api requests to Express backend
+│   │       │   ├── AdminPanel.tsx
+│   │       │   ├── ManagerPage.tsx
+│   │       │   ├── MenuManager.tsx
+│   │       │   ├── OrderSettingsManager.tsx
+│   │       │   ├── TableManager.tsx
+│   │       │   └── TableQRModal.tsx
+│   │       └── index.ts
 │   ├── test/                       # Jest test suites (382 tests, 22 files)
-│   │   ├── crt-ux-elements.test.tsx      # 23 tests: CRT animations, UX elements
-│   │   ├── authorization-behavior.test.tsx
-│   │   ├── components.test.tsx
+│   │   ├── admin-panel-live-updates.test.tsx
+│   │   ├── analytics.test.ts
 │   │   ├── api.test.ts
+│   │   ├── authorization-behavior.test.tsx
+│   │   ├── auth-session-enforcement.test.tsx
 │   │   ├── auth.test.ts
+│   │   ├── components.test.tsx
+│   │   ├── context-derived-state.test.ts
+│   │   ├── crt-ux-elements.test.tsx
 │   │   ├── data.test.ts
-│   │   ├── order-status.test.ts
-│   │   ├── utils.test.ts
-│   │   ├── presence-lifecycle.test.ts
-│   │   ├── server-events-*.test.ts (5 files)
 │   │   ├── menu-ordering-view.test.tsx
+│   │   ├── navigation-routing.test.tsx
+│   │   ├── order-status.test.ts
+│   │   ├── presence-lifecycle.test.ts
+│   │   ├── providers-presence.test.ts
+│   │   ├── proxy-access-control.test.ts
+│   │   ├── seo-metadata.test.tsx
+│   │   ├── server-events-ejection.test.tsx
+│   │   ├── server-events-presence-switch.test.ts
 │   │   ├── staff-mobile-layout.test.tsx
+│   │   ├── table-presence-stability.test.ts
+│   │   ├── utils.test.ts
 │   │   ├── setup.ts                # Jest configuration
 │   │   └── __mocks__/
 │   │       └── config.ts
-│   ├── types/
-│   │   └── models.ts               # TypeScript type definitions (Order, MenuItem, etc)
-│   ├── views/                      # Deprecated (use features/*/components)
-│   │   ├── CustomerPage.tsx
-│   │   ├── KitchenPage.tsx
-│   │   ├── ManagerPage.tsx
-│   │   ├── TablePage.tsx
-│   │   └── NotFound.tsx
+│   ├── types/                      # (Moved to features/shared/types)
 │   └── index.css                   # Global styles (Tailwind, CRT keyframes)
 ├── public/
 │   ├── robots.txt
-│   └── fonts/
-│       └── samsung-crt-tv.ttf      # Custom bitmap font for CRT "AV1" label
+│   ├── fonts/
+│   │   └── samsung-crt-tv.ttf      # Custom bitmap font for CRT "AV1" label
+│   └── images/
+│       └── sushi-logo.svg          # App logo
 ├── server/                         # Express backend
 │   ├── src/
 │   │   ├── index.ts                # Server entry (Express setup, SSE)
@@ -459,31 +459,35 @@ sushi-dash/
 │   │   │   ├── settings.ts         # /api/settings (config)
 │   │   │   └── tables.ts           # /api/tables (presence, PIN management)
 │   │   └── db/
+│   │       ├── check.ts            # DB connection health check
 │   │       ├── prisma.ts           # Prisma client singleton
+│   │       ├── push.ts             # Schema push (swaps to DIRECT_URL for DDL)
+│   │       ├── reset.ts            # DB reset (swaps to DIRECT_URL for DDL)
 │   │       └── seed.ts             # Seed script (145 items, 3 staff users, settings)
 │   ├── prisma/
-│   │   └── schema.prisma           # Database schema (11 models)
+│   │   └── schema.prisma           # Database schema (10 models)
 │   ├── package.json
+│   ├── package-lock.json
 │   ├── tsconfig.json
 │   ├── .env.example
-│   └── jest.config.cjs             # Jest backend tests (future)
+│   └── prisma.config.ts            # Prisma configuration
 ├── pages/
 │   └── api/
 │       └── [...path].ts            # Proxy endpoint (forwards /api/* to Express)
-├── app.json                        # DevContainer config
 ├── components.json                 # shadcn/ui config
 ├── eslint.config.mjs               # ESLint rules
 ├── jest.config.cjs                 # Jest frontend tests
 ├── Makefile                        # Build commands (discussed above)
 ├── next.config.ts                  # Next.js build config (Turbopack enabled)
 ├── package.json                    # Frontend dependencies
-├── package-lock.json
+├── package-lock.json               # npm lockfile
+├── bun.lockb                       # Bun lockfile
 ├── postcss.config.js               # PostCSS config (Tailwind processor)
 ├── tailwind.config.ts              # Tailwind theme (colors, spacing, custom)
-├── tsconfig.json                   # TypeScript config (ES2020 target)
+├── tsconfig.json                   # TypeScript config (ES2022 target)
 ├── vercel.json                     # Vercel deployment config
 ├── CREDENTIALS.md                  # (Git-ignored) Contains seed user passwords
-├── REQUIREMENTS.md                 # Project requirements (17 items)
+├── REQUIREMENTS.md                 # Project requirements (16 items)
 └── README.md                       # This file!
 ```
 
@@ -515,7 +519,7 @@ make test-coverage  # Generate coverage report
 | **order-status.test.ts** | 7 | Order state machine (queued → preparing → ready → delivered) |
 | **utils.test.ts** | 6 | Helper functions (formatting, calculations) |
 | **presence-lifecycle.test.ts** | 45 | Table presence polling, SSE lifecycle, grace period, idle timeout, end-to-end scenarios |
-| **server-events-*.test.ts** | 3 files | SSE presence switching, client ejection on PIN change |
+| **server-events-*.test.ts** | 2 files | SSE presence switching, client ejection on PIN change |
 | **table-presence-stability.test.ts** | 3 | Grace window logic, last-seen timestamp refresh |
 | **providers-presence.test.ts** | 6 | Header mode resolution, presence table ID selection |
 | **proxy-access-control.test.ts** | 6 | Route permission helper (kitchen/manager/admin boundaries) |
@@ -625,12 +629,19 @@ Applied via `CRTScreen` component:
 
 ```tsx
 // app/providers.tsx
-<CRTScreen enabled={ENABLE_CRT_EFFECT}>
+{ENABLE_CRT_EFFECT ? (
+  <CRTScreen enabled>
+    <div className="h-dvh flex flex-col overflow-hidden">
+      {useLightHeader ? <LightHeader /> : <AppHeader />}
+      <div className="flex-1 min-h-0 overflow-auto">{children}</div>
+    </div>
+  </CRTScreen>
+) : (
   <div className="h-dvh flex flex-col overflow-hidden">
-    <LightHeader />
-    <div className="flex-1 min-h-0 overflow-hidden">{children}</div>
+    {useLightHeader ? <LightHeader /> : <AppHeader />}
+    <div className="flex-1 min-h-0 overflow-auto">{children}</div>
   </div>
-</CRTScreen>
+)}
 ```
 
 ---
@@ -645,7 +656,7 @@ Applied via `CRTScreen` component:
 ### Summary
 
 1. ✅ **Next.js 16+ (App Router & SSR)**
-2. ✅ **TypeScript (ES2020 Target)**
+2. ✅ **TypeScript (ES2022 Target)**
 3. ✅ **React Hooks (useState, useEffect, Custom)**
 4. ✅ **Tailwind CSS (Responsive Design)**
 5. ✅ **Authentication & Authorization (JWT + RBAC)**
@@ -673,7 +684,7 @@ Applied via `CRTScreen` component:
 |---|---|---|
 | **Next.js** | 16.1.6 | React framework, App Router, SSR, Turbopack |
 | **React** | 18.3.1 | UI library, hooks, context |
-| **TypeScript** | 5.8.3 | Type safety (ES2020 target, zero implicit `any`) |
+| **TypeScript** | 5.8.3 | Type safety (ES2022 target, zero implicit `any`) |
 | **Tailwind CSS** | 3.4.17 | Utility-first styling, dark mode, responsive |
 | **React Query** | 5.83.0 | Server state, caching, mutations, deduping |
 | **Umami Analytics** | Latest | Privacy-focused tracking, GDPR-compliant, first-party proxy |
@@ -689,7 +700,7 @@ Applied via `CRTScreen` component:
 |---|---|---|
 | **Express.js** | 4.21.2 | REST API, SSE, route handlers |
 | **Prisma ORM** | 7.4.0 | Type-safe database access, migrations |
-| **PostgreSQL** | 15 | Relational database (11 models: users, tables, orders, menu, etc) |
+| **PostgreSQL** | 15 | Relational database (10 models: users, tables, orders, menu, etc) |
 | **JWT** | 9.0.2 | Stateless auth tokens (httpOnly cookies) |
 | **bcryptjs** | 3.0.2 | Password hashing for staff users |
 | **Cookie Parser** | 1.4.7 | httpOnly cookie parsing |
@@ -764,11 +775,10 @@ lighthouse https://sushi-dash.vercel.app/ --view
 - **Accessibility**: 95+
 - **Best Practices**: 95+
 - **SEO**: 100
-- **SEO**: 95+
 
 ### Optimizations Applied
 ✅ Turbopack compilation (removed 26 KiB legacy polyfills)  
-✅ Dynamic imports (CRTScreen, AppHeader, Sonner)  
+✅ Dynamic imports (AppHeader, Sonner, LiveUpdatesClient, QueryRuntimeProvider)  
 ✅ Home route deferred menu (menu loads only after table selection)  
 ✅ React Query caching (5-minute staleTime, 30-second refetch)  
 ✅ CSS minimal (Tailwind utilities only, no bloat)  
