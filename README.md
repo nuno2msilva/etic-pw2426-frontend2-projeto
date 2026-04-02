@@ -7,9 +7,10 @@ A full-stack, real-time sushi restaurant ordering system with role-based authent
 
 ---
 
-## 👩‍🏫 For Teachers & Graders
+## 👩‍🏫 Requirements Page
 
-> **Start here before anything else.**
+> **This project was made for class assessment purposes.
+There were given requirements to which I have tried to uphold to the best of my abilities. These can be viewed in the following link.**
 
 Visit **[`/about`](https://sushi-dash.vercel.app/about)** — the dedicated requirements traceability page built for assessment:
 
