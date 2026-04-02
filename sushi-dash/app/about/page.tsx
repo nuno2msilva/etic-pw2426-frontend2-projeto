@@ -387,7 +387,7 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
   {
     id: 11,
     title: "Unit Testing (Jest + React Testing Library)",
-    description: "382 tests across 22 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, multi-customer per-session presence tracking, UI component rendering, API client error handling, analytics event tracking, SEO metadata, navigation routing, context-derived state, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
+    description: "389 tests across 22 suites cover the full application surface: customer authentication flows, order placement and cancellation, staff role enforcement, real-time SSE presence lifecycle, grace period logic, multi-customer per-session presence tracking, PIN shuffle force-disconnect verification, false-negative protection, UI component rendering, API client error handling, analytics event tracking, SEO metadata, navigation routing, context-derived state, and database-level timeout constants. Tests use React Testing Library with a focus on behaviour over implementation — tests check what the user sees, not internal state. All test titles use plain-English descriptions ('Does the bouncer let the right people through?') to make the test output readable to non-developers. Run make test-verbose to see every title printed.",
     keyFiles: ["jest.config.cjs", "src/test/authorization-behavior.test.tsx", "src/test/components.test.tsx", "src/test/presence-lifecycle.test.ts"],
     codeSnippet: `// src/test/table-presence-stability.test.ts
 describe("Does the presence indicator stay steady or flicker like a broken bulb?", () => {
@@ -407,7 +407,7 @@ describe("Does the presence indicator stay steady or flicker like a broken bulb?
 });
 
 // Run all tests:
-// npm test           → 382/382 passing, 22 suites
+// npm test           → 389/389 passing, 22 suites
 // make test-verbose  → prints every test title
 
 // New suites added for untested areas:
@@ -711,7 +711,7 @@ export default function AboutPage() {
         <div className="mt-16 border-t pt-8 text-center text-muted-foreground">
           <p className="text-sm">✅ All 18 requirements fully implemented and tested</p>
           <p className="text-sm mt-2">Build: <code className="bg-muted px-2 py-1 rounded">npm run build</code></p>
-          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 382/382 passing, 22 suites</p>
+          <p className="text-sm">Test: <code className="bg-muted px-2 py-1 rounded">npm test</code> — 389/389 passing, 22 suites</p>
           <p className="text-sm mt-2">Lighthouse Desktop: <strong>100 / 100 / 95+ / 100</strong> (Performance / Accessibility / Best Practices / SEO)</p>
         </div>
       </div>

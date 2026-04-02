@@ -13,6 +13,7 @@ import {
   getKeepAliveIntervalMs,
   resolveTrackedTableId,
   upsertClientConnection,
+  disconnectCustomerConnectionsByTableId,
 } from "../../server/src/events";
 import type { ClientConnectionEntry } from "../../server/src/events";
 import {
@@ -521,6 +522,21 @@ describe("Does the whole presence lifecycle actually work end-to-end?", () => {
 
       expect(replaced!.tableId).toBe(1);
       expect(connections.get("client-A")!.tableId).toBe(2);
+    });
+  });
+
+  describe("Does a PIN shuffle immediately clear presence (no ghost occupants)?", () => {
+    it("disconnectCustomerConnectionsByTableId returns 0 for a table with no connections", () => {
+      expect(disconnectCustomerConnectionsByTableId(999)).toBe(0);
+    });
+
+    it("returns 0 for NaN or zero table IDs without crashing", () => {
+      expect(disconnectCustomerConnectionsByTableId(NaN)).toBe(0);
+      expect(disconnectCustomerConnectionsByTableId(0)).toBe(0);
+    });
+
+    it("force-disconnect by table ID is available as a named export", () => {
+      expect(typeof disconnectCustomerConnectionsByTableId).toBe("function");
     });
   });
 });

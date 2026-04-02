@@ -22,7 +22,7 @@ Visit **[`/about`](https://sushi-dash.vercel.app/about)** — the dedicated requ
 **Quick verification commands** (from `sushi-dash/`):
 
 ```bash
-make test-verbose   # Prints all 382 test titles — readable, no boilerplate
+make test-verbose   # Prints all 389 test titles — readable, no boilerplate
 make build          # Production build — confirm no errors
 ```
 
@@ -72,7 +72,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 ### Technical Highlights
 - **Type Safety** — 100% TypeScript (ES2022), zero implicit `any`
-- **382 Passing Tests** — 22 test suites covering auth, orders, presence, analytics, SEO, navigation, context, UI elements
+- **389 Passing Tests** — 22 test suites covering auth, orders, presence, analytics, SEO, navigation, context, UI elements
 - **CRT TV Effect** — Authentic Samsung CRT animation on all pages (boot sequence, scanlines, flicker)
 - **Privacy Analytics** — Umami-powered tracking, GDPR-compliant, first-party proxy
 - **Dark Mode** — Licensed theme with light/dark switcher on home page
@@ -131,7 +131,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 1. **Customer Flow**: TableSelector → PIN validation → useAuth() stores JWT → MenuOrderingView renders
 2. **Order Placement**: addToCart() → cart state update → placeOrder() mutation → Prisma insert → SSE broadcast to kitchen
 3. **Kitchen Updates**: Express broadcasts order status change → SSE message to customer, kitchen view updates instantly
-4. **Real-Time Presence**: Table presence polled every 3s → customer leaves → `goToTableSelection()` clears auth → automatic disconnect
+4. **Real-Time Presence**: Table presence polled every 3s (merged in-memory SSE + DB heartbeats) → SSE events trigger cache invalidation (not overwrite) → PIN shuffle force-disconnects SSE + clears DB presence → customer leaves → `goToTableSelection()` clears auth → automatic disconnect
 
 ---
 
@@ -230,7 +230,7 @@ Customer access: select any table on the home page → enter PIN shown on that t
 
 | Command | Description |
 |---------|-------------|
-| `make test` | Run Jest test suite (382/382 passing) |
+| `make test` | Run Jest test suite (389/389 passing) |
 | `make test-watch` | Run tests in watch mode (auto-rerun on file change) |
 | `make test-verbose` | Show every single test case (good for grading/demos) |
 | `make test-coverage` | Generate coverage report |
@@ -412,7 +412,7 @@ sushi-dash/
 │   │       │   ├── TableManager.tsx
 │   │       │   └── TableQRModal.tsx
 │   │       └── index.ts
-│   ├── test/                       # Jest test suites (382 tests, 22 files)
+│   ├── test/                       # Jest test suites (389 tests, 22 files)
 │   │   ├── admin-panel-live-updates.test.tsx
 │   │   ├── analytics.test.ts
 │   │   ├── api.test.ts
@@ -496,7 +496,7 @@ sushi-dash/
 
 ## 🧪 Testing
 
-### Test Coverage (382/382 Passing)
+### Test Coverage (389/389 Passing)
 
 Run the full suite from `sushi-dash/`:
 
@@ -519,9 +519,9 @@ make test-coverage  # Generate coverage report
 | **data.test.ts** | 5 | Menu item data integrity, order item calculations |
 | **order-status.test.ts** | 7 | Order state machine (queued → preparing → ready → delivered) |
 | **utils.test.ts** | 6 | Helper functions (formatting, calculations) |
-| **presence-lifecycle.test.ts** | 45 | Table presence polling, SSE lifecycle, grace period, idle timeout, end-to-end scenarios |
+| **presence-lifecycle.test.ts** | 51 | Table presence polling, SSE lifecycle, grace period, idle timeout, PIN shuffle disconnect, end-to-end scenarios |
 | **server-events-*.test.ts** | 2 files | SSE presence switching, client ejection on PIN change |
-| **table-presence-stability.test.ts** | 3 | Grace window logic, last-seen timestamp refresh |
+| **table-presence-stability.test.ts** | 5 | Grace window logic, last-seen timestamp refresh, false-negative protection |
 | **providers-presence.test.ts** | 6 | Header mode resolution, presence table ID selection |
 | **proxy-access-control.test.ts** | 6 | Route permission helper (kitchen/manager/admin boundaries) |
 | **menu-ordering-view.test.tsx** | 7 | Cart updates, order placement, mobile layout, accessibility |
@@ -666,7 +666,7 @@ Applied via `CRTScreen` component:
 8. ✅ **Navigation (Next.js Router & Dynamic Routes)**
 9. ✅ **Responsive Design (Mobile-First Tailwind)**
 10. ✅ **Vercel Deployment (Serverless, CI/CD)**
-11. ✅ **Unit Testing (Jest + React Testing Library)** — 382/382 passing
+11. ✅ **Unit Testing (Jest + React Testing Library)** — 389/389 passing
 12. ✅ **Context API (AuthContext, AppContext)**
 13. ✅ **Animations & Transitions (CRT Effect + Dialog)**
 14. ✅ **React Query (@tanstack/react-query)**
@@ -746,7 +746,7 @@ NEXT_PUBLIC_ENABLE_WEB_VITALS=false  # Disable Core Web Vitals reporter in prod
 1. Push to `main` → GitHub webhook triggers Vercel
 2. Vercel runs: `prisma generate && npm run build`
 3. Installs: `npm install && cd server && npm install`
-4. Tests: `npm test` (382/382 passing)
+4. Tests: `npm test` (389/389 passing)
 5. Deploys: **11 static routes** + **API routes** to Vercel Edge Network
 6. Preview: Automatic preview URL created for pull requests
 

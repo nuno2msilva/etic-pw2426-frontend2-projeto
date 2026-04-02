@@ -253,6 +253,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       controller.abort(); // cancel any in-flight heartbeat before clearPresenceHeartbeat fires
       clearInterval(timer);
+      void clearPresenceHeartbeat(tableId); // proactively DELETE DB presence row on any teardown
     };
   }, [customerSession?.tableId, isViewingTableSelection]);
 

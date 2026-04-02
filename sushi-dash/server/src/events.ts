@@ -212,6 +212,22 @@ export function disconnectCustomerConnectionsByJti(jti: string): number {
   return toDisconnect.length;
 }
 
+/** Force-disconnect all active customer connections for the given table. */
+export function disconnectCustomerConnectionsByTableId(tableId: number): number {
+  if (!tableId || Number.isNaN(tableId)) return 0;
+
+  const set = tableClients.get(tableId);
+  if (!set || set.size === 0) return 0;
+
+  const toDisconnect = [...set];
+  for (const res of toDisconnect) {
+    cleanupConnection(res);
+  }
+
+  broadcastPresence();
+  return toDisconnect.length;
+}
+
 /** Get current presence counts: { tableId: connectedCount } */
 export function getPresence(): Record<number, number> {
   const presence: Record<number, number> = {};

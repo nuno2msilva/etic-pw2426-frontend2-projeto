@@ -148,8 +148,12 @@ export function useServerEvents({ tableId, onEjected, enabled = true }: UseServe
             break;
 
           // ── Table presence (in-use badges) ──────────────
+          // SSE broadcasts in-memory counts only; invalidate the cache so the
+          // next fetch hits the merged endpoint (in-memory + DB heartbeats).
+          // This prevents a false-negative where a valid DB heartbeat is
+          // overwritten by a zero in-memory count.
           case "table-presence":
-            queryClient.setQueryData(presenceKey, event.presence);
+            queryClient.invalidateQueries({ queryKey: [...presenceKey] });
             break;
         }
       };

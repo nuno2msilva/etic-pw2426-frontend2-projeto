@@ -12,7 +12,7 @@
 import { Router } from "express";
 import prisma from "../db/prisma";
 import { requireRole } from "../middleware/auth";
-import { broadcast, getPresence } from "../events";
+import { broadcast, disconnectCustomerConnectionsByTableId, getPresence } from "../events";
 
 const router = Router();
 
@@ -200,7 +200,10 @@ router.delete("/:id", requireRole("manager"), async (req, res) => {
       return;
     }
 
+    // Evict presence rows and SSE connections for deleted table
+    await prisma.customerPresence.deleteMany({ where: { tableId: id } }).catch(() => {});
     broadcast({ type: "table-deleted", tableId: id });
+    disconnectCustomerConnectionsByTableId(id);
     res.json({ success: true });
   } catch (err) {
     console.error("Table delete error:", err);
@@ -234,6 +237,8 @@ router.put("/:id/pin", requireRole("manager"), async (req, res) => {
     await prisma.customerPresence.deleteMany({ where: { tableId: id } }).catch(() => {});
 
     broadcast({ type: "pin-changed", tableId: id });
+    // Force-close SSE connections so in-memory presence clears immediately
+    disconnectCustomerConnectionsByTableId(id);
     res.json({ success: true, pin });
   } catch (err) {
     console.error("Table PIN update error:", err);
@@ -267,6 +272,8 @@ router.post("/:id/pin/randomize", requireRole("manager"), async (req, res) => {
     await prisma.customerPresence.deleteMany({ where: { tableId: id } }).catch(() => {});
 
     broadcast({ type: "pin-changed", tableId: id });
+    // Force-close SSE connections so in-memory presence clears immediately
+    disconnectCustomerConnectionsByTableId(id);
     res.json({ success: true, pin: newPin, pin_version: updated.pinVersion });
   } catch (err) {
     console.error("Table PIN randomize error:", err);

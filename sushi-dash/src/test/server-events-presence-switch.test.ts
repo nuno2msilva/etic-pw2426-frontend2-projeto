@@ -1,5 +1,6 @@
 import {
   disconnectCustomerConnectionsByJti,
+  disconnectCustomerConnectionsByTableId,
   resolveTrackedTableId,
   upsertClientConnection,
 } from "../../server/src/events";
@@ -53,5 +54,14 @@ describe("Does the SSE system track who's really at which table?", () => {
 
   it("doesn't crash when disconnecting a JTI that was never connected", () => {
     expect(disconnectCustomerConnectionsByJti("missing-jti")).toBe(0);
+  });
+
+  it("doesn't crash when disconnecting a table ID that has no connections", () => {
+    expect(disconnectCustomerConnectionsByTableId(999)).toBe(0);
+  });
+
+  it("returns 0 for invalid table IDs without crashing", () => {
+    expect(disconnectCustomerConnectionsByTableId(NaN)).toBe(0);
+    expect(disconnectCustomerConnectionsByTableId(0)).toBe(0);
   });
 });
