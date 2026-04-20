@@ -5,6 +5,9 @@ A full-stack, real-time sushi restaurant ordering system with role-based authent
 **Live Demo**: [https://sushi-dash.vercel.app/](https://sushi-dash.vercel.app/)  
 **View Requirements**: Visit [`/about`](https://sushi-dash.vercel.app/about) in the running app for complete traceability of all 18 requirements with code snippets.
 
+## Note:
+As of April 20th, 2026, with the conclusion of the grading period, and the recent attack on the vercel app, the online website, database and analytics have been taken down. The repository will now be published to the public for archival and educational purposes. The project will only now run locally, despite the README will still contain references to the online deployment and analytics, as they were integral parts of the project during development and grading.
+
 ---
 
 ## 👩‍🏫 Requirements Page
